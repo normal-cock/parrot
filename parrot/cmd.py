@@ -1,4 +1,5 @@
 # coding=utf8
+import os
 import argparse
 import datetime
 # 为了兼容 mac os
@@ -19,7 +20,7 @@ def rlinput(prompt, prefill=''):
 def run():
     '''parrot命令行入口'''
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', choices=['add', 'review'])
+    parser.add_argument('command', choices=['add', 'review', 'migrate'])
     args = parser.parse_args()
     if args.command == 'add':
         word_text = rlinput('word_text:', '').strip()
@@ -33,7 +34,7 @@ def run():
         add_word(word_text, phonetic_symbol, meaning, use_case, remark)
     if args.command == 'review':
         begin_time = datetime.date.today() - datetime.timedelta(days=7)
-        end_time = datetime.date.today() + datetime.timedelta(days=2)
+        end_time = datetime.date.today() + datetime.timedelta(days=1)
         plan_generator = begin_to_review(begin_time, end_time)
         try:
             plan = next(plan_generator)
@@ -48,6 +49,10 @@ def run():
 
         except StopIteration:
             print('finished')
+    if args.command == 'migrate':
+        alembic_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'alembic.ini')
+        os.system("mkdir -p ~/.parrot")
+        os.system("alembic -c {} upgrade head".format(alembic_config))
 
 if __name__ == '__main__':
     run()

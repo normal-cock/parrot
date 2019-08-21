@@ -1,0 +1,4 @@
+include parrot/*.ini
+include parrot/alembic/README
+include parrot/alembic/*mako
+include parrot/alembic/versions/*
