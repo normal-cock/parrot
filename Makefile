@@ -6,3 +6,6 @@ makemigrations:
 migrate:
 	mkdir -p ~/.parrot
 	PYTHONPATH=. alembic -c parrot/alembic.ini upgrade head
+
+clean:
+	rm -rf ~/.parrot

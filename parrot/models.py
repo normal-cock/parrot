@@ -16,6 +16,9 @@ class Word(Base):
     text = Column(String(64), unique=True)
     # 音标
     phonetic_symbol = Column(String(64))
+    # 示例
+    use_case = Column(String)
+    # 意思
     meaning = Column(String)
     # 备注
     remark = Column(String)
@@ -67,6 +70,9 @@ class ReviewPlan(Base):
     # foreign key
     word_id = Column(Integer, ForeignKey('words.id'))
     word = relationship("Word", back_populates="review_plans")
+
+    def __repr__(self):
+        return "< ReviewPlan(id='{}',word_id='{}')".format(self.id, self.word_id)
 
 # foreign key
 Word.review_plans = relationship("ReviewPlan", 
