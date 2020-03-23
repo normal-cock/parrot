@@ -3,6 +3,7 @@ import datetime
 import enum
 
 from sqlalchemy import Column, Boolean, Enum, Integer, String, DateTime, ForeignKey
+from sqlalchemy import text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -52,6 +53,13 @@ class ReviewStatus(enum.Enum):
     # 已经复习过了，且结果是“没记住”
     UNREMEMBERED = 4
 
+class ReviewPlanType(enum.Enum):
+    '''该条复习的类型'''
+    # 提示单词来复习
+    HINT_WORD = 0
+    # 提示中文来复习
+    HINT_MEANING = 1
+
 class ReviewPlan(Base):
     __tablename__ = 'review_plans'
     id = Column(Integer, primary_key=True)
@@ -59,6 +67,9 @@ class ReviewPlan(Base):
     stage = Column(Enum(ReviewStage), default=ReviewStage.STAGE1)
     # 该计划所处的状态
     status = Column(Enum(ReviewStatus), default=ReviewStatus.UNREVIEWED)
+    review_plan_type = Column(
+        Enum(ReviewPlanType), 
+        default=ReviewPlanType.HINT_WORD)
     # 要复习的时间
     time_to_review = Column(DateTime)
     # 实际被复习的时间, 复习后才有该字段
