@@ -85,6 +85,52 @@ class ReviewPlan(Base):
     def __repr__(self):
         return "< ReviewPlan(id='{}',word_id='{}')".format(self.id, self.word_id)
 
+    @classmethod
+    def generate_full_review_plan(
+            cls,
+            word_id,
+            time_to_review,
+            stage_value=ReviewStage.STAGE1.value
+            ):
+        hint_meaning_plan = cls(
+            time_to_review=time_to_review,
+            word_id=word_id,
+            review_plan_type=ReviewPlanType.HINT_MEANING,
+            stage=ReviewStage(stage_value),
+        )
+        hint_word_plan = cls(
+            time_to_review=time_to_review,
+            word_id=word_id,
+            review_plan_type=ReviewPlanType.HINT_WORD,
+            stage=ReviewStage(stage_value),
+        )
+        return [hint_meaning_plan, hint_word_plan]
+
+class AddCounter(Base):
+    __tablename__ = 'add_counter'
+    id = Column(Integer, primary_key=True)
+    # 第几次
+    counter = Column(Integer, default=0)
+    changed_time = Column(
+        DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+
+    @classmethod
+    def get_counter(cls, session):
+        first = session.query(AddCounter).first()
+        if first is not None:
+            return first
+        new_one = cls(
+            counter=0, 
+            changed_time=datetime.datetime.now())
+        session.add(new_one)
+        return new_one
+
+    def incr(self):
+        if self.changed_time.date() == datetime.date.today():
+            self.counter += 1
+        else:
+            self.counter = 1
+
 # foreign key
 Word.review_plans = relationship("ReviewPlan", 
     order_by=ReviewPlan.id, 
