@@ -12,6 +12,6 @@ if DEBUG:
 print("work dir is:", DATA_DIR)
 
 sqlite_url = 'sqlite:///{}/dictionary.db'.format(DATA_DIR)
-engine = create_engine(sqlite_url)
+engine = create_engine(sqlite_url, echo=DEBUG)
 Session = sessionmaker(bind=engine)
 # print(sqlite_url)

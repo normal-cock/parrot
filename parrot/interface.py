@@ -3,13 +3,14 @@ import os
 import datetime
 import random
 
-from sqlalchemy.orm import joinedload
+# from sqlalchemy.orm import joinedload
 
 from parrot import Session, DEBUG
-from parrot.models import (Word, ReviewPlan, 
-                           ReviewStatus, ReviewStage, 
-                           ReviewPlanType,STAGE_DELTA_MAP,
+from parrot.models import (Word, ReviewPlan,
+                           ReviewStatus, ReviewStage,
+                           ReviewPlanType, STAGE_DELTA_MAP,
                            AddCounter,)
+
 
 def _show_predict(begin_time: datetime.date, end_time: datetime.date):
     session = Session()
@@ -19,6 +20,7 @@ def _show_predict(begin_time: datetime.date, end_time: datetime.date):
         ReviewPlan.status == ReviewStatus.UNREVIEWED
     ).count()
     print("{} : {}".format(end_time-datetime.timedelta(days=1), review_count))
+
 
 def show_predict():
     '''预测未来的复习任务量'''
@@ -32,18 +34,20 @@ def show_predict():
     end_time = begin_time + datetime.timedelta(days=1)
     _show_predict(begin_time, end_time)
 
+
 def get_word(text):
     '''根据text获取库里的单词'''
     session = Session()
-    word = session.query(Word).filter(Word.text==text).one_or_none()
+    word = session.query(Word).filter(Word.text == text).one_or_none()
     return word
+
 
 def add_word(text, phonetic_symbol, meaning, use_case, remark):
     '''添加单词'''
     session = Session()
-    word = session.query(Word).filter(Word.text==text).one_or_none()
+    word = session.query(Word).filter(Word.text == text).one_or_none()
     time_to_review = (
-        datetime.datetime.now() + 
+        datetime.datetime.now() +
         STAGE_DELTA_MAP[ReviewStage.STAGE1]
     )
     counter = AddCounter.get_counter(session)
@@ -61,7 +65,7 @@ def add_word(text, phonetic_symbol, meaning, use_case, remark):
             ReviewPlan.word_id == word.id,
             ReviewPlan.status == ReviewStatus.UNREVIEWED,
         ).update(
-            {ReviewPlan.status: ReviewStatus.UNREMEMBERED}, 
+            {ReviewPlan.status: ReviewStatus.UNREMEMBERED},
             synchronize_session='fetch',
         )
 
@@ -70,17 +74,17 @@ def add_word(text, phonetic_symbol, meaning, use_case, remark):
         last_review_plan = session.query(
             ReviewPlan
         ).filter(
-            ReviewPlan.word_id==word.id
+            ReviewPlan.word_id == word.id
         ).order_by(ReviewPlan.time_to_review.desc()).first()
         last_review_plan.status = ReviewStatus.UNREMEMBERED
-        
+
         plans = ReviewPlan.generate_full_review_plan(word.id, time_to_review)
         session.add_all(plans)
     else:
         word = Word(
-            text=text, 
-            phonetic_symbol=phonetic_symbol, 
-            meaning=meaning, 
+            text=text,
+            phonetic_symbol=phonetic_symbol,
+            meaning=meaning,
             use_case=use_case,
             remark=remark)
         word.review_plans = [
@@ -94,6 +98,7 @@ def add_word(text, phonetic_symbol, meaning, use_case, remark):
     session.commit()
     print("added {} words today".format(counter.counter))
     return True
+
 
 def begin_to_review(begin_time, end_time):
     '''
@@ -114,7 +119,7 @@ def begin_to_review(begin_time, end_time):
     # 某个单词只要有一种形式Plan没记住，就重新构造该单词的所有形式Plan
     # 本次已经生成过所有Plan的单词，不再重复生成
     words_has_reviewed = set()
-    for index,plan_id in enumerate(plan_ids):
+    for index, plan_id in enumerate(plan_ids):
         print("")
         print("Progress: {}/{}".format(index+1, total_len))
         review_plan = session.query(ReviewPlan).get(plan_id)
@@ -127,11 +132,12 @@ def begin_to_review(begin_time, end_time):
             words_has_reviewed.add(review_plan.word_id)
         session.commit()
 
+
 def _generate_next_plan(review_plan):
     new_plans = []
-    if (review_plan.stage.value != ReviewStage.STAGE5.value 
+    if (review_plan.stage.value != ReviewStage.STAGE5.value
             and review_plan.status != ReviewStatus.UNREVIEWED):
-        if (review_plan.status == ReviewStatus.REMEMBERED 
+        if (review_plan.status == ReviewStatus.REMEMBERED
                 and review_plan.stage.value < ReviewStage.STAGE4.value):
             # 记住了，且 stage 小于 4
             # 大于等于4时，就走正常的流程
@@ -150,7 +156,7 @@ def _generate_next_plan(review_plan):
                 stage_value=ReviewStage.STAGE1.value,
             ))
         else:
-            # 正常流程，增加stage ，增加 time_to_review 
+            # 正常流程，增加stage ，增加 time_to_review
             new_plans.extend(ReviewPlan.generate_full_review_plan(
                 review_plan.word_id,
                 time_to_review=(datetime.datetime.now() +
@@ -159,7 +165,8 @@ def _generate_next_plan(review_plan):
             ))
     return new_plans
 
-def _display_review_card(plan:ReviewPlan) -> int :
+
+def _display_review_card(plan: ReviewPlan) -> int:
     '''
     展示复习卡片
     返回值为选择的结果：1.知道了/2.记住了/3.没记住

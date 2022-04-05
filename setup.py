@@ -9,6 +9,7 @@ def get_file_contents(filename):
     with open(join(dirname(__file__), filename)) as fp:
         return fp.read()
 
+
 setup(
     name='parrot',
     version="1.1",
@@ -18,9 +19,8 @@ setup(
     author_email="daedae11@126.com",
     url='https://github.com/chicken-house/parrot',
     install_requires=[
-        'SQLAlchemy==1.3.6', 
-        'alembic==1.0.11',
-        'gnureadline==8.0.0'
+        'SQLAlchemy==1.4.34',
+        'alembic==1.7.7',
     ],
     packages=find_packages(),
     include_package_data=True,
