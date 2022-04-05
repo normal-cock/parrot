@@ -8,7 +8,7 @@ try:
 except ImportError:
     import readline
 
-from parrot.interface import get_word, add_word, begin_to_review
+from parrot.interface import get_word, add_word, begin_to_review, show_predict
 from parrot import DATA_DIR
 
 def rlinput(prompt, prefill=''):
@@ -21,7 +21,8 @@ def rlinput(prompt, prefill=''):
 def run():
     '''parrot命令行入口'''
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', choices=['add', 'review', 'migrate'])
+    parser.add_argument('command', choices=[
+                        'add', 'review', 'migrate', 'predict'])
     args = parser.parse_args()
     if args.command == 'add':
         word_text = rlinput('word_text:', '').strip()
@@ -42,6 +43,8 @@ def run():
         alembic_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'alembic.ini')
         os.system("mkdir -p {}".format(DATA_DIR))
         os.system("alembic -c {} upgrade head".format(alembic_config))
+    if args.command == 'predict':
+        show_predict()
 
 if __name__ == '__main__':
     run()

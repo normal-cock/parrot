@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS "review_plans" (
 INSERT INTO review_plans(id, stage, status, time_to_review, reviewed_time, created_time, changed_time, word_id) 
 select id, stage, status, time_to_review, reviewed_time, created_time, changed_time, word_id from review_plans_old;
 
+DROP TABLE IF EXISTS review_plans_old;
+
 COMMIT;
 
 PRAGMA foreign_keys=on;
