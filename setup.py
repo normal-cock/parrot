@@ -12,7 +12,7 @@ def get_file_contents(filename):
 
 setup(
     name='parrot',
-    version="1.1",
+    version="2.0.0",
     description="parrot背单词工具",
     long_description=get_file_contents('README.md'),
     author="Normal Cock",
@@ -26,7 +26,7 @@ setup(
     include_package_data=True,
     license="MIT",
     entry_points={
-        'console_scripts': ['parrot=parrot.cmd:run'],
+        'console_scripts': ['parrot=parrot_v2.cmd:run'],
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",

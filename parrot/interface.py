@@ -169,7 +169,7 @@ def _generate_next_plan(review_plan):
 def _display_review_card(plan: ReviewPlan) -> int:
     '''
     展示复习卡片
-    返回值为选择的结果：1.知道了/2.记住了/3.没记住
+    返回值为选择的结果: 1.知道了/2.记住了/3.没记住
     '''
     if plan.review_plan_type in [None, "", ReviewPlanType.HINT_WORD]:
         print('word:', plan.word.text, plan.word.phonetic_symbol)
