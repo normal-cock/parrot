@@ -9,24 +9,24 @@ def get_file_contents(filename):
     with open(join(dirname(__file__), filename)) as fp:
         return fp.read()
 
+
 setup(
     name='parrot',
-    version="1.1",
+    version="2.0.0",
     description="parrot背单词工具",
     long_description=get_file_contents('README.md'),
     author="Normal Cock",
     author_email="daedae11@126.com",
     url='https://github.com/chicken-house/parrot',
     install_requires=[
-        'SQLAlchemy==1.3.6', 
-        'alembic==1.0.11',
-        'gnureadline==8.0.0'
+        'SQLAlchemy==1.4.34',
+        'alembic==1.7.7',
     ],
     packages=find_packages(),
     include_package_data=True,
     license="MIT",
     entry_points={
-        'console_scripts': ['parrot=parrot.cmd:run'],
+        'console_scripts': ['parrot=parrot_v2.cmd:run'],
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
