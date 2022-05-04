@@ -8,7 +8,7 @@
         - [复习规则](#复习规则)
     - [具体实现](#具体实现)
     - [changelog](#changelog)
-        - [v2](#v2)
+        - [2022-5-4 v2](#2022-5-4-v2)
 
 <!-- /TOC -->
 # parrot
@@ -64,7 +64,7 @@
 
 ## changelog
 
-### v2
+### 2022-5-4 v2
 #### 实现一个单词多个含义的场景
 由原来的`words->review_plans`模型，变为`words->meanings->review_plans`。
 添加单词：
