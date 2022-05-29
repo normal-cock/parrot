@@ -8,11 +8,13 @@ from parrot_v2.biz.service import (
     add_new_word_and_meaning,
     add_new_meaning_to_exist_word,
     modify_exist_meaning,
-    begin_to_review,
     begin_to_review_v2,
     show_predict,
     search,
 )
+
+from parrot_v2.biz.service_er import add_er_lookup_record, begin_er_lookup_review, predict_er
+
 from parrot_v2.biz.migrate_script import import_data_from_v1
 from parrot_v2 import DATA_DIR
 from parrot_v2.util import rlinput
@@ -23,6 +25,7 @@ def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('command', choices=[
                         'add', 'review', 'search', 'migrate',
+                        'add_er', 'review_er', 'predict_er',
                         'predict', 'import_v1_data',
                         'initialize'])
     args = parser.parse_args()
@@ -86,6 +89,12 @@ def run():
         show_predict()
     if args.command == 'import_v1_data':
         import_data_from_v1()
+    if args.command == 'add_er':
+        add_er_lookup_record()
+    if args.command == 'review_er':
+        begin_er_lookup_review()
+    if args.command == 'predict_er':
+        predict_er()
 
 
 if __name__ == '__main__':

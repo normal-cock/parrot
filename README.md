@@ -67,10 +67,11 @@
 
 ### Future
 
-#### 实现泛读复习计划 P0
+#### 实现泛读复习计划 P0——Done
 
 看到英文能知道意思就行。最看最近7天的，时间不超过5分钟
-增加一个新的column, scene, server_default
+新增一个model，`ERLookupRecord`
+泛读review的时候没有unremember
 
 #### 实现查询功能 P0——Done
 

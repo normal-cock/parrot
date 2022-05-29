@@ -45,7 +45,7 @@ def add_new_meaning_to_exist_word(word_id, phonetic_symbol, meaning, use_case, r
 def modify_exist_meaning(meaning_id, phonetic_symbol, meaning, use_case, remark):
     session = Session()
     counter = AddCounter.get_counter(session)
-    meaning_obj_new = session.query(Meaning).filter(
+    meaning_obj_new: Meaning = session.query(Meaning).filter(
         Meaning.id == meaning_id).one_or_none()
     if meaning_obj_new == None:
         exit("Unknow Error(meaning doesn't exist)")

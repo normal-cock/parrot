@@ -38,6 +38,17 @@ class Word(Base):
 
         return word
 
+    @classmethod
+    def new_word_during_er(cls, text, phonetic_symbol, meaning, use_case, remark):
+        word = Word(
+            text=text,
+        )
+        word.meanings = []
+        Meaning.new_meaning_during_er(
+            word, phonetic_symbol, meaning, use_case, remark)
+
+        return word
+
 
 class Meaning(Base):
     __tablename__ = 'meaning'
@@ -89,6 +100,31 @@ class Meaning(Base):
         word.meanings.append(meaning)
         return meaning
 
+    @classmethod
+    def new_meaning_during_er(cls, word, phonetic_symbol, meaning, use_case, remark):
+        meaning = Meaning(
+            word_id=word.id,
+            phonetic_symbol=phonetic_symbol,
+            meaning=meaning,
+            use_case=use_case,
+            remark=remark,
+        )
+        meaning.er_lookup_records = [
+            ERLookupRecord(
+                meaning_id=meaning.id,
+            )
+        ]
+
+        word.meanings.append(meaning)
+        return meaning
+
+    def add_er_lookup_record(self):
+        self.er_lookup_records.append(
+            ERLookupRecord(
+                meaning_id=self.id,
+            )
+        )
+
 
 class ReviewStage(enum.Enum):
     STAGE1 = 1
@@ -125,6 +161,20 @@ class ReviewPlanType(enum.Enum):
     HINT_WORD = 0
     # 提示中文来复习
     HINT_MEANING = 1
+
+
+class ERLookupRecord(Base):
+    '''ER: Extensive Reading'''
+    __tablename__ = 'er_lookup_record'
+    id = Column(Integer, primary_key=True)
+    created_time = Column(DateTime, default=datetime.datetime.now)
+    changed_time = Column(
+        DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+
+    # foreign key
+    meaning_id = Column(Integer, ForeignKey('meaning.id'))
+    meaning: Meaning = relationship(
+        "Meaning", back_populates="er_lookup_records")
 
 
 class ReviewPlan(Base):
@@ -253,5 +303,9 @@ Word.meanings = relationship("Meaning",
 Meaning.review_plans = relationship("ReviewPlan",
                                     back_populates="meaning",
                                     lazy='dynamic')
+
+Meaning.er_lookup_records = relationship("ERLookupRecord",
+                                         back_populates="meaning",
+                                         lazy='dynamic')
 
 # Base.metadata.create_all(engine)
