@@ -2,8 +2,11 @@ import datetime
 import random
 from parrot_v2 import Session, DEBUG
 from parrot_v2.model import Word, Meaning, ReviewPlan, ReviewPlanType, AddCounter, ReviewStatus
+from parrot_v2.model.core import ReviewStage
 from parrot_v2.util import rlinput
 from sqlalchemy.orm import raiseload
+from typing import List
+from collections import defaultdict
 
 
 def get_word_or_none(text):
@@ -53,6 +56,114 @@ def modify_exist_meaning(meaning_id, phonetic_symbol, meaning, use_case, remark)
     return True
 
 
+def begin_to_review_v2(begin_time, end_time):
+    '''
+    开始复习单词，生成器
+    begin_time 和 end_time 分别为要复习的复习计划的 time_to_review 范围
+    '''
+    session = Session()
+    review_plans: List[ReviewPlan] = session.query(ReviewPlan).filter(
+        ReviewPlan.time_to_review >= begin_time,
+        ReviewPlan.time_to_review <= end_time,
+        ReviewPlan.status == ReviewStatus.UNREVIEWED
+    )
+    review_plans = [review_plan for review_plan in review_plans]
+
+    random.shuffle(review_plans)
+    total_len = len(review_plans)
+
+    # 每个元素为dict，格式为
+    # {"meaning", "review_status", "review_stage"}
+    review_results = []
+    for index, review_plan in enumerate(review_plans):
+        print("")
+        print("Progress: {}/{}".format(index+1, total_len))
+        result = _display_review_card(review_plan)
+        new_status_value = int(result)+1
+        review_plan.complete(new_status_value, False)
+        review_results.append({
+            "meaning": review_plan.meaning,
+            "review_status": review_plan.status,
+            "review_stage": review_plan.stage,
+        })
+
+        other_meanings: List[Meaning] = review_plan.meaning.word.get_other_meaning_without_review_plan(
+        )
+        if len(other_meanings) > 0:
+            print("This word has multiple meanings:")
+            for i, meaning in enumerate(other_meanings):
+                print("{}. {}".format(i+1, meaning.meaning))
+            review_choice = rlinput(
+                "Want to review anyone?Input the index(-1 means don't want to):", "-1")
+            if review_choice != '-1':
+                other_meaning_to_review = other_meanings[int(review_choice)-1]
+                review_results.append({
+                    "meaning": other_meaning_to_review,
+                    "review_status": ReviewStatus.UNREMEMBERED,
+                    "review_stage": ReviewStage.STAGE5
+                })
+                # other_meaning_to_review.unremember()
+
+    # generate next review_plan
+    review_results_per_meaning = defaultdict(list)
+    new_review_plan_count = 0
+    for review_result in review_results:
+        meaning: Meaning = review_result["meaning"]
+        review_results_per_meaning[meaning.id].append(review_result)
+    for _, review_result_list in review_results_per_meaning.items():
+        meaning = review_result_list[0]["meaning"]
+        # check whether there is unremembered review_plan
+        unremember_plans = [review_result
+                            for review_result in review_result_list
+                            if review_result["review_status"] == ReviewStatus.UNREMEMBERED]
+        if len(unremember_plans) > 0:
+            new_review_plan_count += meaning.unremember()
+            continue
+        else:
+            # find reviewed result with maximum stage
+            key_reviewed_result = None
+            for review_result in review_result_list:
+                review_status = review_result["review_status"]
+                review_stage = review_result["review_stage"]
+                if review_status == ReviewStatus.REVIEWED:
+                    if key_reviewed_result == None:
+                        key_reviewed_result = review_result
+                    elif key_reviewed_result["review_stage"].value < review_stage.value:
+                        key_reviewed_result = review_result
+                    else:
+                        pass
+            if key_reviewed_result != None:
+                new_review_plan_count += ReviewPlan.gen_next_plan(
+                    meaning,
+                    key_reviewed_result["review_stage"],
+                    ReviewStatus.REVIEWED,
+                )
+                continue
+
+            # find remember result with maximum stage
+            key_remember_result = None
+            for review_result in review_result_list:
+                review_status = review_result["review_status"]
+                review_stage = review_result["review_stage"]
+                if review_status == ReviewStatus.REMEMBERED:
+                    if key_remember_result == None:
+                        key_remember_result = review_result
+                    elif key_remember_result["review_stage"].value < review_stage.value:
+                        key_remember_result = review_result
+                    else:
+                        pass
+            if key_remember_result != None:
+                new_review_plan_count += ReviewPlan.gen_next_plan(
+                    meaning,
+                    key_remember_result["review_stage"],
+                    ReviewStatus.REMEMBERED,
+                )
+                continue
+    print("\nFinished and generated {} new plans".format(new_review_plan_count))
+
+    session.commit()
+
+
 def begin_to_review(begin_time, end_time):
     '''
     开始复习单词，生成器
@@ -75,7 +186,7 @@ def begin_to_review(begin_time, end_time):
     for index, plan_id in enumerate(plan_ids):
         print("")
         print("Progress: {}/{}".format(index+1, total_len))
-        review_plan = session.query(ReviewPlan).get(plan_id)
+        review_plan: ReviewPlan = session.query(ReviewPlan).get(plan_id)
         result = _display_review_card(review_plan)
         new_status_value = int(result)+1
         is_gen_new_plans = False
@@ -87,7 +198,7 @@ def begin_to_review(begin_time, end_time):
             new_status_value, is_gen_new_plans)
         session.add_all(new_plans)
         other_meaning_dict = {}
-        other_meanings = review_plan.meaning.word.get_all_meaning_without_review_plan()
+        other_meanings = review_plan.meaning.word.get_other_meaning_without_review_plan()
         if len(other_meanings) > 0:
             print("This word has multiple meanings:")
             for i, meaning in enumerate(other_meanings):
@@ -148,3 +259,32 @@ def show_predict():
     begin_time = datetime.date.today() + datetime.timedelta(days=1)
     end_time = begin_time + datetime.timedelta(days=1)
     _show_predict(begin_time, end_time)
+
+
+def search(query: str):
+    session = Session()
+    word = session.query(Word).filter(
+        Word.text == query).one_or_none()
+    meaning_obj = None
+    if word != None:
+        tmp_meaning_dict = {}
+        print("found the following existing meanings:")
+        for i, meaning in enumerate(word.meanings):
+            print("{}. {}".format(i+1, meaning.meaning))
+            tmp_meaning_dict[str(i+1)] = meaning
+        meaning_choice = rlinput(
+            "input existing meaning index:", "1")
+        if meaning_choice not in tmp_meaning_dict:
+            exit('Error: invalid index')
+
+        print("")
+        meaning_obj = tmp_meaning_dict[meaning_choice]
+        phonetic_symbol = print(
+            'phonetic_symbol:', meaning_obj.phonetic_symbol if meaning_obj else '')
+        meaning = print(
+            'meaning:', meaning_obj.meaning if meaning_obj else '')
+        use_case = print(
+            'use case:', meaning_obj.use_case if meaning_obj else '')
+        remark = print('remark:', meaning_obj.remark if meaning_obj else '')
+    else:
+        print("not found")

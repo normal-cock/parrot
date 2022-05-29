@@ -57,7 +57,7 @@ class Meaning(Base):
 
     # foreign key
     word_id = Column(Integer, ForeignKey('word.id'))
-    word = relationship("Word", back_populates="meanings")
+    word: Word = relationship("Word", back_populates="meanings")
 
     def modify_meaning(self, phonetic_symbol, meaning, use_case, remark):
         self.phonetic_symbol = phonetic_symbol
@@ -66,12 +66,13 @@ class Meaning(Base):
         self.remark = remark
         self.unremember()
 
-    def unremember(self):
+    def unremember(self) -> int:
         self.review_plans.filter(ReviewPlan.status == ReviewStatus.UNREVIEWED).update(
             {ReviewPlan.status: ReviewStatus.UNREMEMBERED},
             synchronize_session='fetch',
         )
-        ReviewPlan.generate_a_plan(self)
+        new_plans = ReviewPlan.generate_a_plan(self)
+        return len(new_plans)
 
     @classmethod
     def new_meaning(cls, word, phonetic_symbol, meaning, use_case, remark):
@@ -147,38 +148,39 @@ class ReviewPlan(Base):
 
     # foreign key
     meaning_id = Column(Integer, ForeignKey('meaning.id'))
-    meaning = relationship("Meaning", back_populates="review_plans")
+    meaning: Meaning = relationship("Meaning", back_populates="review_plans")
 
     def __repr__(self):
         return "< ReviewPlan(id='{}',meaning_id='{}')".format(self.id, self.meaning_id)
 
-    def complete(self, final_status_value, is_gen_new_plan):
+    def complete(self, final_status_value, is_gen_new_plan) -> int:
         if final_status_value not in [2, 3, 4]:
             exit("invaid final status({}) for review_plan".format(final_status_value))
         self.status = ReviewStatus(final_status_value)
         self.reviewed_time = datetime.datetime.now()
         if is_gen_new_plan:
-            return self.gen_next_plan()
-        return []
+            return ReviewPlan.gen_next_plan(self.meaning, self.stage, self.status)
+        return 0
 
-    def gen_next_plan(self):
+    @classmethod
+    def gen_next_plan(cls, meaning, stage, status) -> int:
         new_plans = []
-        if (self.stage.value != ReviewStage.STAGE5.value
-                and self.status != ReviewStatus.UNREVIEWED):
-            if (self.status == ReviewStatus.REMEMBERED
-                    and self.stage.value < ReviewStage.STAGE4.value):
+        if (stage.value != ReviewStage.STAGE5.value
+                and status != ReviewStatus.UNREVIEWED):
+            if (status == ReviewStatus.REMEMBERED
+                    and stage.value < ReviewStage.STAGE4.value):
                 # 记住了，且 stage 小于 4，stage+2
                 # 大于等于4时，就走正常的流程
-                new_stage = ReviewStage(self.stage.value + 2)
-            elif self.status == ReviewStatus.UNREMEMBERED:
+                new_stage = ReviewStage(stage.value + 2)
+            elif status == ReviewStatus.UNREMEMBERED:
                 # 没记住，重新从 STAGE1 开始
                 new_stage = ReviewStage.STAGE1
-                new_plans = ReviewPlan.generate_a_plan(self.meaning, new_stage)
+                new_plans = ReviewPlan.generate_a_plan(meaning, new_stage)
             else:
                 # 正常流程，stage+1
-                new_stage = ReviewStage(self.stage.value + 1)
-            new_plans = ReviewPlan.generate_a_plan(self.meaning, new_stage)
-        return new_plans
+                new_stage = ReviewStage(stage.value + 1)
+            new_plans = ReviewPlan.generate_a_plan(meaning, new_stage)
+        return len(new_plans)
 
     @classmethod
     def generate_a_plan(

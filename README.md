@@ -8,7 +8,8 @@
         - [复习规则](#复习规则)
     - [具体实现](#具体实现)
     - [changelog](#changelog)
-        - [2022-5-4 v2](#2022-5-4-v2)
+        - [Future](#future)
+        - [2022-5-4 v2.0.0](#2022-5-4-v200)
 
 <!-- /TOC -->
 # parrot
@@ -64,7 +65,57 @@
 
 ## changelog
 
-### 2022-5-4 v2
+### Future
+
+#### 实现泛读复习计划 P0
+
+看到英文能知道意思就行。最看最近7天的，时间不超过5分钟
+增加一个新的column, scene, server_default
+
+#### 实现查询功能 P0——Done
+
+查询works和meaning
+
+#### 模糊查询 P1
+
+**模糊查询**
+为word建立virtual table
+migrate的时候手写sql创建virtual table
+新写入word的时候，手写sql插入virtual table
+支持新命令，rebuild fts
+
+https://www.sqlite.org/fts5.html#external_content_tables
+
+#### 复习计划打散 P1
+
+下一个阶段的复习计划在某个范围内打散，防止分布不均匀。
+
+#### comparison功能 P2
+
+新增一个model代表comparison，有多个meaning_id组成，有文字解释不同。
+comparison有自己的review_plan。review_plan加一个type，代表
+review的时候先展示每个meaning的word的text，
+与meaning同级，有meaning和review_plan
+
+#### predict算法更新 P2
+
+目的是能够计算出更长的时间
+
+#### review过程升级——Done
+
+由现在的一个一个处理，改为如下过程：
+1. 先统一review，并记录每个meaning的review结果，该阶段不创建新的ReviewPlan
+2. 根据review结果统一生成ReviewPlan，同一个meaning如果有多个review结果，则依次：
+    * if 存在`ReviewStatus.UNREMEMBERED`
+        * 则以`ReviewStatus.UNREMEMBERED`为准来生成新计划
+    * else
+        * if 存在`ReviewStage`最大的且结果为`ReviewStatus.REVIEWED`的ReviewPlan
+            * 则以该ReviewPlan来生成新计划
+        * else
+            * 以`ReviewStage`最大的且结果为`ReviewStatus.REMEMBERED`的ReviewPlan
+3. commit
+
+### 2022-5-4 v2.0.0
 #### 实现一个单词多个含义的场景
 由原来的`words->review_plans`模型，变为`words->meanings->review_plans`。
 添加单词：

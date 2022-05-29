@@ -9,7 +9,9 @@ from parrot_v2.biz.service import (
     add_new_meaning_to_exist_word,
     modify_exist_meaning,
     begin_to_review,
+    begin_to_review_v2,
     show_predict,
+    search,
 )
 from parrot_v2.biz.migrate_script import import_data_from_v1
 from parrot_v2 import DATA_DIR
@@ -20,7 +22,7 @@ def run():
     '''parrot_v2命令行入口'''
     parser = argparse.ArgumentParser()
     parser.add_argument('command', choices=[
-                        'add', 'review', 'migrate',
+                        'add', 'review', 'search', 'migrate',
                         'predict', 'import_v1_data',
                         'initialize'])
     args = parser.parse_args()
@@ -69,8 +71,12 @@ def run():
     if args.command == 'review':
         begin_time = datetime.date.today() - datetime.timedelta(days=7)
         end_time = datetime.date.today() + datetime.timedelta(days=1)
-        begin_to_review(begin_time, end_time)
-        print('finished')
+        # begin_to_review(begin_time, end_time)
+        begin_to_review_v2(begin_time, end_time)
+    if args.command == 'search':
+        query = rlinput('word_text:', '').strip()
+        # print("search:", query)
+        search(query)
     if args.command in ['initialize', 'migrate']:
         alembic_config = os.path.join(os.path.dirname(
             os.path.abspath(__file__)), 'alembic.ini')
