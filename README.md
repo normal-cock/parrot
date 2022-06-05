@@ -9,6 +9,7 @@
     - [具体实现](#具体实现)
     - [changelog](#changelog)
         - [Future](#future)
+        - [\[WIP\] v2.1.0](#\wip\-v210)
         - [2022-5-4 v2.0.0](#2022-5-4-v200)
 
 <!-- /TOC -->
@@ -67,29 +68,10 @@
 
 ### Future
 
-#### 实现泛读复习计划 P0——Done
+#### 更新model P3
 
-看到英文能知道意思就行。最看最近7天的，时间不超过5分钟
-新增一个model，`ERLookupRecord`
-泛读review的时候没有unremember
-
-#### 实现查询功能 P0——Done
-
-查询works和meaning
-
-#### 模糊查询 P1
-
-**模糊查询**
-为word建立virtual table
-migrate的时候手写sql创建virtual table
-新写入word的时候，手写sql插入virtual table
-支持新命令，rebuild fts
-
-https://www.sqlite.org/fts5.html#external_content_tables
-
-#### 复习计划打散 P1
-
-下一个阶段的复习计划在某个范围内打散，防止分布不均匀。
+下一个大版本做，考虑：
+* 是否将meaning和word合并？是否有必要单独为word建模？如果合并的话，fts可以添加word.text的索引，add的时候也可以使用fts来搜索
 
 #### comparison功能 P2
 
@@ -101,6 +83,65 @@ review的时候先展示每个meaning的word的text，
 #### predict算法更新 P2
 
 目的是能够计算出更长的时间
+
+
+
+### \[WIP\] v2.1.0
+
+#### 实现泛读复习计划 P0——Done
+
+看到英文能知道意思就行。最看最近7天的，时间不超过5分钟
+新增一个model，`ERLookupRecord`
+泛读review的时候没有unremember
+
+#### 实现查询功能 P0——Done
+
+查询works和meaning
+
+#### 模糊查询 P1——Done
+
+**为什么只创建use_case的fts**
+因为external content的fts要求所有的列必须都在同一张table中，word.text不在meaning表中，所以有额外工作：
+1. 要么，将word.text添加到meaning中，word表就没有存在意义了，需要修改model
+2. 要么，创建另一个fts表来存储word。
+这两种方式都会带来不不小的复杂性。
+考虑到use_case中肯定有word.text，因此本次只添加use_case的fts。后续重构core model的时候再重新设计。
+**todo**
+
+prototype
+    修改
+        `INSERT INTO meaning_fts(meaning_fts, rowid, use_case) VALUES('delete', old_meaning.id, old_meaning.use_case);`
+        `INSERT INTO meaning_fts(rowid, use_case) VALUES (meaning.id, meaning.use_case);`
+    添加
+        `INSERT INTO meaning_fts(rowid, use_case) VALUES (meaning.id, meaning.use_case);`
+    重建
+        `CREATE VIRTUAL TABLE IF NOT EXISTS meaning_fts USING fts5(use_case, content='meaning', content_rowid='id', tokenize = 'porter');`
+        <!-- `DROP TABLE meaning_fts;` -->
+        `INSERT INTO meaning_fts(meaning_fts) VALUES('delete-all');`
+        `INSERT INTO meaning_fts(rowid, use_case) select meaning.id,meaning.use_case from meaning;`
+    查询
+
+        ```sql
+            select word.text,meaning.meaning,meaning.use_case FROM meaning_fts 
+                LEFT JOIN meaning ON meaning_fts.rowid=meaning.id
+                LEFT JOIN word ON word.id=meaning.word_id
+                WHERE meaning_fts = 'beaver' order by rank limit 10;
+        ```
+    
+initialize、migrate的时候手写sql为meaning rebuild virtual table——Done
+新写入或修改meaning的时候，都先delete再插入virtual table——Done
+<!-- 修改meaning的时候，删除原来的virtual table记录，插入新的记录 -->
+search的时候搜索`meaning.use_case`——Done
+add的时候搜索`meaning.use_case`，然后展示所有match的meaning——Pending
+    因为add的时候还要判断是否有该word，所以不能只搜索use_case
+
+https://www.sqlite.org/fts5.html#external_content_tables
+
+
+#### 复习计划打散 P1——Done
+
+下一个阶段的复习计划在某个范围内打散，防止分布不均匀。
+打散时间范围为`randint(0, STAGE_DELTA_MAP[stage]//6)`
 
 #### review过程升级——Done
 

@@ -11,6 +11,7 @@ from parrot_v2.biz.service import (
     begin_to_review_v2,
     show_predict,
     search,
+    rebuild_fts,
 )
 
 from parrot_v2.biz.service_er import add_er_lookup_record, begin_er_lookup_review, predict_er
@@ -85,6 +86,7 @@ def run():
             os.path.abspath(__file__)), 'alembic.ini')
         os.system("mkdir -p {}".format(DATA_DIR))
         os.system("alembic -c {} upgrade head".format(alembic_config))
+        rebuild_fts()
     if args.command == 'predict':
         show_predict()
     if args.command == 'import_v1_data':

@@ -2,7 +2,7 @@ import datetime
 import random
 from parrot_v2 import Session, DEBUG
 from parrot_v2.model import Word, Meaning, ReviewPlan, ReviewPlanType, AddCounter, ReviewStatus
-from parrot_v2.model.core import ReviewStage
+from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning
 from parrot_v2.util import rlinput
 from sqlalchemy.orm import raiseload
 from typing import List
@@ -24,6 +24,8 @@ def add_new_word_and_meaning(text, phonetic_symbol, meaning, use_case, remark):
     word = Word.new_word(text, phonetic_symbol, meaning, use_case, remark)
     session.add(word)
     counter.incr()
+    meaning: Meaning = word.meanings[0]
+    update_meaning_fts(session, None, None, meaning)
     session.commit()
     print("added {} words today".format(counter.counter))
     return True
@@ -37,6 +39,7 @@ def add_new_meaning_to_exist_word(word_id, phonetic_symbol, meaning, use_case, r
         word, phonetic_symbol, meaning, use_case, remark)
     session.add(meaning)
     counter.incr()
+    update_meaning_fts(session, None, None, meaning)
     session.commit()
     print("added {} words today".format(counter.counter))
     return True
@@ -49,8 +52,11 @@ def modify_exist_meaning(meaning_id, phonetic_symbol, meaning, use_case, remark)
         Meaning.id == meaning_id).one_or_none()
     if meaning_obj_new == None:
         exit("Unknow Error(meaning doesn't exist)")
+    old_use_case = meaning_obj_new.use_case
     meaning_obj_new.modify_meaning(phonetic_symbol, meaning, use_case, remark)
     counter.incr()
+    update_meaning_fts(session, meaning_id, old_use_case,
+                       meaning_obj_new)
     session.commit()
     print("added {} words today".format(counter.counter))
     return True
@@ -61,6 +67,7 @@ def begin_to_review_v2(begin_time, end_time):
     开始复习单词，生成器
     begin_time 和 end_time 分别为要复习的复习计划的 time_to_review 范围
     '''
+    start_time = datetime.datetime.now()
     session = Session()
     review_plans: List[ReviewPlan] = session.query(ReviewPlan).filter(
         ReviewPlan.time_to_review >= begin_time,
@@ -159,57 +166,13 @@ def begin_to_review_v2(begin_time, end_time):
                     ReviewStatus.REMEMBERED,
                 )
                 continue
-    print("\nFinished and generated {} new plans".format(new_review_plan_count))
 
     session.commit()
 
-
-def begin_to_review(begin_time, end_time):
-    '''
-    开始复习单词，生成器
-    begin_time 和 end_time 分别为要复习的复习计划的 time_to_review 范围
-    '''
-    session = Session()
-    plan_ids = [plan[0] for plan in session.query(ReviewPlan.id).filter(
-        ReviewPlan.time_to_review >= begin_time,
-        ReviewPlan.time_to_review <= end_time,
-        ReviewPlan.status == ReviewStatus.UNREVIEWED
-    )]
-
-    total_len = len(plan_ids)
-    print("Total plans: ", total_len)
-    random.shuffle(plan_ids)
-
-    # 某个单词只要有一种形式Plan没记住，就重新构造该单词的所有形式Plan
-    # 本次已经生成过所有Plan的单词，不再重复生成
-    meaning_reviewed = set()
-    for index, plan_id in enumerate(plan_ids):
-        print("")
-        print("Progress: {}/{}".format(index+1, total_len))
-        review_plan: ReviewPlan = session.query(ReviewPlan).get(plan_id)
-        result = _display_review_card(review_plan)
-        new_status_value = int(result)+1
-        is_gen_new_plans = False
-        if review_plan.meaning_id not in meaning_reviewed:
-            is_gen_new_plans = True
-            meaning_reviewed.add(review_plan.meaning_id)
-
-        new_plans = review_plan.complete(
-            new_status_value, is_gen_new_plans)
-        session.add_all(new_plans)
-        other_meaning_dict = {}
-        other_meanings = review_plan.meaning.word.get_other_meaning_without_review_plan()
-        if len(other_meanings) > 0:
-            print("This word has multiple meanings:")
-            for i, meaning in enumerate(other_meanings):
-                print("{}. {}".format(i+1, meaning.meaning))
-                other_meaning_dict[str(i+1)] = meaning
-            review_choice = rlinput(
-                "Want to review anyone?Input the index(-1 means don't want to):", "-1")
-            if review_choice != '-1':
-                other_meaning_to_review = other_meaning_dict[review_choice]
-                other_meaning_to_review.unremember()
-        session.commit()
+    print("\nFinished and generated {} new plans, costing {}".format(
+        new_review_plan_count,
+        datetime.datetime.now() - start_time,
+    ))
 
 
 def _display_review_card(plan: ReviewPlan) -> int:
@@ -263,28 +226,48 @@ def show_predict():
 
 def search(query: str):
     session = Session()
-    word = session.query(Word).filter(
-        Word.text == query).one_or_none()
-    meaning_obj = None
-    if word != None:
-        tmp_meaning_dict = {}
+    meaning_list = get_related_meaning(session, query)
+    if len(meaning_list) != 0:
         print("found the following existing meanings:")
-        for i, meaning in enumerate(word.meanings):
-            print("{}. {}".format(i+1, meaning.meaning))
-            tmp_meaning_dict[str(i+1)] = meaning
-        meaning_choice = rlinput(
-            "input existing meaning index:", "1")
-        if meaning_choice not in tmp_meaning_dict:
+        for i, meaning_dto_tmp in enumerate(meaning_list):
+            print("{}. {}||{}||{}".format(
+                i, meaning_dto_tmp.word_text,
+                meaning_dto_tmp.meaning, meaning_dto_tmp.use_case))
+
+        meaning_choice = int(rlinput(
+            "input existing meaning index:", "0"))
+        if meaning_choice < 0 or meaning_choice >= len(meaning_list):
             exit('Error: invalid index')
 
         print("")
-        meaning_obj = tmp_meaning_dict[meaning_choice]
+        meaning_dto = meaning_list[meaning_choice]
+
         phonetic_symbol = print(
-            'phonetic_symbol:', meaning_obj.phonetic_symbol if meaning_obj else '')
+            'phonetic_symbol:', meaning_dto.phonetic_symbol)
         meaning = print(
-            'meaning:', meaning_obj.meaning if meaning_obj else '')
+            'meaning:', meaning_dto.meaning)
         use_case = print(
-            'use case:', meaning_obj.use_case if meaning_obj else '')
-        remark = print('remark:', meaning_obj.remark if meaning_obj else '')
+            'use case:', meaning_dto.use_case)
+        remark = print('remark:', meaning_dto.remark)
     else:
         print("not found")
+
+
+def rebuild_fts():
+    print('begin to rebuild fts...')
+    create_sql = '''
+    CREATE VIRTUAL TABLE IF NOT EXISTS meaning_fts USING 
+        fts5(use_case, content='meaning', content_rowid='id', tokenize = 'porter');
+    '''
+    delete_all_sql = '''INSERT INTO meaning_fts(meaning_fts) VALUES('delete-all');'''
+    rebuild_sql = '''
+    INSERT INTO meaning_fts(rowid, use_case) 
+        select meaning.id,meaning.use_case from meaning;
+    '''
+    session = Session()
+    result = session.execute(create_sql)
+    result = session.execute(delete_all_sql)
+    result = session.execute(rebuild_sql)
+    print('rebuild {} records'.format(result.rowcount))
+    session.commit()
+    return

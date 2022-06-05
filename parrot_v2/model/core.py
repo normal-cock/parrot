@@ -1,6 +1,8 @@
 # coding=utf8
 import datetime
 import enum
+from random import randint
+import collections
 
 from sqlalchemy import Column, Boolean, Enum, Integer, String, DateTime, ForeignKey
 from sqlalchemy import text
@@ -8,6 +10,7 @@ from sqlalchemy.orm import relationship
 
 from parrot_v2 import DEBUG
 from parrot_v2.model import Base
+import typing
 
 
 class Word(Base):
@@ -242,6 +245,10 @@ class ReviewPlan(Base):
             datetime.datetime.now() +
             STAGE_DELTA_MAP[stage]
         )
+        time_to_review += datetime.timedelta(
+            days=randint(0, STAGE_DELTA_MAP[stage].days//6)
+        )
+
         if DEBUG:
             time_to_review = datetime.datetime.now()
 
@@ -309,3 +316,55 @@ Meaning.er_lookup_records = relationship("ERLookupRecord",
                                          lazy='dynamic')
 
 # Base.metadata.create_all(engine)
+
+
+def update_meaning_fts(
+    session, old_meaning_id, old_meaning_use_case,
+    new_meaning,
+):
+    '''如果没有old_meaning，old_meaning_id和old_meaning_use_case都传None'''
+    # 用于生成primary id
+    session.flush()
+    if old_meaning_id != None:
+        delete_sql = '''
+        INSERT INTO meaning_fts(meaning_fts, rowid, use_case) 
+            VALUES('delete', {}, '{}');
+        '''.format(old_meaning_id, old_meaning_use_case)
+        session.execute(delete_sql)
+    insert_sql = '''
+    INSERT INTO meaning_fts(rowid, use_case) VALUES ({}, '{}');
+    '''.format(new_meaning.id, new_meaning.use_case)
+    result = session.execute(insert_sql)
+    return result
+
+
+# MeaningDTO = collections.namedtuple('MeaningDTO', [
+#     ('word_text', str), ('id', int), ('meaning', str),
+#     ('use_case', str), ('phonetic_symbol', str), ('remark', str)
+# ])
+class MeaningDTO(typing.NamedTuple):
+    word_text: str
+    id: int
+    meaning: str
+    use_case: str
+    phonetic_symbol: str
+    remark: str
+
+
+def get_related_meaning(session, query: str) -> typing.List[MeaningDTO]:
+    '''返回结果[(word_text, meaning_id, meaning_meaning, 
+        meaning_use_case, meaning_phonetic_symbol, meaning_remark)]'''
+    # https: // stackoverflow.com/questions/287871/how-do-i-print-colored-text-to-the-terminal
+    # https://stackoverflow.com/questions/53740460/ansi-escape-code-weird-behavior-at-end-of-line
+    search_sql = '''
+        select word.text,meaning.id,meaning.meaning,
+            highlight(meaning_fts,0,'\x1b[6;30;42m','\x1b[0m\x1b[K'),
+            meaning.phonetic_symbol,meaning.remark FROM meaning_fts 
+                LEFT JOIN meaning ON meaning_fts.rowid=meaning.id
+                LEFT JOIN word ON word.id=meaning.word_id
+                WHERE meaning_fts = '{}' order by rank limit 10;
+    '''.format(query)
+    result = session.execute(search_sql)
+    return [MeaningDTO(word_text=row[0], id=row[1], meaning=row[2],
+                       use_case=row[3], phonetic_symbol=row[4], remark=row[5])
+            for row in result]
