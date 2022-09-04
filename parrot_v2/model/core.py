@@ -328,13 +328,19 @@ def update_meaning_fts(
     if old_meaning_id != None:
         delete_sql = '''
         INSERT INTO meaning_fts(meaning_fts, rowid, use_case) 
-            VALUES('delete', {}, '{}');
-        '''.format(old_meaning_id, old_meaning_use_case)
-        session.execute(delete_sql)
+            VALUES('delete', :rowid, :use_case);
+        '''
+        session.execute(
+            delete_sql,
+            {'rowid': old_meaning_id, 'use_case': old_meaning_use_case},
+        )
     insert_sql = '''
-    INSERT INTO meaning_fts(rowid, use_case) VALUES ({}, '{}');
-    '''.format(new_meaning.id, new_meaning.use_case)
-    result = session.execute(insert_sql)
+    INSERT INTO meaning_fts(rowid, use_case) VALUES (:rowid, :use_case);
+    '''
+    result = session.execute(
+        insert_sql,
+        {'rowid': new_meaning.id, 'use_case': new_meaning.use_case},
+    )
     return result
 
 

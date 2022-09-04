@@ -96,6 +96,8 @@ def begin_to_review_v2(begin_time, end_time):
 
         other_meanings: List[Meaning] = review_plan.meaning.word.get_other_meaning_without_review_plan(
         )
+        other_meanings = [
+            m for m in other_meanings if m.id != review_plan.meaning.id]
         if len(other_meanings) > 0:
             print("This word has multiple meanings:")
             for i, meaning in enumerate(other_meanings):
@@ -182,17 +184,14 @@ def _display_review_card(plan: ReviewPlan) -> int:
     '''
     meaning = plan.meaning
     if plan.review_plan_type in [None, "", ReviewPlanType.HINT_WORD]:
-        print('word:', meaning.word.text, meaning.phonetic_symbol)
-        input()
-        print('use case:', meaning.use_case)
-        input()
+        input(f'word: {meaning.word.text} {meaning.phonetic_symbol}')
+        input(f'use case: {meaning.use_case}')
         print('meaning:', meaning.meaning, meaning.remark)
         result = input('choice[1.知道了/2.记住了/3.没记住]: (default:1)') or '1'
         return result
     elif plan.review_plan_type == ReviewPlanType.HINT_MEANING:
-        print('meaning:', meaning.meaning)
-        input()
-        print('word:', meaning.word.text, meaning.phonetic_symbol)
+        input(f'meaning: {meaning.meaning}')
+        print(f'word: {meaning.word.text} {meaning.phonetic_symbol}')
         print('use case:', meaning.use_case)
         print('remark:', meaning.remark)
         result = input('choice[1.知道了/2.记住了/3.没记住]: (default:1)') or '1'
@@ -214,7 +213,7 @@ def _show_predict(begin_time: datetime.date, end_time: datetime.date):
 def show_predict():
     '''预测未来的复习任务量'''
     # 今天的复习量
-    begin_time = datetime.date.today() - datetime.timedelta(days=10)
+    begin_time = datetime.date.today() - datetime.timedelta(days=15)
     end_time = datetime.date.today() + datetime.timedelta(days=1)
     _show_predict(begin_time, end_time)
 

@@ -73,7 +73,7 @@ def run():
             modify_exist_meaning(
                 meaning_obj.id, phonetic_symbol, meaning, use_case, remark)
     if args.command == 'review':
-        begin_time = datetime.date.today() - datetime.timedelta(days=7)
+        begin_time = datetime.date.today() - datetime.timedelta(days=15)
         end_time = datetime.date.today() + datetime.timedelta(days=1)
         # begin_to_review(begin_time, end_time)
         begin_to_review_v2(begin_time, end_time)
