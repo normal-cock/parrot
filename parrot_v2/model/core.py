@@ -85,7 +85,7 @@ class Meaning(Base):
             {ReviewPlan.status: ReviewStatus.UNREMEMBERED},
             synchronize_session='fetch',
         )
-        new_plans = ReviewPlan.generate_a_plan(self)
+        new_plans = ReviewPlan.gen_plan(self)
         return len(new_plans)
 
     @classmethod
@@ -98,7 +98,7 @@ class Meaning(Base):
             remark=remark,
         )
         meaning.review_plans = []
-        ReviewPlan.generate_a_plan(meaning)
+        ReviewPlan.gen_plan(meaning)
 
         word.meanings.append(meaning)
         return meaning
@@ -228,21 +228,24 @@ class ReviewPlan(Base):
             elif status == ReviewStatus.UNREMEMBERED:
                 # 没记住，重新从 STAGE1 开始
                 new_stage = ReviewStage.STAGE1
-                new_plans = ReviewPlan.generate_a_plan(meaning, new_stage)
+                new_plans = ReviewPlan.gen_plan(meaning, new_stage)
             else:
                 # 正常流程，stage+1
                 new_stage = ReviewStage(stage.value + 1)
-            new_plans = ReviewPlan.generate_a_plan(meaning, new_stage)
+            new_plans = ReviewPlan.gen_plan(meaning, new_stage)
         return len(new_plans)
 
     @classmethod
-    def generate_a_plan(
+    def gen_plan(
             cls,
             meaning,
-            stage=ReviewStage.STAGE1
+            stage=ReviewStage.STAGE1,
+            expect_review_time=None,
     ):
+        if expect_review_time == None:
+            expect_review_time = datetime.datetime.now()
         time_to_review = (
-            datetime.datetime.now() +
+            expect_review_time +
             STAGE_DELTA_MAP[stage]
         )
         time_to_review += datetime.timedelta(
@@ -250,7 +253,7 @@ class ReviewPlan(Base):
         )
 
         if DEBUG:
-            time_to_review = datetime.datetime.now()
+            time_to_review = expect_review_time
 
         hint_meaning_plan = cls(
             meaning_id=meaning.id,

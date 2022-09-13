@@ -9,7 +9,7 @@ from parrot_v2.biz.service import (
     add_new_meaning_to_exist_word,
     modify_exist_meaning,
     begin_to_review_v2,
-    show_predict,
+    show_predict_v2,
     search,
     rebuild_fts,
 )
@@ -88,7 +88,7 @@ def run():
         os.system("alembic -c {} upgrade head".format(alembic_config))
         rebuild_fts()
     if args.command == 'predict':
-        show_predict()
+        show_predict_v2()
     if args.command == 'import_v1_data':
         import_data_from_v1()
     if args.command == 'add_er':

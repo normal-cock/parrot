@@ -223,6 +223,50 @@ def show_predict():
     _show_predict(begin_time, end_time)
 
 
+def show_predict_v2():
+    '''预测未来的复习任务量'''
+    session = Session()
+    predict_days = 30
+    # 今天的复习量
+    begin_time = datetime.date.today() - datetime.timedelta(days=15)
+    end_time = datetime.date.today() + datetime.timedelta(days=1)
+    final_end_time = datetime.date.today() + datetime.timedelta(days=predict_days)
+
+    while end_time <= final_end_time:
+        review_plans_today = []
+        review_plans_in_db = session.query(ReviewPlan).filter(
+            ReviewPlan.time_to_review >= begin_time,
+            ReviewPlan.time_to_review < end_time,
+            ReviewPlan.status == ReviewStatus.UNREVIEWED
+        ).all()
+        review_plans_today = list(review_plans_in_db)
+        review_count = len(review_plans_today)
+        print("{} : {}".format(end_time-datetime.timedelta(days=1), review_count))
+
+        # generate tmp plans by today's review_plans
+        reviewed_meaning_id = set()
+        for review_plan in review_plans_today:
+            if (review_plan.meaning.id not in reviewed_meaning_id and
+                    review_plan.stage.value != ReviewStage.STAGE5.value):
+                ReviewPlan.gen_plan(
+                    review_plan.meaning,
+                    ReviewStage(review_plan.stage.value + 1),
+                    expect_review_time=datetime.datetime.now().replace(
+                        year=begin_time.year,
+                        month=begin_time.month,
+                        day=begin_time.day,
+                    ),
+                )
+                reviewed_meaning_id.add(review_plan.meaning.id)
+
+        begin_time = end_time
+        end_time = end_time + datetime.timedelta(days=1)
+
+    session.rollback()
+    session.close()
+    print('predict finished')
+
+
 def search(query: str):
     session = Session()
     meaning_list = get_related_meaning(session, query)
