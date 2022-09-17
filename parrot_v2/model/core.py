@@ -240,12 +240,12 @@ class ReviewPlan(Base):
             cls,
             meaning,
             stage=ReviewStage.STAGE1,
-            expect_review_time=None,
+            review_time=None,
     ):
-        if expect_review_time == None:
-            expect_review_time = datetime.datetime.now()
+        if review_time == None:
+            review_time = datetime.datetime.now()
         time_to_review = (
-            expect_review_time +
+            review_time +
             STAGE_DELTA_MAP[stage]
         )
         time_to_review += datetime.timedelta(
@@ -253,7 +253,7 @@ class ReviewPlan(Base):
         )
 
         if DEBUG:
-            time_to_review = expect_review_time
+            time_to_review = review_time
 
         hint_meaning_plan = cls(
             meaning_id=meaning.id,

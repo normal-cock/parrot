@@ -226,13 +226,18 @@ def show_predict():
 def show_predict_v2():
     '''预测未来的复习任务量'''
     session = Session()
-    predict_days = 30
+    predict_days = 15
     # 今天的复习量
     begin_time = datetime.date.today() - datetime.timedelta(days=15)
     end_time = datetime.date.today() + datetime.timedelta(days=1)
     final_end_time = datetime.date.today() + datetime.timedelta(days=predict_days)
 
     while end_time <= final_end_time:
+        review_time = datetime.datetime.now().replace(
+            year=end_time.year,
+            month=end_time.month,
+            day=end_time.day,
+        ) - datetime.timedelta(days=1)
         review_plans_today = []
         review_plans_in_db = session.query(ReviewPlan).filter(
             ReviewPlan.time_to_review >= begin_time,
@@ -251,11 +256,7 @@ def show_predict_v2():
                 ReviewPlan.gen_plan(
                     review_plan.meaning,
                     ReviewStage(review_plan.stage.value + 1),
-                    expect_review_time=datetime.datetime.now().replace(
-                        year=begin_time.year,
-                        month=begin_time.month,
-                        day=begin_time.day,
-                    ),
+                    review_time=review_time,
                 )
                 reviewed_meaning_id.add(review_plan.meaning.id)
 
