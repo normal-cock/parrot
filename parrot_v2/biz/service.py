@@ -45,21 +45,31 @@ def add_new_meaning_to_exist_word(word_id, phonetic_symbol, meaning, use_case, r
     return True
 
 
-def modify_exist_meaning(meaning_id, phonetic_symbol, meaning, use_case, remark):
+def modify_exist_meaning(meaning_id, phonetic_symbol, meaning, use_case, remark, unremember=True):
     session = Session()
-    counter = AddCounter.get_counter(session)
     meaning_obj_new: Meaning = session.query(Meaning).filter(
         Meaning.id == meaning_id).one_or_none()
     if meaning_obj_new == None:
         exit("Unknow Error(meaning doesn't exist)")
     old_use_case = meaning_obj_new.use_case
-    meaning_obj_new.modify_meaning(phonetic_symbol, meaning, use_case, remark)
-    counter.incr()
+    meaning_obj_new.modify_meaning(
+        phonetic_symbol, meaning, use_case, remark, unremember=unremember)
     update_meaning_fts(session, meaning_id, old_use_case,
                        meaning_obj_new)
+    if unremember == True:
+        counter = AddCounter.get_counter(session)
+        counter.incr()
+        print("added {} words today".format(counter.counter))
     session.commit()
-    print("added {} words today".format(counter.counter))
     return True
+
+
+def modify_exist_word(word_id, word_text):
+    session = Session()
+    word = session.query(Word).filter(
+        Word.id == word_id).one()
+    word.text = word_text
+    session.commit()
 
 
 def begin_to_review_v2(begin_time, end_time):

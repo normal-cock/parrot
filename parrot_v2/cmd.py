@@ -8,6 +8,7 @@ from parrot_v2.biz.service import (
     add_new_word_and_meaning,
     add_new_meaning_to_exist_word,
     modify_exist_meaning,
+    modify_exist_word,
     begin_to_review_v2,
     show_predict_v2,
     search,
@@ -26,6 +27,8 @@ def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('command', choices=[
                         'add', 'review', 'search', 'migrate',
+                        'query_word',
+                        'modify_word', 'modify_meaning',
                         'add_er', 'review_er', 'predict_er',
                         'predict', 'import_v1_data',
                         'initialize'])
@@ -97,6 +100,64 @@ def run():
         begin_er_lookup_review()
     if args.command == 'predict_er':
         predict_er()
+    if args.command == 'modify_word':
+        target_word_text = rlinput('word_text:', '').strip()
+        word = get_word_or_none(target_word_text)
+        if word == None:
+            exit(f'word "{target_word_text}" not found')
+
+        new_word_text = rlinput('new_word_text:', word.text)
+
+        modify_exist_word(word.id, new_word_text)
+    if args.command == 'modify_meaning':
+        word_text = rlinput('word_text:', '').strip()
+        if not word_text:
+            exit('Error: empty word')
+
+        word = get_word_or_none(word_text)
+        if word == None:
+            exit(f'word not found')
+
+        tmp_meaning_dict = {}
+        print("found the following existing meanings:")
+        for i, meaning in enumerate(word.meanings):
+            print("{}. {}".format(i+1, meaning.meaning))
+            tmp_meaning_dict[str(i+1)] = meaning
+        meaning_choice = rlinput(
+            "input existing meaning index(-1 to add a new meaning):", "-1")
+        if meaning_choice != "-1" and meaning_choice not in tmp_meaning_dict:
+            exit('Error: invalid index')
+
+        if meaning_choice == "-1":
+            exit()
+        meaning_obj = tmp_meaning_dict[meaning_choice]
+
+        phonetic_symbol = rlinput(
+            'phonetic_symbol:', meaning_obj.phonetic_symbol if meaning_obj else '')
+        meaning = rlinput(
+            'meaning:', meaning_obj.meaning if meaning_obj else '')
+        use_case = rlinput(
+            'use case:', meaning_obj.use_case if meaning_obj else '')
+        remark = rlinput('remark:', meaning_obj.remark if meaning_obj else '')
+
+        modify_exist_meaning(
+            meaning_obj.id, phonetic_symbol, meaning, use_case, remark, unremember=False)
+    if args.command == 'query_word':
+        word_text = rlinput('word_text:', '').strip()
+        if not word_text:
+            exit('Error: empty word')
+
+        word = get_word_or_none(word_text)
+        if word == None:
+            exit(f'word not found')
+
+        print("found the following existing meanings:")
+        for i, meaning in enumerate(word.meanings):
+            print("\n{}. {} {}".format(
+                i+1, meaning.word.text, meaning.phonetic_symbol))
+            print('meaning:', meaning.meaning)
+            print(f'use case: {meaning.use_case}')
+            print(f'remark: {meaning.remark}')
 
 
 if __name__ == '__main__':

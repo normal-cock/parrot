@@ -1,4 +1,5 @@
 # coding=utf8
+import re
 import datetime
 import enum
 from random import randint
@@ -7,6 +8,7 @@ import collections
 from sqlalchemy import Column, Boolean, Enum, Integer, String, DateTime, ForeignKey
 from sqlalchemy import text
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import validates
 
 from parrot_v2 import DEBUG
 from parrot_v2.model import Base
@@ -70,15 +72,16 @@ class Meaning(Base):
         DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     # foreign key
-    word_id = Column(Integer, ForeignKey('word.id'))
+    word_id = Column(Integer, ForeignKey('word.id', ondelete='CASCADE'))
     word: Word = relationship("Word", back_populates="meanings")
 
-    def modify_meaning(self, phonetic_symbol, meaning, use_case, remark):
+    def modify_meaning(self, phonetic_symbol, meaning, use_case, remark, unremember=True):
         self.phonetic_symbol = phonetic_symbol
         self.meaning = meaning
         self.use_case = use_case
         self.remark = remark
-        self.unremember()
+        if unremember == True:
+            self.unremember()
 
     def unremember(self) -> int:
         self.review_plans.filter(ReviewPlan.status == ReviewStatus.UNREVIEWED).update(
@@ -128,6 +131,13 @@ class Meaning(Base):
             )
         )
 
+    @validates("phonetic_symbol")
+    def validate_phonetic_symbol(self, key, ipa):
+        _ipa_re_pattern = '''^[rŋ(ːɪiwɒjaxˌqɛɝf ðdsmhoɡ:ə)ˈlt̬.z·gpʊnθɜcɔɑʒʌuʃvk'ebæ,y;ɚ]*$'''
+        if re.match(_ipa_re_pattern, ipa) == None:
+            raise ValueError(f"invalid ipa {ipa}")
+        return ipa
+
 
 class ReviewStage(enum.Enum):
     STAGE1 = 1
@@ -175,7 +185,7 @@ class ERLookupRecord(Base):
         DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     # foreign key
-    meaning_id = Column(Integer, ForeignKey('meaning.id'))
+    meaning_id = Column(Integer, ForeignKey('meaning.id', ondelete='CASCADE'))
     meaning: Meaning = relationship(
         "Meaning", back_populates="er_lookup_records")
 
@@ -200,7 +210,7 @@ class ReviewPlan(Base):
         DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     # foreign key
-    meaning_id = Column(Integer, ForeignKey('meaning.id'))
+    meaning_id = Column(Integer, ForeignKey('meaning.id', ondelete='CASCADE'))
     meaning: Meaning = relationship("Meaning", back_populates="review_plans")
 
     def __repr__(self):
@@ -308,14 +318,17 @@ class AddCounter(Base):
 # foreign key
 Word.meanings = relationship("Meaning",
                              back_populates="word",
+                             passive_deletes=True,
                              lazy='dynamic')
 
 Meaning.review_plans = relationship("ReviewPlan",
                                     back_populates="meaning",
+                                    passive_deletes=True,
                                     lazy='dynamic')
 
 Meaning.er_lookup_records = relationship("ERLookupRecord",
                                          back_populates="meaning",
+                                         passive_deletes=True,
                                          lazy='dynamic')
 
 # Base.metadata.create_all(engine)
@@ -371,9 +384,11 @@ def get_related_meaning(session, query: str) -> typing.List[MeaningDTO]:
             meaning.phonetic_symbol,meaning.remark FROM meaning_fts 
                 LEFT JOIN meaning ON meaning_fts.rowid=meaning.id
                 LEFT JOIN word ON word.id=meaning.word_id
-                WHERE meaning_fts = '{}' order by rank limit 10;
-    '''.format(query)
-    result = session.execute(search_sql)
+                WHERE meaning_fts = :query order by rank limit 10;
+    '''
+    # result = session.execute(search_sql)
+    result = session.execute(
+        search_sql, {'query': query})
     return [MeaningDTO(word_text=row[0], id=row[1], meaning=row[2],
                        use_case=row[3], phonetic_symbol=row[4], remark=row[5])
             for row in result]

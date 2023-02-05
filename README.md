@@ -3,14 +3,35 @@
 - [parrot](#parrot)
     - [介绍](#介绍)
     - [使用](#使用)
+            - [安装](#安装)
+            - [初始化环境](#初始化环境)
+            - [添加单次](#添加单次)
+            - [复习单词](#复习单词)
     - [规则](#规则)
         - [添加规则](#添加规则)
         - [复习规则](#复习规则)
+            - [复习时展示哪些内容](#复习时展示哪些内容)
+            - [完整的复习计划是什么](#完整的复习计划是什么)
+            - [复习的结果有哪些](#复习的结果有哪些)
+            - [如果有一天没有复习，第二天再复习时怎么办](#如果有一天没有复习第二天再复习时怎么办)
+            - [在进行第五阶段复习时，仍然需要看句子才能知道含义怎么办？](#在进行第五阶段复习时仍然需要看句子才能知道含义怎么办)
     - [具体实现](#具体实现)
     - [changelog](#changelog)
         - [Future](#future)
-        - [\[WIP\] v2.1.0](#\wip\-v210)
+            - [更新model P3](#更新model-p3)
+            - [comparison功能 P2](#comparison功能-p2)
+        - [\[WIP\] v2.1.0](#wip-v210)
+            - [1. 对phonetic symbol合法性进行检查，防止输错 P1——Done](#1-对phonetic-symbol合法性进行检查防止输错-p1done)
+            - [2. 支持修改word.text P0——Done](#2-支持修改wordtext-p0done)
+            - [3. 支持仅修改meaning，而不重新生成ReviewPlan P0——Done](#3-支持仅修改meaning而不重新生成reviewplan-p0done)
+            - [4. 实现泛读复习计划 P0——Done](#4-实现泛读复习计划-p0done)
+            - [5. 实现查询功能 P0——Done](#5-实现查询功能-p0done)
+            - [6. 模糊查询 P1——Done](#6-模糊查询-p1done)
+            - [7. 复习计划打散 P1——Done](#7-复习计划打散-p1done)
+            - [8. review过程升级——Done](#8-review过程升级done)
+            - [9. predict算法更新 P2——Done](#9-predict算法更新-p2done)
         - [2022-5-4 v2.0.0](#2022-5-4-v200)
+            - [实现一个单词多个含义的场景](#实现一个单词多个含义的场景)
 
 <!-- /TOC -->
 # parrot
@@ -80,25 +101,30 @@ comparison有自己的review_plan。review_plan加一个type，代表
 review的时候先展示每个meaning的word的text，
 与meaning同级，有meaning和review_plan
 
-#### predict算法更新 P2
-
-目的是能够计算出更长的时间
-
-
-
 ### \[WIP\] v2.1.0
 
-#### 实现泛读复习计划 P0——Done
+#### 1. 对phonetic symbol合法性进行检查，防止输错 P1——Done
+
+google貌似没找到
+尝试从现有meaning中提取——当前方式
+
+#### 2. 支持修改word.text P0——Done
+
+查出来后，修改时第一个修改的是word.text
+
+#### 3. 支持仅修改meaning，而不重新生成ReviewPlan P0——Done
+
+#### 4. 实现泛读复习计划 P0——Done
 
 看到英文能知道意思就行。最看最近7天的，时间不超过5分钟
 新增一个model，`ERLookupRecord`
 泛读review的时候没有unremember
 
-#### 实现查询功能 P0——Done
+#### 5. 实现查询功能 P0——Done
 
 查询works和meaning
 
-#### 模糊查询 P1——Done
+#### 6. 模糊查询 P1——Done
 
 **为什么只创建use_case的fts**
 因为external content的fts要求所有的列必须都在同一张table中，word.text不在meaning表中，所以有额外工作：
@@ -138,12 +164,12 @@ add的时候搜索`meaning.use_case`，然后展示所有match的meaning——Pe
 https://www.sqlite.org/fts5.html#external_content_tables
 
 
-#### 复习计划打散 P1——Done
+#### 7. 复习计划打散 P1——Done
 
 下一个阶段的复习计划在某个范围内打散，防止分布不均匀。
 打散时间范围为`randint(0, STAGE_DELTA_MAP[stage]//6)`
 
-#### review过程升级——Done
+#### 8. review过程升级——Done
 
 由现在的一个一个处理，改为如下过程：
 1. 先统一review，并记录每个meaning的review结果，该阶段不创建新的ReviewPlan
@@ -156,6 +182,10 @@ https://www.sqlite.org/fts5.html#external_content_tables
         * else
             * 以`ReviewStage`最大的且结果为`ReviewStatus.REMEMBERED`的ReviewPlan
 3. commit
+
+#### 9. predict算法更新 P2——Done
+
+目的是能够计算出更长的时间
 
 ### 2022-5-4 v2.0.0
 #### 实现一个单词多个含义的场景
