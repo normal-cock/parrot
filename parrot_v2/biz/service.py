@@ -97,7 +97,7 @@ def begin_to_review_v2(begin_time, end_time):
         print("Progress: {}/{}".format(index+1, total_len))
         result = _display_review_card(review_plan)
         new_status_value = int(result)+1
-        review_plan.complete(new_status_value, False)
+        review_plan.complete(new_status_value, is_gen_new_plan=False)
         review_results.append({
             "meaning": review_plan.meaning,
             "review_status": review_plan.status,

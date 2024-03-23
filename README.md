@@ -18,9 +18,11 @@
     - [具体实现](#具体实现)
     - [changelog](#changelog)
         - [Future](#future)
+            - [review过程分阶段保存，应对单词较多的情况 P1](#review过程分阶段保存应对单词较多的情况-p1)
+            - [随时听 P2](#随时听-p2)
             - [更新model P3](#更新model-p3)
-            - [comparison功能 P2](#comparison功能-p2)
-        - [\[WIP\] v2.1.0](#wip-v210)
+            - [comparison功能 P3](#comparison功能-p3)
+        - [2023-02 v2.1.0](#2023-02-v210)
             - [1. 对phonetic symbol合法性进行检查，防止输错 P1——Done](#1-对phonetic-symbol合法性进行检查防止输错-p1done)
             - [2. 支持修改word.text P0——Done](#2-支持修改wordtext-p0done)
             - [3. 支持仅修改meaning，而不重新生成ReviewPlan P0——Done](#3-支持仅修改meaning而不重新生成reviewplan-p0done)
@@ -89,19 +91,28 @@
 
 ### Future
 
+#### review过程分阶段保存，应对单词较多的情况 P1
+
+每次review，分成多组，每组5个单词。每组结束后就保存一次。
+
+#### 随时听 P2
+
+支持将任意音频材料输入，然后行程逐句的音频+字幕。同时手机端可以播放，一方面增加输入，另一方面可以充分利用碎片化时间。
+字幕：可以利用语音转文字，或者互联网上可以下载到的影视作品的字幕
+
 #### 更新model P3
 
 下一个大版本做，考虑：
 * 是否将meaning和word合并？是否有必要单独为word建模？如果合并的话，fts可以添加word.text的索引，add的时候也可以使用fts来搜索
 
-#### comparison功能 P2
+#### comparison功能 P3
 
 新增一个model代表comparison，有多个meaning_id组成，有文字解释不同。
 comparison有自己的review_plan。review_plan加一个type，代表
 review的时候先展示每个meaning的word的text，
 与meaning同级，有meaning和review_plan
 
-### \[WIP\] v2.1.0
+### 2023-02 v2.1.0
 
 #### 1. 对phonetic symbol合法性进行检查，防止输错 P1——Done
 

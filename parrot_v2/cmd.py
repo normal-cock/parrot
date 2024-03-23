@@ -51,7 +51,7 @@ def run():
                 print("{}. {}".format(i+1, meaning.meaning))
                 tmp_meaning_dict[str(i+1)] = meaning
             meaning_choice = rlinput(
-                "input existing meaning index(-1 to add a new meaning):", "-1")
+                "input existing meaning index(-1 to add a new meaning):", "-1").strip()
             if meaning_choice != "-1" and meaning_choice not in tmp_meaning_dict:
                 exit('Error: invalid index')
 
@@ -59,12 +59,12 @@ def run():
                 meaning_obj = tmp_meaning_dict[meaning_choice]
 
         phonetic_symbol = rlinput(
-            'phonetic_symbol:', meaning_obj.phonetic_symbol if meaning_obj else '')
+            'phonetic_symbol:', meaning_obj.phonetic_symbol if meaning_obj else '').strip()
         meaning = rlinput(
-            'meaning:', meaning_obj.meaning if meaning_obj else '')
+            'meaning:', meaning_obj.meaning if meaning_obj else '').strip()
         use_case = rlinput(
-            'use case:', meaning_obj.use_case if meaning_obj else '')
-        remark = rlinput('remark:', meaning_obj.remark if meaning_obj else '')
+            'use case:', meaning_obj.use_case if meaning_obj else '').strip()
+        remark = rlinput('remark:', meaning_obj.remark if meaning_obj else '').strip()
 
         if word == None:
             add_new_word_and_meaning(
@@ -106,7 +106,7 @@ def run():
         if word == None:
             exit(f'word "{target_word_text}" not found')
 
-        new_word_text = rlinput('new_word_text:', word.text)
+        new_word_text = rlinput('new_word_text:', word.text).strip()
 
         modify_exist_word(word.id, new_word_text)
     if args.command == 'modify_meaning':
@@ -124,7 +124,7 @@ def run():
             print("{}. {}".format(i+1, meaning.meaning))
             tmp_meaning_dict[str(i+1)] = meaning
         meaning_choice = rlinput(
-            "input existing meaning index(-1 to add a new meaning):", "-1")
+            "input existing meaning index(-1 to add a new meaning):", "-1").strip()
         if meaning_choice != "-1" and meaning_choice not in tmp_meaning_dict:
             exit('Error: invalid index')
 
@@ -133,12 +133,12 @@ def run():
         meaning_obj = tmp_meaning_dict[meaning_choice]
 
         phonetic_symbol = rlinput(
-            'phonetic_symbol:', meaning_obj.phonetic_symbol if meaning_obj else '')
+            'phonetic_symbol:', meaning_obj.phonetic_symbol if meaning_obj else '').strip()
         meaning = rlinput(
-            'meaning:', meaning_obj.meaning if meaning_obj else '')
+            'meaning:', meaning_obj.meaning if meaning_obj else '').strip()
         use_case = rlinput(
-            'use case:', meaning_obj.use_case if meaning_obj else '')
-        remark = rlinput('remark:', meaning_obj.remark if meaning_obj else '')
+            'use case:', meaning_obj.use_case if meaning_obj else '').strip()
+        remark = rlinput('remark:', meaning_obj.remark if meaning_obj else '').strip()
 
         modify_exist_meaning(
             meaning_obj.id, phonetic_symbol, meaning, use_case, remark, unremember=False)
