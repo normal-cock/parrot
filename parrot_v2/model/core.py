@@ -1,13 +1,18 @@
 # coding=utf8
+import re
 import datetime
 import enum
+from random import randint
+import collections
 
 from sqlalchemy import Column, Boolean, Enum, Integer, String, DateTime, ForeignKey
 from sqlalchemy import text
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import validates
 
 from parrot_v2 import DEBUG
 from parrot_v2.model import Base
+import typing
 
 
 class Word(Base):
@@ -38,6 +43,17 @@ class Word(Base):
 
         return word
 
+    @classmethod
+    def new_word_during_er(cls, text, phonetic_symbol, meaning, use_case, remark):
+        word = Word(
+            text=text,
+        )
+        word.meanings = []
+        Meaning.new_meaning_during_er(
+            word, phonetic_symbol, meaning, use_case, remark)
+
+        return word
+
 
 class Meaning(Base):
     __tablename__ = 'meaning'
@@ -56,22 +72,24 @@ class Meaning(Base):
         DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     # foreign key
-    word_id = Column(Integer, ForeignKey('word.id'))
-    word = relationship("Word", back_populates="meanings")
+    word_id = Column(Integer, ForeignKey('word.id', ondelete='CASCADE'))
+    word: Word = relationship("Word", back_populates="meanings")
 
-    def modify_meaning(self, phonetic_symbol, meaning, use_case, remark):
+    def modify_meaning(self, phonetic_symbol, meaning, use_case, remark, unremember=True):
         self.phonetic_symbol = phonetic_symbol
         self.meaning = meaning
         self.use_case = use_case
         self.remark = remark
-        self.unremember()
+        if unremember == True:
+            self.unremember()
 
-    def unremember(self):
+    def unremember(self) -> int:
         self.review_plans.filter(ReviewPlan.status == ReviewStatus.UNREVIEWED).update(
             {ReviewPlan.status: ReviewStatus.UNREMEMBERED},
             synchronize_session='fetch',
         )
-        ReviewPlan.generate_a_plan(self)
+        new_plans = ReviewPlan.gen_plan(self)
+        return len(new_plans)
 
     @classmethod
     def new_meaning(cls, word, phonetic_symbol, meaning, use_case, remark):
@@ -83,10 +101,42 @@ class Meaning(Base):
             remark=remark,
         )
         meaning.review_plans = []
-        ReviewPlan.generate_a_plan(meaning)
+        ReviewPlan.gen_plan(meaning)
 
         word.meanings.append(meaning)
         return meaning
+
+    @classmethod
+    def new_meaning_during_er(cls, word, phonetic_symbol, meaning, use_case, remark):
+        meaning = Meaning(
+            word_id=word.id,
+            phonetic_symbol=phonetic_symbol,
+            meaning=meaning,
+            use_case=use_case,
+            remark=remark,
+        )
+        meaning.er_lookup_records = [
+            ERLookupRecord(
+                meaning_id=meaning.id,
+            )
+        ]
+
+        word.meanings.append(meaning)
+        return meaning
+
+    def add_er_lookup_record(self):
+        self.er_lookup_records.append(
+            ERLookupRecord(
+                meaning_id=self.id,
+            )
+        )
+
+    @validates("phonetic_symbol")
+    def validate_phonetic_symbol(self, key, ipa):
+        _ipa_re_pattern = '''^[rŋ(ːɪiwɒjaxˌqɛɝf ðdsmhoɡ:ə)ˈlt̬.z·gpʊnθɜcɔɑʒʌuʃvk'ebæ,y;ɚ˞]*$'''
+        if re.match(_ipa_re_pattern, ipa) == None:
+            raise ValueError(f"invalid ipa {ipa}")
+        return ipa
 
 
 class ReviewStage(enum.Enum):
@@ -126,6 +176,20 @@ class ReviewPlanType(enum.Enum):
     HINT_MEANING = 1
 
 
+class ERLookupRecord(Base):
+    '''ER: Extensive Reading'''
+    __tablename__ = 'er_lookup_record'
+    id = Column(Integer, primary_key=True)
+    created_time = Column(DateTime, default=datetime.datetime.now)
+    changed_time = Column(
+        DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+
+    # foreign key
+    meaning_id = Column(Integer, ForeignKey('meaning.id', ondelete='CASCADE'))
+    meaning: Meaning = relationship(
+        "Meaning", back_populates="er_lookup_records")
+
+
 class ReviewPlan(Base):
     __tablename__ = 'review_plan'
     id = Column(Integer, primary_key=True)
@@ -146,52 +210,60 @@ class ReviewPlan(Base):
         DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     # foreign key
-    meaning_id = Column(Integer, ForeignKey('meaning.id'))
-    meaning = relationship("Meaning", back_populates="review_plans")
+    meaning_id = Column(Integer, ForeignKey('meaning.id', ondelete='CASCADE'))
+    meaning: Meaning = relationship("Meaning", back_populates="review_plans")
 
     def __repr__(self):
         return "< ReviewPlan(id='{}',meaning_id='{}')".format(self.id, self.meaning_id)
 
-    def complete(self, final_status_value, is_gen_new_plan):
+    def complete(self, final_status_value, is_gen_new_plan) -> int:
         if final_status_value not in [2, 3, 4]:
             exit("invaid final status({}) for review_plan".format(final_status_value))
         self.status = ReviewStatus(final_status_value)
         self.reviewed_time = datetime.datetime.now()
         if is_gen_new_plan:
-            return self.gen_next_plan()
-        return []
-
-    def gen_next_plan(self):
-        new_plans = []
-        if (self.stage.value != ReviewStage.STAGE5.value
-                and self.status != ReviewStatus.UNREVIEWED):
-            if (self.status == ReviewStatus.REMEMBERED
-                    and self.stage.value < ReviewStage.STAGE4.value):
-                # 记住了，且 stage 小于 4，stage+2
-                # 大于等于4时，就走正常的流程
-                new_stage = ReviewStage(self.stage.value + 2)
-            elif self.status == ReviewStatus.UNREMEMBERED:
-                # 没记住，重新从 STAGE1 开始
-                new_stage = ReviewStage.STAGE1
-                new_plans = ReviewPlan.generate_a_plan(self.meaning, new_stage)
-            else:
-                # 正常流程，stage+1
-                new_stage = ReviewStage(self.stage.value + 1)
-            new_plans = ReviewPlan.generate_a_plan(self.meaning, new_stage)
-        return new_plans
+            return ReviewPlan.gen_next_plan(self.meaning, self.stage, self.status)
+        return 0
 
     @classmethod
-    def generate_a_plan(
+    def gen_next_plan(cls, meaning, stage, status) -> int:
+        new_plans = []
+        if (stage.value != ReviewStage.STAGE5.value
+                and status != ReviewStatus.UNREVIEWED):
+            if (status == ReviewStatus.REMEMBERED
+                    and stage.value < ReviewStage.STAGE4.value):
+                # 记住了，且 stage 小于 4，stage+2
+                # 大于等于4时，就走正常的流程
+                new_stage = ReviewStage(stage.value + 2)
+            elif status == ReviewStatus.UNREMEMBERED:
+                # 没记住，重新从 STAGE1 开始
+                new_stage = ReviewStage.STAGE1
+                new_plans = ReviewPlan.gen_plan(meaning, new_stage)
+            else:
+                # 正常流程，stage+1
+                new_stage = ReviewStage(stage.value + 1)
+            new_plans = ReviewPlan.gen_plan(meaning, new_stage)
+        return len(new_plans)
+
+    @classmethod
+    def gen_plan(
             cls,
             meaning,
-            stage=ReviewStage.STAGE1
+            stage=ReviewStage.STAGE1,
+            review_time=None,
     ):
+        if review_time == None:
+            review_time = datetime.datetime.now()
         time_to_review = (
-            datetime.datetime.now() +
+            review_time +
             STAGE_DELTA_MAP[stage]
         )
+        time_to_review += datetime.timedelta(
+            days=randint(0, STAGE_DELTA_MAP[stage].days//6)
+        )
+
         if DEBUG:
-            time_to_review = datetime.datetime.now()
+            time_to_review = review_time
 
         hint_meaning_plan = cls(
             meaning_id=meaning.id,
@@ -246,10 +318,77 @@ class AddCounter(Base):
 # foreign key
 Word.meanings = relationship("Meaning",
                              back_populates="word",
+                             passive_deletes=True,
                              lazy='dynamic')
 
 Meaning.review_plans = relationship("ReviewPlan",
                                     back_populates="meaning",
+                                    passive_deletes=True,
                                     lazy='dynamic')
 
+Meaning.er_lookup_records = relationship("ERLookupRecord",
+                                         back_populates="meaning",
+                                         passive_deletes=True,
+                                         lazy='dynamic')
+
 # Base.metadata.create_all(engine)
+
+
+def update_meaning_fts(
+    session, old_meaning_id, old_meaning_use_case,
+    new_meaning,
+):
+    '''如果没有old_meaning，old_meaning_id和old_meaning_use_case都传None'''
+    # 用于生成primary id
+    session.flush()
+    if old_meaning_id != None:
+        delete_sql = '''
+        INSERT INTO meaning_fts(meaning_fts, rowid, use_case) 
+            VALUES('delete', :rowid, :use_case);
+        '''
+        session.execute(
+            delete_sql,
+            {'rowid': old_meaning_id, 'use_case': old_meaning_use_case},
+        )
+    insert_sql = '''
+    INSERT INTO meaning_fts(rowid, use_case) VALUES (:rowid, :use_case);
+    '''
+    result = session.execute(
+        insert_sql,
+        {'rowid': new_meaning.id, 'use_case': new_meaning.use_case},
+    )
+    return result
+
+
+# MeaningDTO = collections.namedtuple('MeaningDTO', [
+#     ('word_text', str), ('id', int), ('meaning', str),
+#     ('use_case', str), ('phonetic_symbol', str), ('remark', str)
+# ])
+class MeaningDTO(typing.NamedTuple):
+    word_text: str
+    id: int
+    meaning: str
+    use_case: str
+    phonetic_symbol: str
+    remark: str
+
+
+def get_related_meaning(session, query: str) -> typing.List[MeaningDTO]:
+    '''返回结果[(word_text, meaning_id, meaning_meaning, 
+        meaning_use_case, meaning_phonetic_symbol, meaning_remark)]'''
+    # https: // stackoverflow.com/questions/287871/how-do-i-print-colored-text-to-the-terminal
+    # https://stackoverflow.com/questions/53740460/ansi-escape-code-weird-behavior-at-end-of-line
+    search_sql = '''
+        select word.text,meaning.id,meaning.meaning,
+            highlight(meaning_fts,0,'\x1b[6;30;42m','\x1b[0m\x1b[K'),
+            meaning.phonetic_symbol,meaning.remark FROM meaning_fts 
+                LEFT JOIN meaning ON meaning_fts.rowid=meaning.id
+                LEFT JOIN word ON word.id=meaning.word_id
+                WHERE meaning_fts = :query order by rank limit 10;
+    '''
+    # result = session.execute(search_sql)
+    result = session.execute(
+        search_sql, {'query': query})
+    return [MeaningDTO(word_text=row[0], id=row[1], meaning=row[2],
+                       use_case=row[3], phonetic_symbol=row[4], remark=row[5])
+            for row in result]

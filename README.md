@@ -3,12 +3,37 @@
 - [parrot](#parrot)
     - [介绍](#介绍)
     - [使用](#使用)
+            - [安装](#安装)
+            - [初始化环境](#初始化环境)
+            - [添加单次](#添加单次)
+            - [复习单词](#复习单词)
     - [规则](#规则)
         - [添加规则](#添加规则)
         - [复习规则](#复习规则)
+            - [复习时展示哪些内容](#复习时展示哪些内容)
+            - [完整的复习计划是什么](#完整的复习计划是什么)
+            - [复习的结果有哪些](#复习的结果有哪些)
+            - [如果有一天没有复习，第二天再复习时怎么办](#如果有一天没有复习第二天再复习时怎么办)
+            - [在进行第五阶段复习时，仍然需要看句子才能知道含义怎么办？](#在进行第五阶段复习时仍然需要看句子才能知道含义怎么办)
     - [具体实现](#具体实现)
     - [changelog](#changelog)
-        - [2022-5-4 v2](#2022-5-4-v2)
+        - [Future](#future)
+            - [随时听 P2](#随时听-p2)
+            - [更新model P3](#更新model-p3)
+            - [comparison功能 P3](#comparison功能-p3)
+        - [2023-02 v2.1.0](#2023-02-v210)
+            - [1. 对phonetic symbol合法性进行检查，防止输错 P1——Done](#1-对phonetic-symbol合法性进行检查防止输错-p1done)
+            - [2. 支持修改word.text P0——Done](#2-支持修改wordtext-p0done)
+            - [3. 支持仅修改meaning，而不重新生成ReviewPlan P0——Done](#3-支持仅修改meaning而不重新生成reviewplan-p0done)
+            - [4. 实现泛读复习计划 P0——Done](#4-实现泛读复习计划-p0done)
+            - [5. 实现查询功能 P0——Done](#5-实现查询功能-p0done)
+            - [6. 模糊查询 P1——Done](#6-模糊查询-p1done)
+            - [7. 复习计划打散 P1——Done](#7-复习计划打散-p1done)
+            - [8. review过程升级——Done](#8-review过程升级done)
+            - [9. predict算法更新 P2——Done](#9-predict算法更新-p2done)
+            - [10. review过程分阶段保存，应对单词较多的情况 P1](#10-review过程分阶段保存应对单词较多的情况-p1)
+        - [2022-5-4 v2.0.0](#2022-5-4-v200)
+            - [实现一个单词多个含义的场景](#实现一个单词多个含义的场景)
 
 <!-- /TOC -->
 # parrot
@@ -64,7 +89,116 @@
 
 ## changelog
 
-### 2022-5-4 v2
+### Future
+
+#### 随时听 P2
+
+支持将任意音频材料输入，然后行程逐句的音频+字幕。同时手机端可以播放，一方面增加输入，另一方面可以充分利用碎片化时间。
+字幕：可以利用语音转文字，或者互联网上可以下载到的影视作品的字幕
+
+#### 更新model P3
+
+下一个大版本做，考虑：
+* 是否将meaning和word合并？是否有必要单独为word建模？如果合并的话，fts可以添加word.text的索引，add的时候也可以使用fts来搜索
+
+#### comparison功能 P3
+
+新增一个model代表comparison，有多个meaning_id组成，有文字解释不同。
+comparison有自己的review_plan。review_plan加一个type，代表
+review的时候先展示每个meaning的word的text，
+与meaning同级，有meaning和review_plan
+
+### 2023-02 v2.1.0
+
+#### 1. 对phonetic symbol合法性进行检查，防止输错 P1——Done
+
+google貌似没找到
+尝试从现有meaning中提取——当前方式
+
+#### 2. 支持修改word.text P0——Done
+
+查出来后，修改时第一个修改的是word.text
+
+#### 3. 支持仅修改meaning，而不重新生成ReviewPlan P0——Done
+
+#### 4. 实现泛读复习计划 P0——Done
+
+看到英文能知道意思就行。最看最近7天的，时间不超过5分钟
+新增一个model，`ERLookupRecord`
+泛读review的时候没有unremember
+
+#### 5. 实现查询功能 P0——Done
+
+查询works和meaning
+
+#### 6. 模糊查询 P1——Done
+
+**为什么只创建use_case的fts**
+因为external content的fts要求所有的列必须都在同一张table中，word.text不在meaning表中，所以有额外工作：
+1. 要么，将word.text添加到meaning中，word表就没有存在意义了，需要修改model
+2. 要么，创建另一个fts表来存储word。
+这两种方式都会带来不不小的复杂性。
+考虑到use_case中肯定有word.text，因此本次只添加use_case的fts。后续重构core model的时候再重新设计。
+**todo**
+
+prototype
+    修改
+        `INSERT INTO meaning_fts(meaning_fts, rowid, use_case) VALUES('delete', old_meaning.id, old_meaning.use_case);`
+        `INSERT INTO meaning_fts(rowid, use_case) VALUES (meaning.id, meaning.use_case);`
+    添加
+        `INSERT INTO meaning_fts(rowid, use_case) VALUES (meaning.id, meaning.use_case);`
+    重建
+        `CREATE VIRTUAL TABLE IF NOT EXISTS meaning_fts USING fts5(use_case, content='meaning', content_rowid='id', tokenize = 'porter');`
+        <!-- `DROP TABLE meaning_fts;` -->
+        `INSERT INTO meaning_fts(meaning_fts) VALUES('delete-all');`
+        `INSERT INTO meaning_fts(rowid, use_case) select meaning.id,meaning.use_case from meaning;`
+    查询
+
+        ```sql
+            select word.text,meaning.meaning,meaning.use_case FROM meaning_fts 
+                LEFT JOIN meaning ON meaning_fts.rowid=meaning.id
+                LEFT JOIN word ON word.id=meaning.word_id
+                WHERE meaning_fts = 'beaver' order by rank limit 10;
+        ```
+    
+initialize、migrate的时候手写sql为meaning rebuild virtual table——Done
+新写入或修改meaning的时候，都先delete再插入virtual table——Done
+<!-- 修改meaning的时候，删除原来的virtual table记录，插入新的记录 -->
+search的时候搜索`meaning.use_case`——Done
+add的时候搜索`meaning.use_case`，然后展示所有match的meaning——Pending
+    因为add的时候还要判断是否有该word，所以不能只搜索use_case
+
+https://www.sqlite.org/fts5.html#external_content_tables
+
+
+#### 7. 复习计划打散 P1——Done
+
+下一个阶段的复习计划在某个范围内打散，防止分布不均匀。
+打散时间范围为`randint(0, STAGE_DELTA_MAP[stage]//6)`
+
+#### 8. review过程升级——Done
+
+由现在的一个一个处理，改为如下过程：
+1. 先统一review，并记录每个meaning的review结果，该阶段不创建新的ReviewPlan
+2. 根据review结果统一生成ReviewPlan，同一个meaning如果有多个review结果，则依次：
+    * if 存在`ReviewStatus.UNREMEMBERED`
+        * 则以`ReviewStatus.UNREMEMBERED`为准来生成新计划
+    * else
+        * if 存在`ReviewStage`最大的且结果为`ReviewStatus.REVIEWED`的ReviewPlan
+            * 则以该ReviewPlan来生成新计划
+        * else
+            * 以`ReviewStage`最大的且结果为`ReviewStatus.REMEMBERED`的ReviewPlan
+3. commit
+
+#### 9. predict算法更新 P2——Done
+
+目的是能够计算出更长的时间
+
+#### 10. review过程分阶段保存，应对单词较多的情况 P1
+
+每次review，分成多组，每组5个单词。每组结束后就保存一次。
+
+### 2022-5-4 v2.0.0
 #### 实现一个单词多个含义的场景
 由原来的`words->review_plans`模型，变为`words->meanings->review_plans`。
 添加单词：
