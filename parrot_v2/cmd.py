@@ -2,6 +2,7 @@
 import os
 import argparse
 import datetime
+import signal
 
 from parrot_v2.biz.service import (
     get_word_or_none,
@@ -23,9 +24,17 @@ from parrot_v2.biz.migrate_script import import_data_from_v1
 from parrot_v2 import DATA_DIR
 from parrot_v2.util import rlinput
 
+# 定义信号处理函数
+def handler(signum, frame):
+    print('\n\nExit')
+    exit()
+
+def init_signal():
+    signal.signal(signal.SIGINT, handler)
 
 def run():
     '''parrot_v2命令行入口'''
+    init_signal()
     parser = argparse.ArgumentParser()
     parser.add_argument('command', choices=[
                         'add', 'review', 'search', 'migrate',
@@ -163,6 +172,7 @@ def run():
             print('meaning:', meaning.meaning)
             print(f'use case: {meaning.use_case}')
             print(f'remark: {meaning.remark}')
+
 
 
 if __name__ == '__main__':
