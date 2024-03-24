@@ -10,10 +10,12 @@ from parrot_v2.biz.service import (
     modify_exist_meaning,
     modify_exist_word,
     begin_to_review_v2,
+    begin_to_review_v3,
     show_predict_v2,
     search,
     rebuild_fts,
 )
+from parrot_v2 import DEBUG
 
 from parrot_v2.biz.service_er import add_er_lookup_record, begin_er_lookup_review, predict_er
 
@@ -78,8 +80,11 @@ def run():
     if args.command == 'review':
         begin_time = datetime.date.today() - datetime.timedelta(days=15)
         end_time = datetime.date.today() + datetime.timedelta(days=1)
-        # begin_to_review(begin_time, end_time)
-        begin_to_review_v2(begin_time, end_time)
+        # if DEBUG:
+        #     begin_to_review_v3(begin_time, end_time)
+        # else:
+        #     begin_to_review_v2(begin_time, end_time)
+        begin_to_review_v3(begin_time, end_time)
     if args.command == 'search':
         query = rlinput('word_text:', '').strip()
         # print("search:", query)

@@ -1,5 +1,6 @@
 import datetime
 import random
+import numpy as np
 from parrot_v2 import Session, DEBUG
 from parrot_v2.model import Word, Meaning, ReviewPlan, ReviewPlanType, AddCounter, ReviewStatus
 from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning
@@ -186,6 +187,154 @@ def begin_to_review_v2(begin_time, end_time):
         datetime.datetime.now() - start_time,
     ))
 
+
+def begin_to_review_v3(begin_time, end_time):
+    '''
+    开始复习单词，生成器
+    begin_time 和 end_time 分别为要复习的复习计划的 time_to_review 范围
+    '''
+    start_time = datetime.datetime.now()
+    session = Session()
+    review_plans: List[ReviewPlan] = session.query(ReviewPlan).filter(
+        ReviewPlan.time_to_review >= begin_time,
+        ReviewPlan.time_to_review <= end_time,
+        ReviewPlan.status == ReviewStatus.UNREVIEWED
+    )
+    review_plans = [review_plan for review_plan in review_plans]
+    review_plans_per_meaning = defaultdict(list)
+    for review_plan in review_plans:
+        meaning: Meaning = review_plan.meaning
+        review_plans_per_meaning[meaning.id].append(review_plan)
+    minimum_meaning_count_in_batch = 5
+    if DEBUG:
+        minimum_meaning_count_in_batch = 2
+    # list of plans of each meaning, 2-d array
+    plans_list = list(review_plans_per_meaning.values())
+    split_count = len(plans_list) // minimum_meaning_count_in_batch
+    if split_count == 0:
+        split_count = 1
+    review_plans_in_batch = np.array_split(plans_list, split_count)
+    reviewed_plan_count = 0
+    new_review_plan_count = 0
+    total_review_plan_count = len(review_plans)
+
+    for sub_review_plans_list in review_plans_in_batch:
+        tmp_review_plans = []
+        for tmp_review_plans2 in sub_review_plans_list:
+            tmp_review_plans.extend(tmp_review_plans2)
+        tmp_new_review_plan_count = _review_in_batch(session, tmp_review_plans, reviewed_plan_count, total_review_plan_count)
+        reviewed_plan_count += len(tmp_review_plans)
+        new_review_plan_count += tmp_new_review_plan_count
+    
+    print("\nFinished and generated {} new plans, costing {}".format(
+        new_review_plan_count,
+        datetime.datetime.now() - start_time,
+    ))
+
+def _review_in_batch(session, review_plans, reviewed_plan_count, total_review_plan_count) -> int:
+    '''
+        return new_review_plan_count
+    '''
+    random.shuffle(review_plans)
+    batch_count = len(review_plans)
+
+    # 每个元素为dict，格式为
+    # {"meaning", "review_status", "review_stage"}
+    review_results = []
+    for index, review_plan in enumerate(review_plans):
+        print("")
+        print("Progress: {}/{} ({}/{} in batch)".format(
+            reviewed_plan_count+index+1, 
+            total_review_plan_count,
+            index+1,
+            batch_count,
+            ))
+        result = _display_review_card(review_plan)
+        new_status_value = int(result)+1
+        review_plan.complete(new_status_value, is_gen_new_plan=False)
+        review_results.append({
+            "meaning": review_plan.meaning,
+            "review_status": review_plan.status,
+            "review_stage": review_plan.stage,
+        })
+
+        other_meanings: List[Meaning] = review_plan.meaning.word.get_other_meaning_without_review_plan(
+        )
+        other_meanings = [
+            m for m in other_meanings if m.id != review_plan.meaning.id]
+        if len(other_meanings) > 0:
+            print("This word has multiple meanings:")
+            for i, meaning in enumerate(other_meanings):
+                print("{}. {}".format(i+1, meaning.meaning))
+            review_choice = rlinput(
+                "Want to review anyone?Input the index(-1 means don't want to):", "-1")
+            if review_choice != '-1':
+                other_meaning_to_review = other_meanings[int(review_choice)-1]
+                review_results.append({
+                    "meaning": other_meaning_to_review,
+                    "review_status": ReviewStatus.UNREMEMBERED,
+                    "review_stage": ReviewStage.STAGE5
+                })
+                # other_meaning_to_review.unremember()
+
+    # generate next review_plan
+    review_results_per_meaning = defaultdict(list)
+    new_review_plan_count = 0
+    for review_result in review_results:
+        meaning: Meaning = review_result["meaning"]
+        review_results_per_meaning[meaning.id].append(review_result)
+    for _, review_result_list in review_results_per_meaning.items():
+        meaning = review_result_list[0]["meaning"]
+        # check whether there is unremembered review_plan
+        unremember_plans = [review_result
+                            for review_result in review_result_list
+                            if review_result["review_status"] == ReviewStatus.UNREMEMBERED]
+        if len(unremember_plans) > 0:
+            new_review_plan_count += meaning.unremember()
+            continue
+        else:
+            # find reviewed result with maximum stage
+            key_reviewed_result = None
+            for review_result in review_result_list:
+                review_status = review_result["review_status"]
+                review_stage = review_result["review_stage"]
+                if review_status == ReviewStatus.REVIEWED:
+                    if key_reviewed_result == None:
+                        key_reviewed_result = review_result
+                    elif key_reviewed_result["review_stage"].value < review_stage.value:
+                        key_reviewed_result = review_result
+                    else:
+                        pass
+            if key_reviewed_result != None:
+                new_review_plan_count += ReviewPlan.gen_next_plan(
+                    meaning,
+                    key_reviewed_result["review_stage"],
+                    ReviewStatus.REVIEWED,
+                )
+                continue
+
+            # find remember result with maximum stage
+            key_remember_result = None
+            for review_result in review_result_list:
+                review_status = review_result["review_status"]
+                review_stage = review_result["review_stage"]
+                if review_status == ReviewStatus.REMEMBERED:
+                    if key_remember_result == None:
+                        key_remember_result = review_result
+                    elif key_remember_result["review_stage"].value < review_stage.value:
+                        key_remember_result = review_result
+                    else:
+                        pass
+            if key_remember_result != None:
+                new_review_plan_count += ReviewPlan.gen_next_plan(
+                    meaning,
+                    key_remember_result["review_stage"],
+                    ReviewStatus.REMEMBERED,
+                )
+                continue
+
+    session.commit()
+    return new_review_plan_count
 
 def _display_review_card(plan: ReviewPlan) -> int:
     '''

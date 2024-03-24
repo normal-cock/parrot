@@ -21,6 +21,7 @@ setup(
     install_requires=[
         'SQLAlchemy==1.4.34',
         'alembic==1.7.7',
+        'numpy==1.26.4',
     ],
     packages=find_packages(),
     include_package_data=True,
