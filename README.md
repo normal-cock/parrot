@@ -18,7 +18,6 @@
     - [具体实现](#具体实现)
     - [changelog](#changelog)
         - [Future](#future)
-            - [review过程分阶段保存，应对单词较多的情况 P1](#review过程分阶段保存应对单词较多的情况-p1)
             - [随时听 P2](#随时听-p2)
             - [更新model P3](#更新model-p3)
             - [comparison功能 P3](#comparison功能-p3)
@@ -32,6 +31,7 @@
             - [7. 复习计划打散 P1——Done](#7-复习计划打散-p1done)
             - [8. review过程升级——Done](#8-review过程升级done)
             - [9. predict算法更新 P2——Done](#9-predict算法更新-p2done)
+            - [10. review过程分阶段保存，应对单词较多的情况 P1](#10-review过程分阶段保存应对单词较多的情况-p1)
         - [2022-5-4 v2.0.0](#2022-5-4-v200)
             - [实现一个单词多个含义的场景](#实现一个单词多个含义的场景)
 
@@ -90,10 +90,6 @@
 ## changelog
 
 ### Future
-
-#### review过程分阶段保存，应对单词较多的情况 P1
-
-每次review，分成多组，每组5个单词。每组结束后就保存一次。
 
 #### 随时听 P2
 
@@ -197,6 +193,10 @@ https://www.sqlite.org/fts5.html#external_content_tables
 #### 9. predict算法更新 P2——Done
 
 目的是能够计算出更长的时间
+
+#### 10. review过程分阶段保存，应对单词较多的情况 P1
+
+每次review，分成多组，每组5个单词。每组结束后就保存一次。
 
 ### 2022-5-4 v2.0.0
 #### 实现一个单词多个含义的场景
