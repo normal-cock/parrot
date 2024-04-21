@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Video.js Audio Player Demo</title>
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css"> -->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"> -->
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script> -->
+    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script> -->
+    <link href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <!-- <script src="https://vjs.zencdn.net/7.10.2/video.js"></script> -->
+
+    <!-- City -->
+    <link href="https://unpkg.com/@videojs/themes@1/dist/city/index.css" rel="stylesheet">
+
+    <style>
+        body {
+            width: auto;
+            margin: auto;
+            max-width: 1200px;
+            height: 80vh;
+        }
+
+        #audioPlayer {
+            width: 100%;
+            height: 15vh;
+        }
+
+        /* .custom-tool {
+            height: 15vh;
+        } */
+
+
+        #subtitle-list {
+            height: 65vh;
+            width: auto;
+            overflow: auto;
+            margin: 5%;
+            font-size: 1.5em;
+        }
+
+        .list-group-item {
+            /* 设置内填充为 10 像素 */
+            padding: 3%;
+            border: none;
+        }
+
+        .form-check-label {
+            font-size: 1.5em;
+        }
+
+        /* not work */
+        @media only screen and (hover: none) and (pointer: coarse) {
+
+            /* 样式 */
+            #subtitle-list {
+                font-size: 4.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div data-vjs-player="true">
+            <video id="audioPlayer" class="video-js vjs-theme-city" controls preload="metadata"
+                data-setup='{ "techOrder": ["html5", "flash", "youtube"], "autoplay": false, "controls": true, "mute": false, "playsinline": true}'>
+                <p class="vjs-no-js">
+                    您的浏览器不支持 HTML5 视频播放器，请升级浏览器。
+                </p>
+                <!-- <track label="English" kind="subtitles" srclang="en" src="english.vtt" disabled>
+                </track> -->
+                <!-- <track label="English" kind="subtitles" srclang="en" src="test2.vtt" default>
+                </track> -->
+                <track label="English" kind="subtitles" srclang="en"
+                    src="https://dae-parrot.oss-cn-beijing.aliyuncs.com/audio.vtt?x-oss-security-token=CAISwwJ1q6Ft5B2yfSjIr5bvEfn3ippm5ZDYYV%2FQvTkxVrlHmvCYjzz2IHhMfHFpB%2BAdsfU1nG5Q7f0alqRrQoVfQlCBdsZq8JlNqf4Dt2NZ4p7b16cNrbH4M0rxYkeJ8a2%2FSuH9S8ynCZXJQlvYlyh17KLnfDG5JTKMOoGIjpgVBbZ%2BHHPPD1x8CcxROxFppeIDKHLVLozNCBPxhXfKB0ca0WgVy0EHsPrgkpbFsEKA1w2lkr5K%2BL6ceMb0M5NeW75kSMqw0eBMca7M7TVd8RAi9t0t1PQcoW6Z7orCUgMJvU3daLLOkcVmNhV%2Beu0gHKpJvBFEc0a3H3m5fe3WvPUtVYk9O0y3LAtQUlVtj3xHHOKYZGTa%2BoX8I8EODOOBlykOTxx1On00dTSPJAGe59KCRH8kSMuFvGSuSGPF78DWz0t1jPIdpxqAAXQsnYecUcUadJocPVdkUjhA6VAhh5kwtaM2DrDFiCQAGz%2FFu9bgPotgAewGt6pFlDUINeJZm4e2FOvbg89G2j2NZwHpjqIy3mzENS%2Fz5YOjm18aZ6aQiGCJWZkdod%2FMBV6AGLhXJKTGqpSeivO54fIXPM60YKAKh%2BrowjAbLK1KIAA%3D&x-oss-date=20240421T092400Z&x-oss-expires=3600&x-oss-signature-version=OSS4-HMAC-SHA256&x-oss-credential=STS.NUZZCCgEGRR3cyaY9dZ6ku53m%2F20240421%2Fcn-beijing%2Foss%2Faliyun_v4_request&x-oss-signature=a88dcb579ba88f826dec5c98c8932ba03eef93fed6e4c0ad757520cfb88525a1"
+                    default>
+                </track>
+                <!-- <track label="English" kind="subtitles" srclang="en" src="english.vtt" default>
+        </track> -->
+            </video>
+        </div>
+    </div>
+    <div class="custom-area">
+        <div class="custom-tool">
+            <div class="btn-group" role="group" aria-label="Media Player Control Buttons">
+                <!-- <button type="button" class="btn btn-default" onclick="previousAudio();">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-skip-start-fill"
+                        viewBox="0 0 16 16">
+                        <path
+                            d="M4 4a.5.5 0 0 1 1 0v3.248l6.267-3.636c.54-.313 1.232.066 1.232.696v7.384c0 .63-.692 1.01-1.232.697L5 8.753V12a.5.5 0 0 1-1 0z" />
+                    </svg>
+                </button> -->
+                <button type="button" class="btn btn-default" onclick="previousAudio();">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="32" fill="currentColor"
+                        class="bi bi-skip-start-fill" viewBox="0 0 16 16">
+                        <path
+                            d="M4 4a.5.5 0 0 1 1 0v3.248l6.267-3.636c.54-.313 1.232.066 1.232.696v7.384c0 .63-.692 1.01-1.232.697L5 8.753V12a.5.5 0 0 1-1 0z" />
+                    </svg>
+                </button>
+                <button type="button" class="btn btn-default" onclick="nextAudio();">
+                    <!-- <span class="glyphicon glyphicon-step-forward"></span> -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="32" fill="currentColor"
+                        class="bi bi-skip-end-fill" viewBox="0 0 16 16">
+                        <path
+                            d="M12.5 4a.5.5 0 0 0-1 0v3.248L5.233 3.612C4.693 3.3 4 3.678 4 4.308v7.384c0 .63.692 1.01 1.233.697L11.5 8.753V12a.5.5 0 0 0 1 0z" />
+                    </svg>
+                </button>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="singleLineLoop" checked="true">
+                    <label class="form-check-label" for="singleLineLoop">单行循环</label>
+                    </input>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="audioOnlyMode" checked="true">
+                    <label class="form-check-label" for="audioOnlyMode">音频模式</label>
+                    </input>
+                </div>
+            </div>
+        </div>
+        <div>
+            <ul id="subtitle-list" class="list-group"></ul>
+        </div>
+    </div>
+
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script> -->
+    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script> -->
+
+    <script>
+        const mp3Src = 'https://dae-parrot.oss-cn-beijing.aliyuncs.com/audio.mp3?x-oss-security-token=CAISwwJ1q6Ft5B2yfSjIr5bvEfn3ippm5ZDYYV%2FQvTkxVrlHmvCYjzz2IHhMfHFpB%2BAdsfU1nG5Q7f0alqRrQoVfQlCBdsZq8JlNqf4Dt2NZ4p7b16cNrbH4M0rxYkeJ8a2%2FSuH9S8ynCZXJQlvYlyh17KLnfDG5JTKMOoGIjpgVBbZ%2BHHPPD1x8CcxROxFppeIDKHLVLozNCBPxhXfKB0ca0WgVy0EHsPrgkpbFsEKA1w2lkr5K%2BL6ceMb0M5NeW75kSMqw0eBMca7M7TVd8RAi9t0t1PQcoW6Z7orCUgMJvU3daLLOkcVmNhV%2Beu0gHKpJvBFEc0a3H3m5fe3WvPUtVYk9O0y3LAtQUlVtj3xHHOKYZGTa%2BoX8I8EODOOBlykOTxx1On00dTSPJAGe59KCRH8kSMuFvGSuSGPF78DWz0t1jPIdpxqAAXQsnYecUcUadJocPVdkUjhA6VAhh5kwtaM2DrDFiCQAGz%2FFu9bgPotgAewGt6pFlDUINeJZm4e2FOvbg89G2j2NZwHpjqIy3mzENS%2Fz5YOjm18aZ6aQiGCJWZkdod%2FMBV6AGLhXJKTGqpSeivO54fIXPM60YKAKh%2BrowjAbLK1KIAA%3D&x-oss-date=20240421T092400Z&x-oss-expires=3600&x-oss-signature-version=OSS4-HMAC-SHA256&x-oss-credential=STS.NUZZCCgEGRR3cyaY9dZ6ku53m%2F20240421%2Fcn-beijing%2Foss%2Faliyun_v4_request&x-oss-signature=92d6f86cebedff4cb8fad3cc8c2812d5aca85196802bddb5afca2a4cb2fa42ab';
+        // const mp3Src = 'http://192.168.31.79:8000/audio.mp3';
+        // const mp3Src = 'test2.mp4';
+        // const mp3Src = 'audio.mp3';
+
+        // const subtitleSrc = "https://files.vidstack.io/sprite-fight/subs/english.vtt";
+
+        function findProperCueIndex(currentTime) {
+            const cues = Array.from(audioPlayer.textTracks()[0]?.cues || []);
+            //为每个cue分配一个唯一的ID
+            if (cues.length <= 1) {
+                return 0;
+            }
+            for (var i = 0; i < cues.length; i++) {
+                var cue = cues[i];
+                if (currentTime <= cue.endTime) {
+                    return i;
+                }
+            }
+            return cues.length - 1;
+        }
+        function getCuesLength() {
+            return Array.from(audioPlayer.textTracks()[0]?.cues || []).length;
+        }
+        function getCurCue() {
+            return audioPlayer.textTracks()[0]?.cues
+        }
+        // https://videojs.com/guides/options/
+        const audioPlayer = videojs(
+            'audioPlayer',
+            {
+                audioOnlyMode: true,
+                preload: 'auto',
+                src: mp3Src,
+                defaultTracks: [],
+                controlBar: {
+                    remainingTimeDisplay: {
+                        displayNegative: false
+                    }
+                }
+            }
+        );
+        // audioPlayer.textTrackSettings.setValues({ "mode": "disabled" });
+        // const mp3Src = 'audio.mp3';
+        // const subtitleSrc = 'english.vtt';
+        // 添加音频源
+        audioPlayer.src([
+            { type: 'audio/mp3', src: mp3Src }
+        ]);
+
+        if ($('#audioOnlyMode').is(':checked')) {
+            audioPlayer.audioOnlyMode(true);
+        }
+        $('#audioOnlyMode').change(function () {
+            if ($('#audioOnlyMode').is(':checked')) {
+                audioPlayer.audioOnlyMode(true);
+            } else {
+                audioPlayer.audioOnlyMode(false);
+            }
+        });
+        // 将 AVPlayer 添加到 video.js 播放器中
+        // player.ready(function () {
+        //     var videoElement = player.el().getElementsByTagName('video')[0];
+        //     var avPlayer = new AVPlayer(videoElement);
+
+        //     // 注册为 audio 背景模式应用程序
+        //     AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayback, nil)
+        // });
+        audioPlayer.currentCueIndex = 0;
+        audioPlayer.on('timeupdate', function () {
+            if ($('#singleLineLoop').is(':checked')) {
+                const currentTime = this.currentTime();
+                const cues = Array.from(this.textTracks()[0]?.cues || []);
+                if (this.currentCueIndex >= 0 && this.currentCueIndex < cues.length) {
+                    var cue = cues[this.currentCueIndex];
+                    // for more graceful ending
+                    const cueStarttime = cue.startTime - 0.1;
+                    const cueEndtime = cue.endTime + 0.3;
+                    // const cueEndtime = cue.endTime;
+                    // We can't distinguish between progress bar change and timeupdate
+                    // because currentTime change will also trigger seeking and seeked event.
+                    // So here we differentiate them through duration between new_current_time 
+                    // and cues[this.currentCueIndex].endTime, if it's more than 30s, it's
+                    // considered as manual progress bar operation because most of the time, mannual
+                    // progess bar operation aimed at big time change
+                    if (!(cueStarttime <= currentTime && currentTime <= cueEndtime)) {
+                        if (Math.abs(currentTime - cueEndtime) > 30) {
+                            this.currentCueIndex = findProperCueIndex(currentTime)
+                            cue = cues[this.currentCueIndex];
+                        }
+
+                        flushListHighlight();
+                        console.log('begin update curTime:' + this.currentTime());
+                        this.currentTime(cue.startTime);
+                    }
+                } else (
+                    this.pause()
+                )
+            }
+        });
+
+        // 
+        // 
+        audioPlayer.on('seeking', function () {
+            // console.log('seeking currentTime:' + this.currentTime());
+            // this.currentCueIndex = findProperCueIndex(this.currentTime());
+        });
+        audioPlayer.on('seeked', function () {
+            // console.log('seeked currentTime:' + this.currentTime());
+            // this.currentCueIndex = findProperCueIndex(this.currentTime());
+        });
+        function previousAudio() {
+            audioPlayer.currentCueIndex -= 1;
+            audioPlayer.currentCueIndex %= getCuesLength();
+            flushListHighlight();
+        };
+        function nextAudio() {
+            audioPlayer.currentCueIndex += 1;
+            audioPlayer.currentCueIndex %= getCuesLength();
+            flushListHighlight();
+        };
+
+        window.addEventListener('keydown', function (event) {
+            switch (event.keyCode) {
+                case 32: // 空格键
+                    if (audioPlayer.paused()) {
+                        audioPlayer.play();
+                    } else {
+                        audioPlayer.pause();
+                    }
+                    break;
+                case 37: // 左箭头键
+                    previousAudio();
+                    break;
+                case 39: // 右箭头键
+                    nextAudio()
+                    break;
+            }
+        }, true);
+
+        navigator.mediaSession.setActionHandler('play', function () {
+            audioPlayer.play();
+        });
+        navigator.mediaSession.setActionHandler('pause', function () {
+            audioPlayer.pause();
+        });
+        navigator.mediaSession.setActionHandler('previoustrack', function () {
+            previousAudio();
+        });
+        navigator.mediaSession.setActionHandler('nexttrack', function () {
+            nextAudio();
+        });
+
+        function flushListHighlight() {
+            var highlightClass = 'list-group-item-success';
+            var list = $('#subtitle-list');
+            list.find('li').removeClass(highlightClass);
+            var li = list.children().eq(audioPlayer.currentCueIndex);
+            li.addClass(highlightClass);
+
+            var pos = (
+                li.offset().top + list.scrollTop()
+                - list.offset().top - list.height() / 2 + li.height() / 2);
+            // console.log('pos:' + pos);
+            list.animate({ scrollTop: pos });
+        }
+
+        audioPlayer.one('loadedmetadata', function () {
+            // 获取第一个 TextTrack
+            console.log('Subtitles loaded.' + getCuesLength());
+            setTimeout(function () {
+                console.log('Subtitles loaded.' + getCuesLength());
+                const cues = Array.from(audioPlayer.textTracks()[0]?.cues || []);
+                //为每个cue分配一个唯一的ID
+                for (var i = 0; i < cues.length; i++) {
+                    cues[i].id = i.toString();
+                }
+
+                var list = $('#subtitle-list');
+                for (var i = 0; i < cues.length; i++) {
+                    let cue = cues[i];
+                    var li = $('<li class="list-group-item">').text(cue.text);
+                    li.click(function () {
+                        audioPlayer.currentCueIndex = parseInt(cue.id);
+                        flushListHighlight();
+                        audioPlayer.currentTime(cue.startTime);
+                        audioPlayer.play();
+                    });
+                    list.append(li);
+                }
+            }, 1000);
+        });
+
+    </script>
+
+</body>
+
+</html>
