@@ -25,12 +25,16 @@ from parrot_v2 import DATA_DIR
 from parrot_v2.util import rlinput
 
 # 定义信号处理函数
+
+
 def handler(signum, frame):
     print('\n\nExit')
     exit()
 
+
 def init_signal():
     signal.signal(signal.SIGINT, handler)
+
 
 def run():
     '''parrot_v2命令行入口'''
@@ -75,7 +79,8 @@ def run():
             'meaning:', meaning_obj.meaning if meaning_obj else '').strip()
         use_case = rlinput(
             'use case:', meaning_obj.use_case if meaning_obj else '').strip()
-        remark = rlinput('remark:', meaning_obj.remark if meaning_obj else '').strip()
+        remark = rlinput(
+            'remark:', meaning_obj.remark if meaning_obj else '').strip()
 
         if word == None:
             add_new_word_and_meaning(
@@ -87,7 +92,7 @@ def run():
             modify_exist_meaning(
                 meaning_obj.id, phonetic_symbol, meaning, use_case, remark)
     if args.command == 'review':
-        begin_time = datetime.date.today() - datetime.timedelta(days=15)
+        begin_time = datetime.date.today() - datetime.timedelta(days=60)
         end_time = datetime.date.today() + datetime.timedelta(days=1)
         # if DEBUG:
         #     begin_to_review_v3(begin_time, end_time)
@@ -152,7 +157,8 @@ def run():
             'meaning:', meaning_obj.meaning if meaning_obj else '').strip()
         use_case = rlinput(
             'use case:', meaning_obj.use_case if meaning_obj else '').strip()
-        remark = rlinput('remark:', meaning_obj.remark if meaning_obj else '').strip()
+        remark = rlinput(
+            'remark:', meaning_obj.remark if meaning_obj else '').strip()
 
         modify_exist_meaning(
             meaning_obj.id, phonetic_symbol, meaning, use_case, remark, unremember=False)
@@ -172,7 +178,6 @@ def run():
             print('meaning:', meaning.meaning)
             print(f'use case: {meaning.use_case}')
             print(f'remark: {meaning.remark}')
-
 
 
 if __name__ == '__main__':

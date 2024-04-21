@@ -205,7 +205,7 @@ def begin_to_review_v3(begin_time, end_time):
     for review_plan in review_plans:
         meaning: Meaning = review_plan.meaning
         review_plans_per_meaning[meaning.id].append(review_plan)
-    minimum_meaning_count_in_batch = 7
+    minimum_meaning_count_in_batch = 10
     if DEBUG:
         minimum_meaning_count_in_batch = 2
     # list of plans of each meaning, 2-d array
