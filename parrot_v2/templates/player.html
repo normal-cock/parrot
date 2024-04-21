@@ -5,19 +5,10 @@
     <meta charset="UTF-8">
     <title>Video.js Audio Player Demo</title>
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css"> -->
-    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"> -->
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script> -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-        crossorigin="anonymous"></script> -->
-    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script> -->
     <link href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
-    <!-- <script src="https://vjs.zencdn.net/7.10.2/video.js"></script> -->
 
     <!-- City -->
     <link href="https://unpkg.com/@videojs/themes@1/dist/city/index.css" rel="stylesheet">
@@ -28,6 +19,11 @@
             margin: auto;
             max-width: 1200px;
             height: 80vh;
+        }
+
+        .container-fluid {
+            padding-left: 0;
+            padding-right: 0;
         }
 
         #audioPlayer {
@@ -58,12 +54,11 @@
             font-size: 1.5em;
         }
 
-        /* not work */
         @media only screen and (hover: none) and (pointer: coarse) {
 
             /* 样式 */
             #subtitle-list {
-                font-size: 4.5rem;
+                font-size: 3rem;
             }
         }
     </style>
@@ -81,9 +76,7 @@
                 </track> -->
                 <!-- <track label="English" kind="subtitles" srclang="en" src="test2.vtt" default>
                 </track> -->
-                <track label="English" kind="subtitles" srclang="en"
-                    src="https://dae-parrot.oss-cn-beijing.aliyuncs.com/audio.vtt?x-oss-security-token=CAISwwJ1q6Ft5B2yfSjIr5bvEfn3ippm5ZDYYV%2FQvTkxVrlHmvCYjzz2IHhMfHFpB%2BAdsfU1nG5Q7f0alqRrQoVfQlCBdsZq8JlNqf4Dt2NZ4p7b16cNrbH4M0rxYkeJ8a2%2FSuH9S8ynCZXJQlvYlyh17KLnfDG5JTKMOoGIjpgVBbZ%2BHHPPD1x8CcxROxFppeIDKHLVLozNCBPxhXfKB0ca0WgVy0EHsPrgkpbFsEKA1w2lkr5K%2BL6ceMb0M5NeW75kSMqw0eBMca7M7TVd8RAi9t0t1PQcoW6Z7orCUgMJvU3daLLOkcVmNhV%2Beu0gHKpJvBFEc0a3H3m5fe3WvPUtVYk9O0y3LAtQUlVtj3xHHOKYZGTa%2BoX8I8EODOOBlykOTxx1On00dTSPJAGe59KCRH8kSMuFvGSuSGPF78DWz0t1jPIdpxqAAXQsnYecUcUadJocPVdkUjhA6VAhh5kwtaM2DrDFiCQAGz%2FFu9bgPotgAewGt6pFlDUINeJZm4e2FOvbg89G2j2NZwHpjqIy3mzENS%2Fz5YOjm18aZ6aQiGCJWZkdod%2FMBV6AGLhXJKTGqpSeivO54fIXPM60YKAKh%2BrowjAbLK1KIAA%3D&x-oss-date=20240421T092400Z&x-oss-expires=3600&x-oss-signature-version=OSS4-HMAC-SHA256&x-oss-credential=STS.NUZZCCgEGRR3cyaY9dZ6ku53m%2F20240421%2Fcn-beijing%2Foss%2Faliyun_v4_request&x-oss-signature=a88dcb579ba88f826dec5c98c8932ba03eef93fed6e4c0ad757520cfb88525a1"
-                    default>
+                <track label="English" kind="subtitles" srclang="en" src="{{ subtitle_url }}" default>
                 </track>
                 <!-- <track label="English" kind="subtitles" srclang="en" src="english.vtt" default>
         </track> -->
@@ -136,10 +129,11 @@
     <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script> -->
 
     <script>
-        const mp3Src = 'https://dae-parrot.oss-cn-beijing.aliyuncs.com/audio.mp3?x-oss-security-token=CAISwwJ1q6Ft5B2yfSjIr5bvEfn3ippm5ZDYYV%2FQvTkxVrlHmvCYjzz2IHhMfHFpB%2BAdsfU1nG5Q7f0alqRrQoVfQlCBdsZq8JlNqf4Dt2NZ4p7b16cNrbH4M0rxYkeJ8a2%2FSuH9S8ynCZXJQlvYlyh17KLnfDG5JTKMOoGIjpgVBbZ%2BHHPPD1x8CcxROxFppeIDKHLVLozNCBPxhXfKB0ca0WgVy0EHsPrgkpbFsEKA1w2lkr5K%2BL6ceMb0M5NeW75kSMqw0eBMca7M7TVd8RAi9t0t1PQcoW6Z7orCUgMJvU3daLLOkcVmNhV%2Beu0gHKpJvBFEc0a3H3m5fe3WvPUtVYk9O0y3LAtQUlVtj3xHHOKYZGTa%2BoX8I8EODOOBlykOTxx1On00dTSPJAGe59KCRH8kSMuFvGSuSGPF78DWz0t1jPIdpxqAAXQsnYecUcUadJocPVdkUjhA6VAhh5kwtaM2DrDFiCQAGz%2FFu9bgPotgAewGt6pFlDUINeJZm4e2FOvbg89G2j2NZwHpjqIy3mzENS%2Fz5YOjm18aZ6aQiGCJWZkdod%2FMBV6AGLhXJKTGqpSeivO54fIXPM60YKAKh%2BrowjAbLK1KIAA%3D&x-oss-date=20240421T092400Z&x-oss-expires=3600&x-oss-signature-version=OSS4-HMAC-SHA256&x-oss-credential=STS.NUZZCCgEGRR3cyaY9dZ6ku53m%2F20240421%2Fcn-beijing%2Foss%2Faliyun_v4_request&x-oss-signature=92d6f86cebedff4cb8fad3cc8c2812d5aca85196802bddb5afca2a4cb2fa42ab';
-        // const mp3Src = 'http://192.168.31.79:8000/audio.mp3';
-        // const mp3Src = 'test2.mp4';
-        // const mp3Src = 'audio.mp3';
+        const audioSrc = '{{ audio_url }}';
+        const videoSrc = '{{ video_url }}';
+        // const audioSrc = 'http://192.168.31.79:8000/audio.mp3';
+        // const audioSrc = 'test2.mp4';
+        // const audioSrc = 'audio.mp3';
 
         // const subtitleSrc = "https://files.vidstack.io/sprite-fight/subs/english.vtt";
 
@@ -169,7 +163,7 @@
             {
                 audioOnlyMode: true,
                 preload: 'auto',
-                src: mp3Src,
+                src: audioSrc,
                 defaultTracks: [],
                 controlBar: {
                     remainingTimeDisplay: {
@@ -179,11 +173,11 @@
             }
         );
         // audioPlayer.textTrackSettings.setValues({ "mode": "disabled" });
-        // const mp3Src = 'audio.mp3';
+        // const audioSrc = 'audio.mp3';
         // const subtitleSrc = 'english.vtt';
         // 添加音频源
         audioPlayer.src([
-            { type: 'audio/mp3', src: mp3Src }
+            { type: 'audio/mp3', src: audioSrc }
         ]);
 
         if ($('#audioOnlyMode').is(':checked')) {

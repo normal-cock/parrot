@@ -1,10 +1,12 @@
 import oss2
+import base64
 from oss2.credentials import StaticCredentialsProvider
 from parrot_v2.dal.aliyun_sts import aliyun_sts_sington
 
 
 class OSSSington:
     def __init__(self) -> None:
+        self._bucket_name = 'dae-parrot'
         self._bucket = self._get_bucket()
 
     def get_object_url(self, obj_name):
@@ -18,6 +20,26 @@ class OSSSington:
         # 列举Bucket下的所有文件。
         for obj in oss2.ObjectIteratorV2(self._bucket):
             print(obj.key)
+
+    def extract_audio(self, video_key: str):
+        '''
+            注意是收费的, 1小时1.5元左右
+        '''
+        # 对文件example.avi进行音频提取并将提取的音频进行转码。
+        name = '.'.join(video_key.split('.')[:-1])
+        audio_key = f'{name}.mp3'
+        style = 'video/convert,f_mp3,acodec_mp3,ab_100000,vn_1,sn_1'
+        process = "{0}|sys/saveas,o_{1},b_{2}".format(
+            style,
+            oss2.compat.to_string(base64.urlsafe_b64encode(
+                oss2.compat.to_bytes(audio_key))).replace('=', ''),
+            oss2.compat.to_string(base64.urlsafe_b64encode(
+                oss2.compat.to_bytes(self._bucket_name))).replace('=', '')
+        )
+
+        # 调用异步流媒体处理接口。
+        result = self._bucket.async_process_object(video_key, process)
+        return result.status
 
     def _get_bucket(self):
         token_info, err_string = aliyun_sts_sington.get_token_info()
@@ -35,7 +57,7 @@ class OSSSington:
         region = 'cn-beijing'
 
         # 填写Bucket名称。
-        bucket = oss2.Bucket(auth, endpoint, 'dae-parrot', region=region)
+        bucket = oss2.Bucket(auth, endpoint, self._bucket_name, region=region)
         return bucket
 
 
@@ -43,6 +65,7 @@ oss_sington = OSSSington()
 
 if __name__ == '__main__':
     # 通过list来验证权限
-    oss_sington.list_file()
-    print(oss_sington.get_object_url('audio.vtt'))
-    print(oss_sington.get_object_url('audio.mp3'))
+    print(oss_sington.list_file())
+    # print(oss_sington.get_object_url('audio.vtt'))
+    # print(oss_sington.get_object_url('audio.mp3'))
+    print(oss_sington.extract_audio('test2.mp4'))
