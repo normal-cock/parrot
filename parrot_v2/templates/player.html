@@ -206,8 +206,8 @@
                 if (this.currentCueIndex >= 0 && this.currentCueIndex < cues.length) {
                     var cue = cues[this.currentCueIndex];
                     // for more graceful ending
-                    const cueStarttime = cue.startTime - 0.1;
-                    const cueEndtime = cue.endTime + 0.3;
+                    const cueStarttime = cue.startTime - 0.01;
+                    const cueEndtime = cue.endTime + 0.2;
                     // const cueEndtime = cue.endTime;
                     // We can't distinguish between progress bar change and timeupdate
                     // because currentTime change will also trigger seeking and seeked event.
@@ -297,6 +297,15 @@
             list.animate({ scrollTop: pos });
         }
 
+        function formatTime(seconds) {
+            var time = new Date(0, 0, 0, 0, 0, seconds.toFixed(2));
+            var hours = time.getHours().toString().padStart(2, '0');
+            var minutes = time.getMinutes().toString().padStart(2, '0');
+            var seconds = time.getSeconds().toString().padStart(2, '0');
+
+            return hours + ":" + minutes + ":" + seconds;
+        }
+
         audioPlayer.one('loadedmetadata', function () {
             // 获取第一个 TextTrack
             console.log('Subtitles loaded.' + getCuesLength());
@@ -311,7 +320,8 @@
                 var list = $('#subtitle-list');
                 for (var i = 0; i < cues.length; i++) {
                     let cue = cues[i];
-                    var li = $('<li class="list-group-item">').text(cue.text);
+                    var startTime = formatTime(cue.startTime);
+                    var li = $('<li class="list-group-item">').text(startTime + '-' + cue.text);
                     li.click(function () {
                         audioPlayer.currentCueIndex = parseInt(cue.id);
                         flushListHighlight();
@@ -321,6 +331,12 @@
                     list.append(li);
                 }
             }, 1000);
+        });
+
+        // flushListHighlight won't work normally if browser is switched to background
+        // so it's better to invoce it every time when visibility changed
+        document.addEventListener("visibilitychange", function () {
+            flushListHighlight();
         });
 
     </script>

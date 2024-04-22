@@ -7,18 +7,17 @@ from parrot_v2.dal.aliyun_sts import aliyun_sts_sington
 class OSSSington:
     def __init__(self) -> None:
         self._bucket_name = 'dae-parrot'
-        self._bucket = self._get_bucket()
 
     def get_object_url(self, obj_name):
         # 生成下载文件的签名URL，有效时间为3600秒。
         # 设置slash_safe为True，OSS不会对Object完整路径中的正斜线（/）进行转义，此时生成的签名URL可以直接使用。
-        url = self._bucket.sign_url('GET', obj_name, 3600, slash_safe=True)
+        url = self._get_bucket().sign_url('GET', obj_name, 3600, slash_safe=True)
         return url
         # print('签名URL的地址为：', url)
 
     def list_file(self):
         # 列举Bucket下的所有文件。
-        for obj in oss2.ObjectIteratorV2(self._bucket):
+        for obj in oss2.ObjectIteratorV2(self._get_bucket()):
             print(obj.key)
 
     def extract_audio(self, video_key: str):
@@ -38,10 +37,14 @@ class OSSSington:
         )
 
         # 调用异步流媒体处理接口。
-        result = self._bucket.async_process_object(video_key, process)
+        result = self._get_bucket().async_process_object(video_key, process)
         return result.status
 
     def _get_bucket(self):
+        '''
+            注意, 这里的bucket是会过期的, 所以要么不缓存每次都重新生成bucket, 要么将token的过期时间也缓存下来
+            不过也没有网络请求 可以不缓存生成的bucket
+        '''
         token_info, err_string = aliyun_sts_sington.get_token_info()
         if err_string:
             raise Exception(err_string)
