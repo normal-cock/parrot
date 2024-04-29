@@ -19,7 +19,7 @@ def hello_world(passport):
     item_name = 'test2'
     subtitle_url = Markup(oss_sington.get_object_url(f'{item_name}.vtt'))
     audio_url = Markup(oss_sington.get_object_url(f'{item_name}.mp3'))
-    video_url = Markup('')
+    video_url = Markup(oss_sington.get_object_url(f'{item_name}.mp4'))
     # app.logger.info(f'subtitle_url={subtitle_url}||audio_url={audio_url}')
     return render_template(
         'player.html',

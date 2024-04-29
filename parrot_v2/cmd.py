@@ -10,11 +10,11 @@ from parrot_v2.biz.service import (
     add_new_meaning_to_exist_word,
     modify_exist_meaning,
     modify_exist_word,
-    begin_to_review_v2,
     begin_to_review_v3,
     show_predict_v2,
     search,
     rebuild_fts,
+    get_report_stats
 )
 from parrot_v2 import DEBUG
 
@@ -42,7 +42,7 @@ def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('command', choices=[
                         'add', 'review', 'search', 'migrate',
-                        'query_word',
+                        'query_word', 'report',
                         'modify_word', 'modify_meaning',
                         'add_er', 'review_er', 'predict_er',
                         'predict', 'import_v1_data',
@@ -178,6 +178,13 @@ def run():
             print('meaning:', meaning.meaning)
             print(f'use case: {meaning.use_case}')
             print(f'remark: {meaning.remark}')
+
+    if args.command == 'report':
+        report_stats = get_report_stats()
+        print(
+            f'''Study Report:\n You have learnt {report_stats['word_count']} words'''
+            f''', {report_stats['meaning_count']} meanings, {report_stats['review_plan_count']} times of review'''
+        )
 
 
 if __name__ == '__main__':

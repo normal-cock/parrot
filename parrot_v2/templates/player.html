@@ -146,21 +146,33 @@
         }
 
         function storeLocalCurIndex() {
+            console.log('storeLocalCurIndex||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
             localStorage.setItem(localCurIndexKey, audioPlayer.currentCueIndex)
         }
 
-        function playCurCue() {
+        function jump2CurCue() {
+            // https://docs.videojs.com/docs/api/player.html#MethodsreadyState
+            if (audioPlayer.readyState() < 1) {
+                return
+            }
+            console.log('jump2CurCue||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
             var cue = audioPlayer.textTracks()[0]?.cues[audioPlayer.currentCueIndex];
             audioPlayer.currentTime(cue.startTime + adjustTime);
             // only improve ending time exceedence, couldn't solve it completely
-            setTimeout(singleLineCalibration, cue.endTime - cue.startTime - 0.1)
-            setTimeout(singleLineCalibration, cue.endTime - cue.startTime)
-            setTimeout(singleLineCalibration, cue.endTime - cue.startTime + 0.1)
+            setTimeout(timeUpdate, cue.endTime - cue.startTime - 0.1)
+            setTimeout(timeUpdate, cue.endTime - cue.startTime)
+            setTimeout(timeUpdate, cue.endTime - cue.startTime + 0.1)
 
             storeLocalCurIndex();
         }
 
-        function singleLineCalibration() {
+        function timeUpdate() {
+            // https://docs.videojs.com/docs/api/player.html#MethodsreadyState
+            if (audioPlayer.readyState() < 1) {
+                return
+            }
+            console.log('timeUpdate||currentTime:' + audioPlayer.currentTime());
+
             const currentTime = audioPlayer.currentTime();
             const cues = Array.from(audioPlayer.textTracks()[0]?.cues || []);
             if (audioPlayer.currentCueIndex >= 0 && audioPlayer.currentCueIndex < cues.length) {
@@ -183,8 +195,8 @@
 
                     flushListHighlight();
                     // less than 0.1 is ok
-                    console.log('Endtime exceedance:' + (audioPlayer.currentTime() - cueEndtime));
-                    playCurCue();
+                    console.log('timeUpdate||Endtime exceedance:' + (audioPlayer.currentTime() - cueEndtime));
+                    jump2CurCue();
                 }
             } else (
                 audioPlayer.pause()
@@ -213,6 +225,37 @@
 
             return hours + ":" + minutes + ":" + seconds;
         }
+
+        function loadedmetadata() {
+            // 获取第一个 TextTrack
+            console.log('loadedmetadata||Subtitles loaded:' + getCuesLength());
+            setTimeout(function () {
+                console.log('loadedmetadata||Subtitles loaded:' + getCuesLength());
+                const cues = Array.from(audioPlayer.textTracks()[0]?.cues || []);
+                //为每个cue分配一个唯一的ID
+                for (var i = 0; i < cues.length; i++) {
+                    cues[i].id = i.toString();
+                }
+
+                var list = $('#subtitle-list');
+                for (var i = 0; i < cues.length; i++) {
+                    let cue = cues[i];
+                    var startTime = formatTime(cue.startTime);
+                    var li = $('<li class="list-group-item">').text(startTime + '-' + cue.text);
+                    li.click(function () {
+                        audioPlayer.currentCueIndex = parseInt(cue.id);
+                        flushListHighlight();
+                        // audioPlayer.currentTime(cue.startTime);
+                        jump2CurCue();
+                        audioPlayer.play();
+                    });
+                    list.append(li);
+                }
+                fetchLocalCurIndex();
+                flushListHighlight();
+                jump2CurCue();
+            }, 1000);
+        }
         // https://videojs.com/guides/options/
         const audioPlayer = videojs(
             'audioPlayer',
@@ -239,36 +282,52 @@
         }
         $('#audioOnlyMode').change(function () {
             if ($('#audioOnlyMode').is(':checked')) {
+                audioPlayer.src({
+                    src: audioSrc,
+                    type: 'audio/mp3',
+                });
                 audioPlayer.audioOnlyMode(true);
+                audioPlayer.load();
+                audioPlayer.one('loadedmetadata', loadedmetadata);
+                jump2CurCue();
+                console.log('audioOnlyMode||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
             } else {
+                audioPlayer.src({
+                    src: videoSrc,
+                    type: 'video/mp4',
+                });
                 audioPlayer.audioOnlyMode(false);
+                audioPlayer.load();
+                audioPlayer.one('loadedmetadata', loadedmetadata);
+                jump2CurCue();
+                console.log('audioOnlyMode||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
             }
         });
         fetchLocalCurIndex();
 
         audioPlayer.on('timeupdate', function () {
             if ($('#singleLineLoop').is(':checked')) {
-                singleLineCalibration();
+                timeUpdate();
             }
         });
 
         audioPlayer.on('seeking', function () {
-            console.log('seeking currentTime:' + this.currentTime());
+            // console.log('seeking currentTime:' + this.currentTime());
         });
         audioPlayer.on('seeked', function () {
-            console.log('seeked currentTime:' + this.currentTime());
+            // console.log('seeked currentTime:' + this.currentTime());
         });
         function previousAudio() {
             audioPlayer.currentCueIndex -= 1;
             audioPlayer.currentCueIndex %= getCuesLength();
             flushListHighlight();
-            playCurCue();
+            jump2CurCue();
         };
         function nextAudio() {
             audioPlayer.currentCueIndex += 1;
             audioPlayer.currentCueIndex %= getCuesLength();
             flushListHighlight();
-            playCurCue();
+            jump2CurCue();
         };
 
         window.addEventListener('keydown', function (event) {
@@ -302,36 +361,7 @@
             nextAudio();
         });
 
-        audioPlayer.one('loadedmetadata', function () {
-            // 获取第一个 TextTrack
-            console.log('Subtitles loaded.' + getCuesLength());
-            setTimeout(function () {
-                console.log('Subtitles loaded.' + getCuesLength());
-                const cues = Array.from(audioPlayer.textTracks()[0]?.cues || []);
-                //为每个cue分配一个唯一的ID
-                for (var i = 0; i < cues.length; i++) {
-                    cues[i].id = i.toString();
-                }
-
-                var list = $('#subtitle-list');
-                for (var i = 0; i < cues.length; i++) {
-                    let cue = cues[i];
-                    var startTime = formatTime(cue.startTime);
-                    var li = $('<li class="list-group-item">').text(startTime + '-' + cue.text);
-                    li.click(function () {
-                        audioPlayer.currentCueIndex = parseInt(cue.id);
-                        flushListHighlight();
-                        // audioPlayer.currentTime(cue.startTime);
-                        playCurCue();
-                        audioPlayer.play();
-                    });
-                    list.append(li);
-                }
-                fetchLocalCurIndex();
-                flushListHighlight();
-                playCurCue();
-            }, 1000);
-        });
+        audioPlayer.one('loadedmetadata', loadedmetadata);
 
         // flushListHighlight won't work normally if browser is switched to background
         // so it's better to invoce it every time when visibility changed

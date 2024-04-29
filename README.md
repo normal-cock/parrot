@@ -18,6 +18,7 @@
     - [具体实现](#具体实现)
     - [changelog](#changelog)
         - [Future](#future)
+            - [根据单词和例句的中文翻译，复习英文 P2](#根据单词和例句的中文翻译复习英文-p2)
             - [随时听 P2](#随时听-p2)
             - [更新model P3](#更新model-p3)
             - [comparison功能 P3](#comparison功能-p3)
@@ -91,6 +92,8 @@
 
 ### Future
 
+#### 根据单词和例句的中文翻译，复习英文 P2
+
 #### 随时听 P2
 
 **想法**
@@ -104,10 +107,15 @@
 * [P0]逐句循环播放——Done
 * [P0]快进到上一句或下一句——Done
 * [P0]本次播放进度缓存——Done
+* [P0]支持视频语音的切换——Done
 * [P1]字幕时间可以前端调整
 * [P1]播放进度和字幕时间的存储
+* [P2]偶尔自动回到开头的bug修复，尤其是切换视频的时候。看看是否需要加加载状态时锁定的逻辑。
 * [P2]播放列表
+* [P2]选中查词，选中自动翻译
 * [P3]上传页面
+    * 设置缓存时间: 设置为`private`
+        * https://help.aliyun.com/zh/oss/user-guide/manage-object-metadata-10?spm=5176.28426678.J_HeJR_wZokYt378dwP-lLl.835.c4065181r2ZHCz#4815c9a499evb
 
 核心作用
 * 利用碎花片时间

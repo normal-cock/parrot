@@ -1,5 +1,6 @@
 import datetime
 import random
+import signal
 import numpy as np
 from parrot_v2 import Session, DEBUG
 from parrot_v2.model import Word, Meaning, ReviewPlan, ReviewPlanType, AddCounter, ReviewStatus
@@ -17,6 +18,22 @@ def get_word_or_none(text):
         Word.text == text).one_or_none()
     # session.close()
     return word
+
+
+def get_report_stats():
+    '''
+        获得统计数据
+        return {'word_count':int, 'meaning_count':int, 'review_plan_count':int}
+    '''
+    session = Session()
+    word_count = session.query(Word).count()
+    meaning_count = session.query(Meaning).count()
+    review_plan_count = session.query(ReviewPlan).count()
+    return {
+        'word_count': word_count,
+        'meaning_count': meaning_count,
+        'review_plan_count': review_plan_count,
+    }
 
 
 def add_new_word_and_meaning(text, phonetic_symbol, meaning, use_case, remark):
@@ -194,6 +211,16 @@ def begin_to_review_v3(begin_time, end_time):
     begin_time 和 end_time 分别为要复习的复习计划的 time_to_review 范围
     '''
     start_time = datetime.datetime.now()
+    reviewed_plan_count = 0
+    new_review_plan_count = 0
+
+    def ctrlc_handler(signum, frame):
+        print("\n\nReview Finished and generated {} new plans, costing {}".format(
+            new_review_plan_count,
+            datetime.datetime.now() - start_time,
+        ))
+        exit()
+    signal.signal(signal.SIGINT, ctrlc_handler)
     session = Session()
     review_plans: List[ReviewPlan] = session.query(ReviewPlan).filter(
         ReviewPlan.time_to_review >= begin_time,
@@ -215,22 +242,23 @@ def begin_to_review_v3(begin_time, end_time):
     if split_count == 0:
         split_count = 1
     review_plans_in_batch = np.array_split(plans_list, split_count)
-    reviewed_plan_count = 0
-    new_review_plan_count = 0
+
     total_review_plan_count = len(review_plans)
 
     for sub_review_plans_list in review_plans_in_batch:
         tmp_review_plans = []
         for tmp_review_plans2 in sub_review_plans_list:
             tmp_review_plans.extend(tmp_review_plans2)
-        tmp_new_review_plan_count = _review_in_batch(session, tmp_review_plans, reviewed_plan_count, total_review_plan_count)
+        tmp_new_review_plan_count = _review_in_batch(
+            session, tmp_review_plans, reviewed_plan_count, total_review_plan_count)
         reviewed_plan_count += len(tmp_review_plans)
         new_review_plan_count += tmp_new_review_plan_count
-    
+
     print("\nFinished and generated {} new plans, costing {}".format(
         new_review_plan_count,
         datetime.datetime.now() - start_time,
     ))
+
 
 def _review_in_batch(session, review_plans, reviewed_plan_count, total_review_plan_count) -> int:
     '''
@@ -245,11 +273,11 @@ def _review_in_batch(session, review_plans, reviewed_plan_count, total_review_pl
     for index, review_plan in enumerate(review_plans):
         print("")
         print("Progress: {}/{} ({}/{} in batch)".format(
-            reviewed_plan_count+index+1, 
+            reviewed_plan_count+index+1,
             total_review_plan_count,
             index+1,
             batch_count,
-            ))
+        ))
         result = _display_review_card(review_plan)
         new_status_value = int(result)+1
         review_plan.complete(new_status_value, is_gen_new_plan=False)
@@ -336,6 +364,7 @@ def _review_in_batch(session, review_plans, reviewed_plan_count, total_review_pl
 
     session.commit()
     return new_review_plan_count
+
 
 def _display_review_card(plan: ReviewPlan) -> int:
     '''
