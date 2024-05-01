@@ -16,16 +16,23 @@ def hello_world(passport):
     if passport.upper() != 'Rkf7br9rmUMB'.upper():
         return make_response('', 404)
     # file_name = 'audio'
-    item_name = 'test2'
+    item_name = 'apu_hertz_weekly_20240412'
     subtitle_url = Markup(oss_sington.get_object_url(f'{item_name}.vtt'))
     audio_url = Markup(oss_sington.get_object_url(f'{item_name}.mp3'))
     video_url = Markup(oss_sington.get_object_url(f'{item_name}.mp4'))
     # app.logger.info(f'subtitle_url={subtitle_url}||audio_url={audio_url}')
+    adjust_time = 0
     return render_template(
         'player.html',
         item_name=item_name,
         subtitle_url=subtitle_url,
         audio_url=audio_url,
         video_url=video_url,
-        adjust_time=0.39,
+        adjust_time=adjust_time,
     )
+
+
+'''
+data record
+
+'''

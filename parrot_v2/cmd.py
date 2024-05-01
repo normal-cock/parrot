@@ -42,7 +42,7 @@ def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('command', choices=[
                         'add', 'review', 'search', 'migrate',
-                        'query_word', 'report',
+                        'query_word', 'report', 'rebuild_fts',
                         'modify_word', 'modify_meaning',
                         'add_er', 'review_er', 'predict_er',
                         'predict', 'import_v1_data',
@@ -108,6 +108,8 @@ def run():
             os.path.abspath(__file__)), 'alembic.ini')
         os.system("mkdir -p {}".format(DATA_DIR))
         os.system("alembic -c {} upgrade head".format(alembic_config))
+        rebuild_fts()
+    if args.command == 'rebuild_fts':
         rebuild_fts()
     if args.command == 'predict':
         show_predict_v2()

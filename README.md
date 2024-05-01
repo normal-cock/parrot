@@ -16,6 +16,8 @@
             - [如果有一天没有复习，第二天再复习时怎么办](#如果有一天没有复习第二天再复习时怎么办)
             - [在进行第五阶段复习时，仍然需要看句子才能知道含义怎么办？](#在进行第五阶段复习时仍然需要看句子才能知道含义怎么办)
     - [具体实现](#具体实现)
+    - [issue log](#issue-log)
+        - [Error: stepping, database disk image is malformed (11)](#error-stepping-database-disk-image-is-malformed-11)
     - [changelog](#changelog)
         - [Future](#future)
             - [根据单词和例句的中文翻译，复习英文 P2](#根据单词和例句的中文翻译复习英文-p2)
@@ -88,6 +90,12 @@
 每次新加入一个单词，或者完成某一阶段（除了第五个复习阶段）的复习时，在该表中为该单词添加一条新的记录，代表下一次复习计划。
 每次复习时，从复习计划表中选出未记录来复习，并根据复习结果和当前复习计划所处的阶段，决定是否为下一次复习创建新的复习计划。同时，将已经复习过的复习计划记录标记为已复习。
 
+## issue log
+
+### Error: stepping, database disk image is malformed (11)
+
+sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的库依然有这个问题。最终通过`rebuild_fts`解决了，估计是索引有什么问题。
+
 ## changelog
 
 ### Future
@@ -113,6 +121,7 @@
 * [P2]偶尔自动回到开头的bug修复，尤其是切换视频的时候。看看是否需要加加载状态时锁定的逻辑。
 * [P2]播放列表
 * [P2]选中查词，选中自动翻译
+* [P3]用vue重构
 * [P3]上传页面
     * 设置缓存时间: 设置为`private`
         * https://help.aliyun.com/zh/oss/user-guide/manage-object-metadata-10?spm=5176.28426678.J_HeJR_wZokYt378dwP-lLl.835.c4065181r2ZHCz#4815c9a499evb
@@ -124,7 +133,7 @@
 
 
 
-**已有软件调研**
+**调研记录**
 20240422
     声音和字幕不匹配的问题
         * 本身就不匹配。增加微调值，影响startTime和endTime

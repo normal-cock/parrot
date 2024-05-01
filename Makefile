@@ -21,3 +21,6 @@ run_nginx:
 
 extract_mp3:
 	ffmpeg -i test2.mp4 -vn -acodec libmp3lame test2.mp3
+
+convert_subtitle_from_srt:
+	pysubs2 --to vtt {xxx.srt}
