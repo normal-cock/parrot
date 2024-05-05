@@ -189,8 +189,9 @@
                 // because most of the time, mannual progess bar operation aimed at big
                 // time change
                 if (!(cueStarttime <= currentTime && currentTime < cueEndtime)) {
+                    // adjust cue index proactively is not often used, so cancel this temporarily
                     if (Math.abs(currentTime - cueEndtime) > 1) {
-                        audioPlayer.currentCueIndex = findProperCueIndex(currentTime)
+                        // audioPlayer.currentCueIndex = findProperCueIndex(currentTime)
                     }
 
                     flushListHighlight();
@@ -243,11 +244,14 @@
                     var startTime = formatTime(cue.startTime);
                     var li = $('<li class="list-group-item">').text(startTime + '-' + cue.text);
                     li.click(function () {
-                        audioPlayer.currentCueIndex = parseInt(cue.id);
-                        flushListHighlight();
-                        // audioPlayer.currentTime(cue.startTime);
-                        jump2CurCue();
-                        audioPlayer.play();
+                        const selction = document.getSelection();
+                        if (selction.type != 'Range') {
+                            audioPlayer.currentCueIndex = parseInt(cue.id);
+                            flushListHighlight();
+                            // audioPlayer.currentTime(cue.startTime);
+                            jump2CurCue();
+                            audioPlayer.play();
+                        }
                     });
                     list.append(li);
                 }
@@ -282,6 +286,7 @@
         }
         $('#audioOnlyMode').change(function () {
             if ($('#audioOnlyMode').is(':checked')) {
+                audioPlayer.pause();
                 audioPlayer.src({
                     src: audioSrc,
                     type: 'audio/mp3',
@@ -292,6 +297,7 @@
                 jump2CurCue();
                 console.log('audioOnlyMode||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
             } else {
+                audioPlayer.pause();
                 audioPlayer.src({
                     src: videoSrc,
                     type: 'video/mp4',
@@ -330,23 +336,37 @@
             jump2CurCue();
         };
 
-        window.addEventListener('keydown', function (event) {
-            switch (event.keyCode) {
+        window.addEventListener('keydown', function (e) {
+            switch (e.keyCode) {
                 case 32: // 空格键
                     if (audioPlayer.paused()) {
                         audioPlayer.play();
                     } else {
                         audioPlayer.pause();
                     }
+                    e.preventDefault();
                     break;
                 case 37: // 左箭头键
                     previousAudio();
+                    e.preventDefault();
                     break;
                 case 39: // 右箭头键
                     nextAudio()
+                    e.preventDefault();
                     break;
             }
         }, true);
+
+        document.addEventListener('copy', function (e) {
+            const selction = document.getSelection();
+            if (selction.type == 'Range') {
+                const text_only = selction.toString();
+                const clipdata = e.clipboardData || window.clipboardData;
+                clipdata.setData('text/plain', text_only);
+                clipdata.setData('text/html', text_only);
+                e.preventDefault();
+            }
+        });
 
         navigator.mediaSession.setActionHandler('play', function () {
             audioPlayer.play();
