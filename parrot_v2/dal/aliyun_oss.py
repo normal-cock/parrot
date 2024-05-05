@@ -7,11 +7,15 @@ from parrot_v2.dal.aliyun_sts import aliyun_sts_sington
 class OSSSington:
     def __init__(self) -> None:
         self._bucket_name = 'dae-parrot'
+        self._expires = 7*24*3600
+
+    def get_expire_sec(self):
+        return self._expires
 
     def get_object_url(self, obj_name):
         # 生成下载文件的签名URL，有效时间为3600秒。
         # 设置slash_safe为True，OSS不会对Object完整路径中的正斜线（/）进行转义，此时生成的签名URL可以直接使用。
-        url = self._get_bucket().sign_url('GET', obj_name, 7*24*3600, slash_safe=True)
+        url = self._get_bucket().sign_url('GET', obj_name, self._expires, slash_safe=True)
         return url
         # print('签名URL的地址为：', url)
 
