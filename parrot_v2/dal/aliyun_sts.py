@@ -16,6 +16,7 @@ from alibabacloud_tea_util.client import Client as UtilClient
 
 class STSTokenSington:
     '''
+        https://ram.console.aliyun.com/overview
         相当于利用openapi, 来让RAM用户parrot来扮演parrot-role角色。
         之后增加授权时, 都给parrot-role增加授权即可, RAM用户parrot只需要STS权限来进行角色扮演
     '''
@@ -26,6 +27,9 @@ class STSTokenSington:
         self.client = STSTokenSington.create_client()
         self._token_info = None
         self._expire_timestamp = 0
+
+    def get_expire_sec(self) -> float:
+        return self._expire_timestamp
 
     def get_token_info(self):
         '''

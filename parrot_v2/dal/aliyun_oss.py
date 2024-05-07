@@ -7,10 +7,14 @@ from parrot_v2.dal.aliyun_sts import aliyun_sts_sington
 class OSSSington:
     def __init__(self) -> None:
         self._bucket_name = 'dae-parrot'
-        self._expires = 7*24*3600
+        # expiration of signed url is also affected by token expiration which
+        # is 3600s by default, you can change that in
+        # https://ram.console.aliyun.com/roles/detail?roleName=parrot-role
+        self._expires = 3600
 
-    def get_expire_sec(self):
-        return self._expires
+    def get_expire_sec(self) -> float:
+        token_expiration = aliyun_sts_sington.get_expire_sec()
+        return min(self._expires, token_expiration)
 
     def get_object_url(self, obj_name):
         # 生成下载文件的签名URL，有效时间为3600秒。

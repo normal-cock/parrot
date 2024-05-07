@@ -20,10 +20,15 @@
         - [Error: stepping, database disk image is malformed (11)](#error-stepping-database-disk-image-is-malformed-11)
     - [changelog](#changelog)
         - [Future](#future)
+            - [优化 P1](#优化-p1)
+            - [增加log P2](#增加log-p2)
             - [根据单词和例句的中文翻译，复习英文 P2](#根据单词和例句的中文翻译复习英文-p2)
+            - [移动端支持 P1](#移动端支持-p1)
             - [随时听 P2](#随时听-p2)
             - [更新model P3](#更新model-p3)
             - [comparison功能 P3](#comparison功能-p3)
+        - [v2.2.0](#v220)
+            - [随时听](#随时听)
         - [2023-02 v2.1.0](#2023-02-v210)
             - [1. 对phonetic symbol合法性进行检查，防止输错 P1——Done](#1-对phonetic-symbol合法性进行检查防止输错-p1done)
             - [2. 支持修改word.text P0——Done](#2-支持修改wordtext-p0done)
@@ -100,37 +105,42 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 
 ### Future
 
+#### 优化 P1
+增加删除word或meaning的能力
+
+#### 增加log P2
+
 #### 根据单词和例句的中文翻译，复习英文 P2
+
+#### 移动端支持 P1
+
+充分利用碎片时间。
+* 手机背单词
+* 手机查单词
 
 #### 随时听 P2
 
 **想法**
-支持将任意音频材料输入，然后行程逐句的音频+字幕。同时手机端可以播放，一方面增加输入，另一方面可以充分利用碎片化时间。
-字幕：
+支持将任意音频材料输入，然后按照字幕逐句播放，支持逐句循环，同时手机端可以播放。一方面增加输入，丰富输入的英语类型；另一方面可以充分利用碎片化时间。
+
+**字幕**
 * 可以借助飞书妙计，将视频转音频，然后上传音频，生成字幕，然后下载字幕。
-* 互联网上可以下载到的影视作品的字幕
+* 互联网上可以下载到的影视作品的字幕，上专门的字幕网站下载
 * 付费的语音转文字接口
 * 中文字幕，作为可选项。后期可以考虑使用chatgpt或者其他开源的大模型翻译
-播放器功能
-* [P0]逐句循环播放——Done
-* [P0]快进到上一句或下一句——Done
-* [P0]本次播放进度缓存——Done
-* [P0]支持视频语音的切换——Done
+
+**播放器功能**
 * [P1]字幕时间可以前端调整
-* [P1]播放进度和字幕时间的存储
-* [P2]偶尔自动回到开头的bug修复，尤其是切换视频的时候。看看是否需要加加载状态时锁定的逻辑。
-* [P2]播放列表
+* [P2]建模
+    * [P2]字幕修正时间的存储
+    * [P2]播放列表
 * [P2]选中查词，选中自动翻译
-* [P3]用vue重构
+* [P4]专辑列表（二级播放列表）
+* [P3]锁屏时，不显示上一首按钮
+* [P4]用vue重构
 * [P3]上传页面
     * 设置缓存时间: 设置为`private`
         * https://help.aliyun.com/zh/oss/user-guide/manage-object-metadata-10?spm=5176.28426678.J_HeJR_wZokYt378dwP-lLl.835.c4065181r2ZHCz#4815c9a499evb
-
-核心作用
-* 利用碎花片时间
-* 播放模式，可单句循环
-* 丰富输入的英语类型
-
 
 
 **调研记录**
@@ -168,7 +178,6 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
         * https://www.vidstack.io/docs/wc/player/components/display/captions?styling=default-theme
         * video.js
         * 尝试AI写代码工具
-* 
 
 #### 更新model P3
 
@@ -181,6 +190,16 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 comparison有自己的review_plan。review_plan加一个type，代表
 review的时候先展示每个meaning的word的text，
 与meaning同级，有meaning和review_plan
+
+### v2.2.0
+
+#### 随时听
+
+* [P0]逐句循环播放——Done
+* [P0]快进到上一句或下一句——Done
+* [P0]本次播放进度缓存——Done
+* [P0]支持视频语音的切换——Done
+* [P2]偶尔自动回到开头的bug修复，尤其是切换视频的时候。看看是否需要加加载状态时锁定的逻辑——Done
 
 ### 2023-02 v2.1.0
 
