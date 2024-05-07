@@ -21,7 +21,6 @@
     - [changelog](#changelog)
         - [Future](#future)
             - [优化 P1](#优化-p1)
-            - [增加log P2](#增加log-p2)
             - [根据单词和例句的中文翻译，复习英文 P2](#根据单词和例句的中文翻译复习英文-p2)
             - [移动端支持 P1](#移动端支持-p1)
             - [随时听 P2](#随时听-p2)
@@ -29,6 +28,7 @@
             - [comparison功能 P3](#comparison功能-p3)
         - [v2.2.0](#v220)
             - [随时听](#随时听)
+            - [增加log P2——Done](#增加log-p2done)
         - [2023-02 v2.1.0](#2023-02-v210)
             - [1. 对phonetic symbol合法性进行检查，防止输错 P1——Done](#1-对phonetic-symbol合法性进行检查防止输错-p1done)
             - [2. 支持修改word.text P0——Done](#2-支持修改wordtext-p0done)
@@ -106,9 +106,8 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 ### Future
 
 #### 优化 P1
-增加删除word或meaning的能力
 
-#### 增加log P2
+增加删除word或meaning的能力
 
 #### 根据单词和例句的中文翻译，复习英文 P2
 
@@ -200,6 +199,8 @@ review的时候先展示每个meaning的word的text，
 * [P0]本次播放进度缓存——Done
 * [P0]支持视频语音的切换——Done
 * [P2]偶尔自动回到开头的bug修复，尤其是切换视频的时候。看看是否需要加加载状态时锁定的逻辑——Done
+
+#### 增加log P2——Done
 
 ### 2023-02 v2.1.0
 

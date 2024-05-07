@@ -9,6 +9,7 @@ from parrot_v2.dal.aliyun_oss import oss_sington
 from werkzeug.middleware.proxy_fix import ProxyFix
 from parrot_v2 import DATA_DIR
 from parrot_v2.biz.service_v2 import get_media_url
+from parrot_v2.util import logger
 
 app = Flask(__name__)
 
@@ -33,10 +34,10 @@ def hello_world(passport):
     media_url_dict = json.loads(session.get(_media_url_key, '{}'))
     if not ('expiration_time' in media_url_dict and time.time() < media_url_dict['expiration_time']):
         media_url_dict = get_media_url()
-        app.logger.info(f'regened media url:{media_url_dict}')
+        logger.info(f'regened media url:{media_url_dict}')
         session[_media_url_key] = json.dumps(media_url_dict)
     else:
-        app.logger.info(f'reuse media url:{media_url_dict}')
+        logger.info(f'reuse media url:{media_url_dict}')
     subtitle_url = Markup(media_url_dict['subtitle_url'])
     audio_url = Markup(media_url_dict['audio_url'])
     video_url = Markup(media_url_dict['video_url'])
