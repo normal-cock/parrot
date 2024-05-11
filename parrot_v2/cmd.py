@@ -16,6 +16,7 @@ from parrot_v2.biz.service import (
     rebuild_fts,
     get_report_stats
 )
+from parrot_v2.biz.service_v2 import add_item
 from parrot_v2 import DEBUG
 
 from parrot_v2.biz.service_er import add_er_lookup_record, begin_er_lookup_review, predict_er
@@ -46,6 +47,7 @@ def run():
                         'modify_word', 'modify_meaning',
                         'add_er', 'review_er', 'predict_er',
                         'predict', 'import_v1_data',
+                        'add_item',
                         'initialize'])
     args = parser.parse_args()
 
@@ -187,6 +189,19 @@ def run():
             f'''Study Report:\n You have learnt {report_stats['word_count']} words'''
             f''', {report_stats['meaning_count']} meanings, {report_stats['review_plan_count']} times of review'''
         )
+    if args.command == 'add_item':
+        item_name = rlinput('Item Name:', '').strip()
+        if not item_name:
+            exit('Error: empty item name')
+        item_id = rlinput(
+            'Item ID(leave empty for auto generation):', item_name).strip()
+        item_type = int(
+            rlinput('Item Type(1:MP3 only 2:MP4+MP3):', '2').strip())
+        adjustment = float(
+            rlinput('Subtitle Adjustment(negative is allowed):', '0').strip())
+        add_item(item_name=item_name, item_id=item_id,
+                 adjustment=adjustment, item_type=item_type)
+        print('Item added')
 
 
 if __name__ == '__main__':

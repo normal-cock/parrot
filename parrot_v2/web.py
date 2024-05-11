@@ -1,15 +1,16 @@
 import json
 import time
 from cachelib.file import FileSystemCache
-from flask import Flask, session
+from flask import Flask, session, request
 from flask import render_template, make_response
 from flask_session import Session
 from markupsafe import Markup
 from parrot_v2.dal.aliyun_oss import oss_sington
 from werkzeug.middleware.proxy_fix import ProxyFix
-from parrot_v2 import DATA_DIR
-from parrot_v2.biz.service_v2 import get_media_url
+from parrot_v2 import DATA_DIR, PW
+from parrot_v2.biz.service_v2 import get_media_url, get_item_list, get_item_total
 from parrot_v2.util import logger
+from flask_paginate import Pagination, get_page_parameter
 
 app = Flask(__name__)
 
@@ -27,13 +28,35 @@ app.wsgi_app = ProxyFix(
 
 
 @app.route("/<passport>")
-def hello_world(passport):
-    if passport.upper() != 'Rkf7br9rmUMB'.upper():
+def index(passport):
+    if passport.upper() != PW.upper():
         return make_response('', 404)
-    _media_url_key = 'media_url_dict'
+
+    page = request.args.get(get_page_parameter(), type=int, default=1)
+    item_total = get_item_total()
+    pagination = Pagination(page=page, total=item_total, css_framework='bootstrap5',
+                            search=False, record_name='items')
+    offsite = (page - 1) * pagination.per_page
+    item_list = get_item_list(offsite, pagination.per_page)
+
+    return render_template(
+        'index.html',
+        items=item_list,
+        pagination=pagination,
+    )
+
+
+@app.route("/<passport>/<item_id>")
+def item_play_page(passport, item_id):
+    if passport.upper() != PW.upper():
+        return make_response('', 404)
+    _media_url_key = f'media_url_dict:{item_id}'
     media_url_dict = json.loads(session.get(_media_url_key, '{}'))
     if not ('expiration_time' in media_url_dict and time.time() < media_url_dict['expiration_time']):
-        media_url_dict = get_media_url()
+        media_url_dict, err_string = get_media_url(item_id)
+        if len(err_string) != 0:
+            logger.error(err_string)
+            return make_response(err_string, 404)
         logger.info(f'regened media url:{media_url_dict}')
         session[_media_url_key] = json.dumps(media_url_dict)
     else:
@@ -41,18 +64,12 @@ def hello_world(passport):
     subtitle_url = Markup(media_url_dict['subtitle_url'])
     audio_url = Markup(media_url_dict['audio_url'])
     video_url = Markup(media_url_dict['video_url'])
-    adjust_time = 0
+    adjust_time = media_url_dict.get('adjustment', 0)
     return render_template(
         'player.html',
-        item_name=media_url_dict['item_name'],
+        item_id=item_id,
         subtitle_url=subtitle_url,
         audio_url=audio_url,
         video_url=video_url,
         adjust_time=adjust_time,
     )
-
-
-'''
-data record
-
-'''

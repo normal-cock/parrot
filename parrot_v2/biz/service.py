@@ -484,6 +484,7 @@ def search(query: str):
         remark = print('remark:', meaning_dto.remark)
     else:
         print("not found")
+    session.close()
 
 
 def rebuild_fts():

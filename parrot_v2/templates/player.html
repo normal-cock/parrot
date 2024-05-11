@@ -116,7 +116,7 @@
         const audioSrc = '{{ audio_url }}';
         const videoSrc = '{{ video_url }}';
         const adjustTime = {{ adjust_time }};
-        const localCurIndexKey = 'parrot:{{ item_name }}:local_cur_index';
+        const localCurIndexKey = 'parrot:{{ item_id }}:local_cur_index';
 
         function findProperCueIndex(currentTime) {
             const cues = Array.from(audioPlayer.textTracks()[0]?.cues || []);
