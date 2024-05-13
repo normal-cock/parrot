@@ -130,10 +130,12 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 
 **播放器功能**
 * [P1]字幕时间可以前端调整
+* [P1]手机端支持全屏，同时研究一下怎么使用代码的配置（因为有语法提示）
+    * https://github.com/prateekrastogi/videojs-landscape-fullscreen
+    * 20240512 测试没有生效，有时间调试看看是不是js或网络问题，顺便看看移动版无法加载字幕的原因
 * [P1]建模
     * [P2]字幕修正时间的存储——Done
     * [P1]播放列表——Done
-* [P1]手机端支持全屏
 * [P2]选中查词，选中自动翻译
 * [P4]专辑列表（二级播放列表）
 * [P3]锁屏时，不显示上一首按钮
@@ -144,6 +146,12 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 
 
 **调研记录**
+20240512
+    加载字幕失败: Text Tracks are being loaded from another origin but the crossorigin attribute isn't used
+        https://stackoverflow.com/questions/37236418/html5-track-element-does-not-have-a-crossorigin-attribute
+    手机端加载不出来
+        点击chrome浏览器右下方"..."，选择“请求切换到桌面版网站”
+            还是不行的话研究怎么调试移动端
 20240422
     声音和字幕不匹配的问题
         * 本身就不匹配。增加微调值，影响startTime和endTime
