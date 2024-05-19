@@ -64,7 +64,7 @@ def item_play_page(passport, item_id):
     subtitle_url = Markup(media_url_dict['subtitle_url'])
     audio_url = Markup(media_url_dict['audio_url'])
     video_url = Markup(media_url_dict['video_url'])
-    adjust_time = media_url_dict.get('adjustment', 0)
+    adjust_time = media_url_dict.get('adjustment', 10)
     return render_template(
         'player.html',
         item_id=item_id,

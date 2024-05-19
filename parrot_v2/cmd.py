@@ -147,11 +147,11 @@ def run():
             print("{}. {}".format(i+1, meaning.meaning))
             tmp_meaning_dict[str(i+1)] = meaning
         meaning_choice = rlinput(
-            "input existing meaning index(-1 to add a new meaning):", "-1").strip()
-        if meaning_choice != "-1" and meaning_choice not in tmp_meaning_dict:
+            "input existing meaning index(0 to add a new meaning):", "0").strip()
+        if meaning_choice != "0" and meaning_choice not in tmp_meaning_dict:
             exit('Error: invalid index')
 
-        if meaning_choice == "-1":
+        if meaning_choice == "0":
             exit()
         meaning_obj = tmp_meaning_dict[meaning_choice]
 

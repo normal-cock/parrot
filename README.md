@@ -22,6 +22,7 @@
         - [Future](#future)
             - [优化 P2](#优化-p2)
             - [根据单词和例句的中文翻译，复习英文 P2](#根据单词和例句的中文翻译复习英文-p2)
+            - [断点续背功能 P1](#断点续背功能-p1)
             - [移动端支持 P1](#移动端支持-p1)
             - [随时听 P1](#随时听-p1)
             - [更新model P3](#更新model-p3)
@@ -111,6 +112,11 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 
 #### 根据单词和例句的中文翻译，复习英文 P2
 
+#### 断点续背功能 P1
+
+背到一半不小心退出，结果要重背。
+续背功能跟reviewplan的生成解耦开，不影响第二天复习。
+
 #### 移动端支持 P1
 
 充分利用碎片时间。
@@ -129,10 +135,11 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 * 中文字幕，作为可选项。后期可以考虑使用chatgpt或者其他开源的大模型翻译
 
 **播放器功能**
-* [P1]字幕时间可以前端调整
+* [P1]字幕时间可以前端调整——Done
 * [P1]手机端支持全屏，同时研究一下怎么使用代码的配置（因为有语法提示）
     * https://github.com/prateekrastogi/videojs-landscape-fullscreen
     * 20240512 测试没有生效，有时间调试看看是不是js或网络问题，顺便看看移动版无法加载字幕的原因
+        * https://developer.chrome.com/blog/debugging-chrome-on-ios?hl=zh-cn
 * [P1]建模
     * [P2]字幕修正时间的存储——Done
     * [P1]播放列表——Done
@@ -146,6 +153,8 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 
 
 **调研记录**
+20240513 
+    移动端html的调试方法: https://developer.chrome.com/blog/debugging-chrome-on-ios?hl=zh-cn
 20240512
     加载字幕失败: Text Tracks are being loaded from another origin but the crossorigin attribute isn't used
         https://stackoverflow.com/questions/37236418/html5-track-element-does-not-have-a-crossorigin-attribute

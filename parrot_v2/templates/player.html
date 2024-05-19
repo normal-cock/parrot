@@ -9,8 +9,8 @@
     <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
     <link href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
-    <script
-        src="https://cdn.jsdelivr.net/npm/videojs-landscape-fullscreen@1.4.6/dist/videojs-landscape-fullscreen.min.js"></script>
+    <!-- <script
+        src="https://cdn.jsdelivr.net/npm/videojs-landscape-fullscreen@1.4.6/dist/videojs-landscape-fullscreen.min.js"></script> -->
 
     <!-- City -->
     <link href="https://unpkg.com/@videojs/themes@1/dist/city/index.css" rel="stylesheet">
@@ -74,7 +74,7 @@
     <div class="container-fluid">
         <div data-vjs-player="true">
             <video id="audioPlayer" class="vjs-fluid video-js vjs-theme-city" controls preload="metadata" width="100%"
-                data-setup="{}" crossorigin="anonymous">
+                crossorigin="anonymous">
                 <p class="vjs-no-js">
                     您的浏览器不支持 HTML5 视频播放器，请升级浏览器。
                 </p>
@@ -113,6 +113,9 @@
                     <label class="form-check-label" for="audioOnlyMode">音频模式</label>
                     </input>
                 </div>
+                <div id="app" class="form-check">
+                    <input type="number" id="duration" name="duration" min="-5" max="5" step="0.01" value="0">
+                </div>
             </div>
         </div>
         <div>
@@ -123,8 +126,15 @@
     <script>
         const audioSrc = '{{ audio_url }}';
         const videoSrc = '{{ video_url }}';
-        const adjustTime = {{ adjust_time }};
+        var adjustTime = {{ adjust_time }};
+        // const adjustTime = {{ adjust_time }};
         const localCurIndexKey = 'parrot:{{ item_id }}:local_cur_index';
+        const adjustTimeKey = 'parrot:{{ item_id }}:local_adjust_time';
+
+        $('#duration').on('input', function () {
+            adjustTime = parseFloat($(this).val()); // 更新 javascript 变量 myVar
+            storeLocalCurIndex();
+        });
 
         function findProperCueIndex(currentTime) {
             const cues = Array.from(audioPlayer.textTracks()[0]?.cues || []);
@@ -151,11 +161,17 @@
             } else {
                 audioPlayer.currentCueIndex = parseInt(curIndexValue);
             }
+            const tmpAdjustTime = localStorage.getItem(adjustTimeKey);
+            if (tmpAdjustTime != null) {
+                adjustTime = parseFloat(tmpAdjustTime);
+                $('#duration').val(adjustTime);
+            }
         }
 
         function storeLocalCurIndex() {
             console.log('storeLocalCurIndex||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
-            localStorage.setItem(localCurIndexKey, audioPlayer.currentCueIndex)
+            localStorage.setItem(localCurIndexKey, audioPlayer.currentCueIndex);
+            localStorage.setItem(adjustTimeKey, adjustTime);
         }
 
         function jump2CurCue() {
@@ -272,6 +288,7 @@
         const audioPlayer = videojs(
             'audioPlayer',
             {
+                // crossorigin: 'anonymous',
                 audioOnlyMode: true,
                 preload: 'auto',
                 src: audioSrc,
@@ -286,14 +303,14 @@
                 autoplay: false, controls: true, mute: false, playsinline: true,
             }
         );
-        audioPlayer.landscapeFullscreen({
-            fullscreen: {
-                enterOnRotate: true,
-                exitOnRotate: true,
-                alwaysInLandscapeMode: true,
-                iOS: true,
-            }
-        });
+        // audioPlayer.landscapeFullscreen({
+        //     fullscreen: {
+        //         enterOnRotate: true,
+        //         exitOnRotate: true,
+        //         alwaysInLandscapeMode: true,
+        //         iOS: true,
+        //     }
+        // });
 
         // 添加音频源
         audioPlayer.src([
