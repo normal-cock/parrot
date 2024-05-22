@@ -136,13 +136,13 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 
 **播放器功能**
 * [P1]字幕时间可以前端调整——Done
-* [P1]手机端支持全屏，同时研究一下怎么使用代码的配置（因为有语法提示）
+* [P1]建模——Done
+    * [P2]字幕修正时间的存储——Done
+    * [P1]播放列表——Done
+* [P2]手机端支持全屏，同时研究一下怎么使用代码的配置（因为有语法提示）
     * https://github.com/prateekrastogi/videojs-landscape-fullscreen
     * 20240512 测试没有生效，有时间调试看看是不是js或网络问题，顺便看看移动版无法加载字幕的原因
         * https://developer.chrome.com/blog/debugging-chrome-on-ios?hl=zh-cn
-* [P1]建模
-    * [P2]字幕修正时间的存储——Done
-    * [P1]播放列表——Done
 * [P2]选中查词，选中自动翻译
 * [P4]专辑列表（二级播放列表）
 * [P3]锁屏时，不显示上一首按钮
