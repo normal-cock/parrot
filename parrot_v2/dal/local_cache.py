@@ -32,7 +32,7 @@ class CustmLocalCache(object):
             这里的index是未review的rplan里面的第一个chuck的上次review了的index
                 如果该chunk都未review过，则为-1
         '''
-        return int(self._cache.get(self._gen_rplan_last_index_key(), '-0'))
+        return int(self._cache.get(self._gen_rplan_last_index_key(), '-1'))
 
     def set_rplan_last_index_today(self, reviewed_index: int):
         self._cache.set(
@@ -41,6 +41,7 @@ class CustmLocalCache(object):
         )
 
     def reset_rplan_last_index_today(self):
+        '''reset to -1'''
         self._cache.set(
             self._gen_rplan_last_index_key(),
             '-1', expire=self._duration
