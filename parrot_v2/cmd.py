@@ -10,7 +10,7 @@ from parrot_v2.biz.service import (
     add_new_meaning_to_exist_word,
     modify_exist_meaning,
     modify_exist_word,
-    begin_to_review_v3,
+    begin_to_review_v3, begin_to_review_v4,
     show_predict_v2,
     search,
     rebuild_fts,
@@ -97,10 +97,11 @@ def run():
         begin_time = datetime.date.today() - datetime.timedelta(days=60)
         end_time = datetime.date.today() + datetime.timedelta(days=1)
         # if DEBUG:
-        #     begin_to_review_v3(begin_time, end_time)
+        #     begin_to_review_v4(begin_time, end_time)
         # else:
-        #     begin_to_review_v2(begin_time, end_time)
-        begin_to_review_v3(begin_time, end_time)
+        #     begin_to_review_v3(begin_time, end_time)
+        begin_to_review_v4(begin_time, end_time)
+
     if args.command == 'search':
         query = rlinput('word_text:', '').strip()
         # print("search:", query)
@@ -147,12 +148,10 @@ def run():
             print("{}. {}".format(i+1, meaning.meaning))
             tmp_meaning_dict[str(i+1)] = meaning
         meaning_choice = rlinput(
-            "input existing meaning index(0 to add a new meaning):", "0").strip()
-        if meaning_choice != "0" and meaning_choice not in tmp_meaning_dict:
+            "input existing meaning index:", "1").strip()
+        if meaning_choice not in tmp_meaning_dict:
             exit('Error: invalid index')
 
-        if meaning_choice == "0":
-            exit()
         meaning_obj = tmp_meaning_dict[meaning_choice]
 
         phonetic_symbol = rlinput(

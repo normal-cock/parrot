@@ -1,8 +1,9 @@
 import datetime
 import random
+import json
 import signal
 import numpy as np
-from parrot_v2 import Session, DEBUG
+from parrot_v2 import Session, DEBUG, cache
 from parrot_v2.model import Word, Meaning, ReviewPlan, ReviewPlanType, AddCounter, ReviewStatus
 from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning
 from parrot_v2.util import rlinput
@@ -88,6 +89,187 @@ def modify_exist_word(word_id, word_text):
         Word.id == word_id).one()
     word.text = word_text
     session.commit()
+
+
+def _gen_rplans_batch(session, begin_time, end_time):
+    '''
+        return [[plan_id1, plan_id2], []]
+    '''
+    _rplan_cache_key = f'rplan_cache:{datetime.date.today()}'
+    final_rplans_in_batch = cache.get_rplan_today()
+
+    if len(final_rplans_in_batch) == 0:
+        review_plans: List[ReviewPlan] = session.query(ReviewPlan).filter(
+            ReviewPlan.time_to_review >= begin_time,
+            ReviewPlan.time_to_review <= end_time,
+            ReviewPlan.status == ReviewStatus.UNREVIEWED
+        )
+        review_plans = [review_plan for review_plan in review_plans]
+        review_plans_per_meaning = defaultdict(list)
+        for review_plan in review_plans:
+            meaning: Meaning = review_plan.meaning
+            review_plans_per_meaning[meaning.id].append(review_plan)
+        minimum_meaning_count_in_batch = 10
+        if DEBUG:
+            minimum_meaning_count_in_batch = 2
+        # plan list of each meaning, 2-d array
+        plans_list = list(review_plans_per_meaning.values())
+        random.shuffle(plans_list)
+        split_count = len(plans_list) // minimum_meaning_count_in_batch
+        if split_count == 0:
+            split_count = 1
+        plans_list = np.asarray(plans_list, dtype="object")
+        review_plans_in_batch = np.array_split(plans_list, split_count)
+
+        for sub_review_plans_list in review_plans_in_batch:
+            tmp_plan_id_list = []
+            for tmp_review_plans in sub_review_plans_list:
+                for review_plan in tmp_review_plans:
+                    tmp_plan_id_list.append(review_plan.id)
+            random.shuffle(tmp_plan_id_list)
+            final_rplans_in_batch.append(tmp_plan_id_list)
+        cache.set_rplan_today(final_rplans_in_batch)
+
+    return final_rplans_in_batch
+
+
+def _review_in_batch_v2(
+        session,
+        rplan_ids,
+        reviewed_plan_count,
+        total_review_plan_count
+) -> int:
+    '''
+        去掉其他review结果，只保留reviewed，这么长时间以来其他的状态几乎用不上
+        return new_review_plan_count
+    '''
+    last_reviewed_index = cache.get_rplan_last_index_today()
+    batch_count = len(rplan_ids)
+
+    # 每个元素为dict，格式为
+    # {"meaning", "review_status", "review_stage"}
+    review_results = []
+    rplans = session.query(ReviewPlan).filter(
+        ReviewPlan.id.in_(rplan_ids)).all()
+    rplans: List[ReviewPlan] = sorted(
+        rplans, key=lambda o: rplan_ids.index(o.id))
+
+    for index, review_plan in enumerate(rplans):
+        overall_cur_index = reviewed_plan_count+index+1
+        # 默认为 reviewed
+        new_status_value = 2
+        if index > last_reviewed_index:
+            print("")
+            print("Progress: {}/{} ({}/{} in batch)".format(
+                overall_cur_index,
+                total_review_plan_count,
+                index+1,
+                batch_count,
+            ))
+            _display_review_card(review_plan)
+        review_plan.complete(new_status_value, is_gen_new_plan=False)
+        review_results.append({
+            "meaning": review_plan.meaning,
+            "review_status": review_plan.status,
+            "review_stage": review_plan.stage,
+        })
+
+        if index > last_reviewed_index:
+            other_meanings: List[Meaning] = review_plan.meaning.word.get_other_meaning_without_review_plan(
+            )
+            other_meanings = [
+                m for m in other_meanings if m.id != review_plan.meaning.id]
+            if len(other_meanings) > 0:
+                print("This word has multiple meanings:")
+                for i, meaning in enumerate(other_meanings):
+                    print("{}. {}".format(i+1, meaning.meaning))
+                review_choice = rlinput(
+                    "Want to review anyone?Input the index(-1 means don't want to):", "-1")
+                if review_choice != '-1':
+                    other_meaning_to_review = other_meanings[int(
+                        review_choice)-1]
+                    review_results.append({
+                        "meaning": other_meaning_to_review,
+                        "review_status": ReviewStatus.UNREMEMBERED,
+                        "review_stage": ReviewStage.STAGE5
+                    })
+
+        cache.set_rplan_last_index_today(index)
+
+    # generate next review_plan
+    review_results_per_meaning = defaultdict(list)
+    new_review_plan_count = 0
+    for review_result in review_results:
+        meaning: Meaning = review_result["meaning"]
+        review_results_per_meaning[meaning.id].append(review_result)
+    for _, review_result_list in review_results_per_meaning.items():
+        meaning = review_result_list[0]["meaning"]
+
+        # find reviewed result with maximum stage
+        key_reviewed_result = None
+        for review_result in review_result_list:
+            review_status = review_result["review_status"]
+            review_stage = review_result["review_stage"]
+            if review_status == ReviewStatus.REVIEWED:
+                if key_reviewed_result == None:
+                    key_reviewed_result = review_result
+                elif key_reviewed_result["review_stage"].value < review_stage.value:
+                    key_reviewed_result = review_result
+                else:
+                    pass
+        if key_reviewed_result != None:
+            new_review_plan_count += ReviewPlan.gen_next_plan(
+                meaning,
+                key_reviewed_result["review_stage"],
+                ReviewStatus.REVIEWED,
+            )
+            continue
+
+    session.commit()
+    print('\nDB Session Saved!')
+    return new_review_plan_count
+
+
+def begin_to_review_v4(begin_time, end_time):
+    '''
+    开始复习单词，增加了断点续传(先不支持多用户)
+        * 读取缓存的review_plans_in_batch或重新生成，生成过程为
+            * 查出所有review_plan
+            * 统一对review_plan进行处理，包括分组和打散，形成当天的最终复习计划review_plans_in_batch，并保存
+        * 读取reviewed_index_today，默认值为0
+        * 开始复习，将当前复习过得最大index（0代表完全没开始，1代表复习过了一个review_plan）存下来
+        * 其他复习流程保持不变
+    begin_time 和 end_time 分别为要复习的复习计划的 time_to_review 范围
+    '''
+    start_time = datetime.datetime.now()
+    this_time_reviewed_plan_count = 0
+    this_time_new_review_plan_count = 0
+
+    def ctrlc_handler(signum, frame):
+        print("\n\nReview Finished and generated {} new plans, costing {}".format(
+            this_time_new_review_plan_count,
+            datetime.datetime.now() - start_time,
+        ))
+        exit()
+    signal.signal(signal.SIGINT, ctrlc_handler)
+    session = Session()
+
+    rplan_ids_in_batch = _gen_rplans_batch(session, begin_time, end_time)
+    total_review_plan_count = sum([len(l) for l in rplan_ids_in_batch])
+
+    for i, rplan_ids in enumerate(rplan_ids_in_batch):
+        tmp_new_review_plan_count = _review_in_batch_v2(
+            session, rplan_ids, this_time_reviewed_plan_count,
+            total_review_plan_count)
+        this_time_reviewed_plan_count += len(rplan_ids)
+        this_time_new_review_plan_count += tmp_new_review_plan_count
+        cache.set_rplan_today(rplan_ids_in_batch[(i+1):])
+        cache.reset_rplan_last_index_today()
+
+    print("\nFinished and generated {} new plans, costing {}".format(
+        this_time_new_review_plan_count,
+        datetime.datetime.now() - start_time,
+    ))
 
 
 def begin_to_review_v3(begin_time, end_time):
@@ -254,28 +436,25 @@ def _review_in_batch(session, review_plans, reviewed_plan_count, total_review_pl
 def _display_review_card(plan: ReviewPlan) -> int:
     '''
     展示复习卡片
-    返回值为选择的结果: 1.知道了/2.记住了/3.没记住
+    返回值为选择的结果: 1.下一个
     '''
-    def _input_review_result():
-        result = input('choice[1.知道了/2.记住了/3.没记住]: (default:1)') or '1'
-        while result not in ['1', '2', '3']:
-            print(f'Invalid input:{result}. Please reinput')
-            result = input('choice[1.知道了/2.记住了/3.没记住]: (default:1)') or '1'
-        return result
+    def _begin_next_word():
+        input('Press enter to go on:')
+        return
     meaning = plan.meaning
     if plan.review_plan_type in [None, "", ReviewPlanType.HINT_WORD]:
         input(f'word: {meaning.word.text} {meaning.phonetic_symbol}')
         input(f'use case: {meaning.use_case}')
         print('meaning:', meaning.meaning, meaning.remark)
-        result = _input_review_result()
-        return result
+        _begin_next_word()
+        return
     elif plan.review_plan_type == ReviewPlanType.HINT_MEANING:
         input(f'meaning: {meaning.meaning}')
         print(f'word: {meaning.word.text} {meaning.phonetic_symbol}')
         print('use case:', meaning.use_case)
         print('remark:', meaning.remark)
-        result = _input_review_result()
-        return result
+        _begin_next_word()
+        return
     else:
         raise Exception("Unknown ReviewPlayType")
 

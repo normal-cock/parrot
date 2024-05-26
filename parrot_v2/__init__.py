@@ -4,6 +4,8 @@ import os
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import diskcache as dc
+from parrot_v2.dal.local_cache import CustmLocalCache
 
 DEBUG = (os.getenv("DEBUG") == "True")
 # DEBUG = True
@@ -17,5 +19,7 @@ sqlite_url = 'sqlite:///{}/dictionary.db'.format(DATA_DIR)
 engine = create_engine(sqlite_url)
 Session = sessionmaker(bind=engine)
 # print(sqlite_url)
+cache = CustmLocalCache(f'{DATA_DIR}/diskcache')
+
 
 PW = 'Rkf7br9rmUMB'
