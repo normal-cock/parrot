@@ -133,7 +133,7 @@ class Meaning(Base):
 
     @validates("phonetic_symbol")
     def validate_phonetic_symbol(self, key, ipa):
-        _ipa_re_pattern = '''^[rŋ(ːɪiwɒjaxˌqɛɝf ðdsmhoɡ:ə)ˈlt̬.z·gpʊnθɜcɔɑʒʌuʃvk'ebæ,y;ɚ˞]*$'''
+        _ipa_re_pattern = '''^[/rŋ(ːɪiwɒjaxˌqɛɝf ðdsmhoɡ:ə)ˈlt̬.z·gpʊnθɜcɔɑʒʌuʃvk'ebæ,y;ɚ˞]*$'''
         if re.match(_ipa_re_pattern, ipa) == None:
             raise ValueError(f"invalid ipa {ipa}")
         return ipa
