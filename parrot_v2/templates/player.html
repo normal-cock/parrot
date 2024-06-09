@@ -160,6 +160,7 @@
         videojs('audioPlayer', null, function () {
             // getPlayer may return null if player is not ready
             const audioPlayer = videojs.getPlayer('audioPlayer');
+            audioPlayer.one('loadedmetadata', loadedmetadata);
             audioPlayer.options(initOptions);
             // audioPlayer.addRemoteTextTrack({
             //     src: subtitleSrc,
@@ -339,7 +340,7 @@
                             }
                             if (subCue.startTime == cue.startTime) {
                                 li = li.append("<br>")
-                                    .append($("<span>").addClass("list-group-item-subcue").text(startTime + '-' + subCue.text));
+                                    .append($("<span>").addClass("list-group-item-subcue").text("CN: " + subCue.text));
                                 j++;
                             }
                         }
@@ -471,7 +472,11 @@
                 nextAudio();
             });
 
-            audioPlayer.one('loadedmetadata', loadedmetadata);
+            // audioPlayer.ready(function () {
+            //     // this.on('loadedmetadata', function () { alert('lmd'); })
+            //     this.one('loadedmetadata', loadedmetadata);
+            // });
+            // audioPlayer.one('loadedmetadata', loadedmetadata);
 
             // flushListHighlight won't work normally if browser is switched to background
             // so it's better to invoce it every time when visibility changed
