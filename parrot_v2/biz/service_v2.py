@@ -22,7 +22,12 @@ def get_media_url(item_id):
     if item == None:
         return {}, f'{item_id} not found'
     adjustment = item.subtitle_adjustment
-    subtitle_url = oss_sington.get_object_url(f'{item_id}.vtt')
+    subtitle_url = oss_sington.get_object_url(f'{item_id}-e.vtt')
+    subtitle_url_2 = ''
+    if oss_sington.check_existence(f'{item_id}.vtt'):
+        subtitle_url = oss_sington.get_object_url(f'{item_id}.vtt')
+    if oss_sington.check_existence(f'{item_id}-c.vtt'):
+        subtitle_url_2 = oss_sington.get_object_url(f'{item_id}-c.vtt')
     audio_url = oss_sington.get_object_url(f'{item_id}.mp3')
     video_url = oss_sington.get_object_url(f'{item_id}.mp4')
 
@@ -30,6 +35,7 @@ def get_media_url(item_id):
     return {
         'item_id': item_id,
         'subtitle_url': subtitle_url,
+        'subtitle_url_2': subtitle_url_2,
         'audio_url': audio_url,
         'video_url': video_url,
         'adjustment': adjustment,

@@ -52,6 +52,10 @@
             border: none;
         }
 
+        .list-group-item-subcue {
+            font-size: 0.7em;
+        }
+
         .form-check-label {
             font-size: 1.5em;
         }
@@ -81,6 +85,10 @@
                 <source src="{{ audio_url }}" type="audio/mp3">
                 <track label="English" kind="metadata" srclang="en" src="{{ subtitle_url }}" default>
                 </track>
+                {% if subtitle_url_2|length != 0 %}
+                <track label="Chinese" kind="metadata" srclang="cn" src="{{ subtitle_url_2 }}" default>
+                </track>
+                {% endif %}
             </video>
         </div>
     </div>
@@ -166,8 +174,16 @@
                 storeLocalCurIndex();
             });
 
+            function findENCues() {
+                return Array.from(audioPlayer.textTracks()).find(track => track.language === 'en');
+            }
+            function findCNCues() {
+                return Array.from(audioPlayer.textTracks()).find(track => track.language === 'cn');
+            }
+
             function findProperCueIndex(currentTime) {
-                const cues = Array.from(audioPlayer.textTracks()[0]?.cues || []);
+                const cues = Array.from(findENCues()?.cues || []);
+
                 //为每个cue分配一个唯一的ID
                 if (cues.length <= 1) {
                     return 0;
@@ -181,7 +197,10 @@
                 return cues.length - 1;
             }
             function getCuesLength() {
-                return Array.from(audioPlayer.textTracks()[0]?.cues || []).length;
+                return Array.from(findENCues()?.cues || []).length;
+            }
+            function getSubCuesLength() {
+                return Array.from(findCNCues()?.cues || []).length;
             }
 
             function fetchLocalCurIndex() {
@@ -210,7 +229,7 @@
                     return
                 }
                 console.log('jump2CurCue||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
-                var cue = audioPlayer.textTracks()[0]?.cues[audioPlayer.currentCueIndex];
+                var cue = findENCues()?.cues[audioPlayer.currentCueIndex];
                 audioPlayer.currentTime(cue.startTime + adjustTime);
                 // only improve ending time exceedence, couldn't solve it completely
                 setTimeout(timeUpdate, cue.endTime - cue.startTime - 0.1)
@@ -228,7 +247,7 @@
                 console.log('timeUpdate||currentTime:' + audioPlayer.currentTime());
 
                 const currentTime = audioPlayer.currentTime();
-                const cues = Array.from(audioPlayer.textTracks()[0]?.cues || []);
+                const cues = Array.from(findENCues()?.cues || []);
                 if (audioPlayer.currentCueIndex >= 0 && audioPlayer.currentCueIndex < cues.length) {
                     var cue = cues[audioPlayer.currentCueIndex];
                     // for more graceful ending
@@ -283,20 +302,48 @@
 
             function loadedmetadata() {
                 // 获取第一个 TextTrack
-                console.log('loadedmetadata||Subtitles loaded:' + getCuesLength());
+                console.log('loadedmetadata||Subtitles loaded cue:' + getCuesLength());
+
                 setTimeout(function () {
-                    console.log('loadedmetadata||Subtitles loaded:' + getCuesLength());
-                    const cues = Array.from(audioPlayer.textTracks()[0]?.cues || []);
+                    console.log('loadedmetadata||time trigger');
+                    console.log('loadedmetadata||Subtitles loaded cue:' + getCuesLength());
+                    const cues = Array.from(findENCues()?.cues || []);
                     //为每个cue分配一个唯一的ID
                     for (var i = 0; i < cues.length; i++) {
                         cues[i].id = i.toString();
                     }
+                    const subCues = Array.from(findCNCues()?.cues || []);
+                    var hasSubCue = false;
+                    if (subCues.length != 0) {
+                        console.log('loadedmetadata||Subtitles 2 loaded:' + getSubCuesLength());
+                        hasSubCue = true;
+                    }
 
                     var list = $('#subtitle-list');
-                    for (var i = 0; i < cues.length; i++) {
+                    for (var i = 0, j = 0; i < cues.length; i++) {
                         let cue = cues[i];
                         var startTime = formatTime(cue.startTime);
-                        var li = $('<li class="list-group-item">').text(startTime + '-' + cue.text);
+                        // var li = $('<li class="list-group-item">').text(startTime + '-' + cue.text);
+                        var li = $('<li class="list-group-item">')
+                            .append($("<span>").text(startTime + '-' + cue.text));
+                        if (hasSubCue == true && j < subCues.length) {
+                            let subCue = subCues[j];
+                            // 应对en和cn部分字幕数量不匹配的问题
+                            for (; subCue.startTime < cue.startTime;) {
+                                j++;
+                                if (j < subCues.length) {
+                                    subCue = subCues[j];
+                                } else {
+                                    break;
+                                }
+                            }
+                            if (subCue.startTime == cue.startTime) {
+                                li = li.append("<br>")
+                                    .append($("<span>").addClass("list-group-item-subcue").text(startTime + '-' + subCue.text));
+                                j++;
+                            }
+                        }
+
                         li.click(function () {
                             const selction = document.getSelection();
                             if (selction.type != 'Range') {

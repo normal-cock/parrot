@@ -62,6 +62,7 @@ def item_play_page(passport, item_id):
     else:
         logger.info(f'reuse media url:{media_url_dict}')
     subtitle_url = Markup(media_url_dict['subtitle_url'])
+    subtitle_url_2 = Markup(media_url_dict.get('subtitle_url_2', ''))
     audio_url = Markup(media_url_dict['audio_url'])
     video_url = Markup(media_url_dict['video_url'])
     adjust_time = media_url_dict.get('adjustment', 10)
@@ -69,7 +70,17 @@ def item_play_page(passport, item_id):
         'player.html',
         item_id=item_id,
         subtitle_url=subtitle_url,
+        subtitle_url_2=subtitle_url_2,
         audio_url=audio_url,
         video_url=video_url,
         adjust_time=adjust_time,
     )
+
+
+@app.route("/<passport>/clear_session/<item_id>")
+def clear_session(passport, item_id):
+    if passport.upper() != PW.upper():
+        return make_response('', 404)
+    _media_url_key = f'media_url_dict:{item_id}'
+    session.pop(_media_url_key)
+    return "<p>Hello, World!</p>"

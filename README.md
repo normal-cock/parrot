@@ -138,6 +138,7 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 * [P1]建模——Done
     * [P2]字幕修正时间的存储——Done
     * [P1]播放列表——Done
+* [P1]双语字幕支持——Done
 * [P2]手机端支持全屏，同时研究一下怎么使用代码的配置（因为有语法提示）
     * https://github.com/prateekrastogi/videojs-landscape-fullscreen
     * 20240512 测试没有生效，有时间调试看看是不是js或网络问题，顺便看看移动版无法加载字幕的原因
@@ -152,6 +153,9 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 
 
 **调研记录**
+20240609
+    转字幕格式时，遇到`'utf-8' codec can't decode byte 0xff in position 0: invalid start byte`
+        方案，用vscode打开，并将变化转为utf-8。直接点击vscode中的右下角展示的当前编码，然后选择save。同时将LTFT换成LF
 20240513 
     移动端html的调试方法: https://developer.chrome.com/blog/debugging-chrome-on-ios?hl=zh-cn
 20240512

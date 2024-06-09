@@ -12,6 +12,9 @@ class OSSSington:
         # https://ram.console.aliyun.com/roles/detail?roleName=parrot-role
         self._expires = 3600
 
+    def check_existence(self, obj_name) -> bool:
+        return self._get_bucket().object_exists(obj_name)
+
     def get_expire_sec(self) -> float:
         token_expiration = aliyun_sts_sington.get_expire_sec()
         return min(self._expires, token_expiration)
