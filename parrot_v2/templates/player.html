@@ -44,6 +44,7 @@
             width: auto;
             overflow: auto;
             margin: 5%;
+            margin-top: 0%;
             font-size: 1.5em;
         }
 
@@ -62,10 +63,10 @@
             font-size: 0.7em;
         }
 
-        .control-item {
+        /* .control-item {
             height: 39px;
             width: 39px;
-        }
+        } */
 
         .video-js {
             width: 100vw;
@@ -133,6 +134,7 @@
                     <input id="duration-starttime" type="number" name="duration" min="-5" max="5" step="0.01" value="0">
                     <input id="duration-endtime" type="number" name="duration" min="-5" max="5" step="0.01" value="0">
                 </div>
+                <button type="button" class="btn btn-dark" onclick="goHome()">Home</button>
             </div>
         </div>
         <div>
@@ -173,7 +175,7 @@
         function httpRequest() {
             var q = 'aaa';
             $.ajax({
-                url: `/search/${q}`,
+                url: `/{{ passport }}/search/${q}`,
                 type: 'GET',
                 success: function (response) {
                     httpRequestCallback(response);
@@ -199,10 +201,6 @@
             // crossorigin: 'anonymous',
             audioOnlyMode: true,
             preload: 'metadata',
-            // src: audioSrc,
-            // sources: {
-            //     type: 'audio/mp3', src: audioSrc
-            // },
             controlBar: {
                 remainingTimeDisplay: {
                     displayNegative: false
@@ -213,6 +211,10 @@
             techOrder: ["html5"],
             autoplay: false, controls: true, mute: false, playsinline: true,
         };
+
+        function goHome() {
+            window.location.href = `/{{ passport }}`;
+        }
 
         // https://videojs.com/guides/options/
         // videojs.getPlayer('audioPlayer').ready(

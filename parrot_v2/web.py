@@ -74,18 +74,15 @@ def item_play_page(passport, item_id):
         audio_url=audio_url,
         video_url=video_url,
         adjust_time=adjust_time,
+        passport=passport,
     )
 
 
-@app.route("/search/<q>")
-def search(q):
-    return 'hellp world'
+@app.route("/<passport>/search/<q>")
+def search(passport, q):
     if passport.upper() != PW.upper():
         return make_response('', 404)
-    _media_url_key = f'media_url_dict:{item_id}'
-    session.pop(_media_url_key)
-    return "<p>Hello, World!</p>"
-
+    return 'hellp world'
 
 
 @app.route("/<passport>/clear_session/<item_id>")
