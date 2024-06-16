@@ -155,6 +155,7 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 
 **播放器功能**
 * [P1]字幕时间可以前端调整——Done
+    * [P1]可以分别调整start time和end time——Done
 * [P1]建模——Done
     * [P2]字幕修正时间的存储——Done
     * [P1]播放列表——Done

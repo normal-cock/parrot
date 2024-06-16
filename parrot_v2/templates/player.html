@@ -94,10 +94,8 @@
                 </p>
                 <source src="{{ audio_url }}" type="audio/mp3">
                 <track label="English" kind="metadata" srclang="en" src="{{ subtitle_url }}" default>
-                </track>
                 {% if subtitle_url_2|length != 0 %}
                 <track label="Chinese" kind="metadata" srclang="cn" src="{{ subtitle_url_2 }}" default>
-                </track>
                 {% endif %}
             </video>
         </div>
@@ -210,8 +208,9 @@
                     displayNegative: false
                 }
             },
-            responsive: true,
-            techOrder: ["html5", "flash", "youtube"],
+            // responsive: true,
+            // techOrder: ["html5", "flash", "youtube"],
+            techOrder: ["html5"],
             autoplay: false, controls: true, mute: false, playsinline: true,
         };
 
@@ -222,13 +221,12 @@
             const audioPlayer = videojs.getPlayer('audioPlayer');
             audioPlayer.one('loadedmetadata', loadedmetadata);
             audioPlayer.options(initOptions);
-            // audioPlayer.addRemoteTextTrack({
-            //     src: subtitleSrc,
-            //     label: "English",
-            //     kind: "metadata",
-            //     srclang: "en",
-            //     default: true,
-            // });
+
+            // this logic is used to avoid cases when loadedmetadata is not triggered
+            audioPlayer.src({
+                src: audioSrc,
+                type: 'audio/mp3',
+            });
 
             $('#duration-starttime').on('input', function () {
                 adjustStartTime = parseFloat($(this).val()); // 更新 javascript 变量 myVar
@@ -433,15 +431,6 @@
                 }, 1000);
             }
 
-            // audioPlayer.landscapeFullscreen({
-            //     fullscreen: {
-            //         enterOnRotate: true,
-            //         exitOnRotate: true,
-            //         alwaysInLandscapeMode: true,
-            //         iOS: true,
-            //     }
-            // });
-
             if ($('#audioOnlyMode').is(':checked')) {
                 audioPlayer.audioOnlyMode(true);
             }
@@ -546,7 +535,6 @@
             //     // this.on('loadedmetadata', function () { alert('lmd'); })
             //     this.one('loadedmetadata', loadedmetadata);
             // });
-            // audioPlayer.one('loadedmetadata', loadedmetadata);
 
             // flushListHighlight won't work normally if browser is switched to background
             // so it's better to invoce it every time when visibility changed
