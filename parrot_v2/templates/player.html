@@ -34,9 +34,9 @@
             height: 15vh;
         }
 
-        /* .custom-tool {
-            height: 15vh;
-        } */
+        .custom-tool {
+            background-color: lightgray;
+        }
 
 
         #subtitle-list {
@@ -121,12 +121,12 @@
                     </svg>
                 </button>
                 <div class="form-check control-item">
-                    <input class="form-check-input" type="checkbox" id="singleLineLoop" checked="true">
+                    <input id="singleLineLoop" class="form-check-input" type="checkbox" checked="true">
                     <label class="form-check-label" for="singleLineLoop">单行循环</label>
                     </input>
                 </div>
                 <div class="form-check control-item">
-                    <input class="form-check-input" type="checkbox" id="audioOnlyMode" checked="true">
+                    <input id="audioOnlyMode" class="form-check-input" type="checkbox" checked="true">
                     <label class="form-check-label" for="audioOnlyMode">音频模式</label>
                     </input>
                 </div>
@@ -134,13 +134,14 @@
                     <input id="duration-starttime" type="number" name="duration" min="-5" max="5" step="0.01" value="0">
                     <input id="duration-endtime" type="number" name="duration" min="-5" max="5" step="0.01" value="0">
                 </div>
-                <button type="button" class="btn btn-dark" onclick="goHome()">Home</button>
+                <button type="button" class="btn btn-link" onclick="goHome()">Home</button>
             </div>
         </div>
         <div>
             <ul id="subtitle-list" class="list-group"></ul>
         </div>
     </div>
+    <!-- context menu -->
     <div id="contextMenu" role="group" class="btn-group-vertical btn-group-lg" style="display:none">
         <button id="httpRequest" type="button" class="btn btn-secondary">Query HTTP API</button>
         <button type="button" class="btn btn-secondary">Left</button>
