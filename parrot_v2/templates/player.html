@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video.js Audio Player Demo</title>
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
@@ -56,20 +57,29 @@
             font-size: 0.7em;
         }
 
+
         .form-check-label {
-            font-size: 1.5em;
+            font-size: 0.7em;
+        }
+
+        .control-item {
+            height: 39px;
+            width: 39px;
         }
 
         .video-js {
             width: 100vw;
         }
 
-        @media only screen and (hover: none) and (pointer: coarse) {
-
-            /* 样式 */
+        /* @media only screen and (hover: none) and (pointer: coarse) {
             #subtitle-list {
                 font-size: 3rem;
             }
+        } */
+
+        #contextMenu {
+            position: absolute;
+            bottom: 0;
         }
     </style>
 </head>
@@ -92,36 +102,38 @@
             </video>
         </div>
     </div>
+
     <div class="custom-area">
         <div class="custom-tool">
             <div class="btn-group" role="group" aria-label="Media Player Control Buttons">
-                <button type="button" class="btn btn-default" onclick="previousAudio();">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="32" fill="currentColor"
+                <button type="button" class="btn btn-default control-item" onclick="previousAudio();">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor"
                         class="bi bi-skip-start-fill" viewBox="0 0 16 16">
                         <path
                             d="M4 4a.5.5 0 0 1 1 0v3.248l6.267-3.636c.54-.313 1.232.066 1.232.696v7.384c0 .63-.692 1.01-1.232.697L5 8.753V12a.5.5 0 0 1-1 0z" />
                     </svg>
                 </button>
-                <button type="button" class="btn btn-default" onclick="nextAudio();">
+                <button type="button" class="btn btn-default control-item" onclick="nextAudio();">
                     <!-- <span class="glyphicon glyphicon-step-forward"></span> -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="32" fill="currentColor"
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor"
                         class="bi bi-skip-end-fill" viewBox="0 0 16 16">
                         <path
                             d="M12.5 4a.5.5 0 0 0-1 0v3.248L5.233 3.612C4.693 3.3 4 3.678 4 4.308v7.384c0 .63.692 1.01 1.233.697L11.5 8.753V12a.5.5 0 0 0 1 0z" />
                     </svg>
                 </button>
-                <div class="form-check">
+                <div class="form-check control-item">
                     <input class="form-check-input" type="checkbox" id="singleLineLoop" checked="true">
                     <label class="form-check-label" for="singleLineLoop">单行循环</label>
                     </input>
                 </div>
-                <div class="form-check">
+                <div class="form-check control-item">
                     <input class="form-check-input" type="checkbox" id="audioOnlyMode" checked="true">
                     <label class="form-check-label" for="audioOnlyMode">音频模式</label>
                     </input>
                 </div>
-                <div id="app" class="form-check">
-                    <input type="number" id="duration" name="duration" min="-5" max="5" step="0.01" value="0">
+                <div id="app" class="form-check control-item">
+                    <input id="duration-starttime" type="number" name="duration" min="-5" max="5" step="0.01" value="0">
+                    <input id="duration-endtime" type="number" name="duration" min="-5" max="5" step="0.01" value="0">
                 </div>
             </div>
         </div>
@@ -129,14 +141,62 @@
             <ul id="subtitle-list" class="list-group"></ul>
         </div>
     </div>
+    <div id="contextMenu" role="group" class="btn-group-vertical btn-group-lg" style="display:none">
+        <button id="httpRequest" type="button" class="btn btn-secondary">Query HTTP API</button>
+        <button type="button" class="btn btn-secondary">Left</button>
+        <button type="button" class="btn btn-secondary">Left</button>
+        <button type="button" class="btn btn-secondary">Left</button>
+        <button type="button" class="btn btn-secondary">Left</button>
+    </div>
+
+    <script>
+        function showContextMenu(e) {
+            e.preventDefault();
+            selectedText = window.getSelection().toString();
+            const contextMenu = $('#contextMenu');
+            contextMenu.css('display', 'block');
+            // contextMenu.css({
+            //     left: e.pageX + 'px',
+            //     top: e.pageY + 'px'
+            // });
+        };
+        function hideContextMenu() {
+            const contextMenu = $('#contextMenu');
+            contextMenu.css('display', 'none');
+        };
+
+        function httpRequestCallback(response) {
+            const contextMenu = $('#contextMenu');
+            const httpRequestItem = $('#httpRequest');
+            const httpRequestResult = $('<p>').text(response);
+            httpRequestItem.append(httpRequestResult);
+            contextMenu.css('display', 'block');
+        };
+        function httpRequest() {
+            var q = 'aaa';
+            $.ajax({
+                url: `/search/${q}`,
+                type: 'GET',
+                success: function (response) {
+                    httpRequestCallback(response);
+                }
+            });
+        };
+        $('#httpRequest').on('click', httpRequest);
+        // $(document).on('mouseup', hideContextMenu);
+        $(document).on('contextmenu', showContextMenu);
+        $(document).on('click', hideContextMenu);
+    </script>
 
     <script>
         const audioSrc = '{{ audio_url }}';
         const videoSrc = '{{ video_url }}';
         const subtitleSrc = '{ { subtitle_url } }';
-        var adjustTime = {{ adjust_time }};
+        var adjustStartTime = {{ adjust_time }};
+        var adjustEndTime = {{ adjust_time }};
         const localCurIndexKey = 'parrot:{{ item_id }}:local_cur_index';
-        const adjustTimeKey = 'parrot:{{ item_id }}:local_adjust_time';
+        const adjustStartTimeKey = 'parrot:{{ item_id }}:local_adjust_start_time';
+        const adjustEndTimeKey = 'parrot:{{ item_id }}:local_adjust_end_time';
         const initOptions = {
             // crossorigin: 'anonymous',
             audioOnlyMode: true,
@@ -170,8 +230,12 @@
             //     default: true,
             // });
 
-            $('#duration').on('input', function () {
-                adjustTime = parseFloat($(this).val()); // 更新 javascript 变量 myVar
+            $('#duration-starttime').on('input', function () {
+                adjustStartTime = parseFloat($(this).val()); // 更新 javascript 变量 myVar
+                storeLocalCurIndex();
+            });
+            $('#duration-endtime').on('input', function () {
+                adjustEndTime = parseFloat($(this).val()); // 更新 javascript 变量 myVar
                 storeLocalCurIndex();
             });
 
@@ -211,17 +275,23 @@
                 } else {
                     audioPlayer.currentCueIndex = parseInt(curIndexValue);
                 }
-                const tmpAdjustTime = localStorage.getItem(adjustTimeKey);
-                if (tmpAdjustTime != null) {
-                    adjustTime = parseFloat(tmpAdjustTime);
-                    $('#duration').val(adjustTime);
-                }
+                const tmpAdjustStartTime = localStorage.getItem(adjustStartTimeKey);
+                if (tmpAdjustStartTime != null) {
+                    adjustStartTime = parseFloat(tmpAdjustStartTime);
+                    $('#duration-starttime').val(adjustStartTime);
+                };
+                const tmpAdjustEndTime = localStorage.getItem(adjustEndTimeKey);
+                if (tmpAdjustEndTime != null) {
+                    adjustEndTime = parseFloat(tmpAdjustEndTime);
+                    $('#duration-endtime').val(adjustEndTime);
+                };
             }
 
             function storeLocalCurIndex() {
                 console.log('storeLocalCurIndex||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
                 localStorage.setItem(localCurIndexKey, audioPlayer.currentCueIndex);
-                localStorage.setItem(adjustTimeKey, adjustTime);
+                localStorage.setItem(adjustStartTimeKey, adjustStartTime);
+                localStorage.setItem(adjustEndTimeKey, adjustEndTime);
             }
 
             function jump2CurCue() {
@@ -231,11 +301,11 @@
                 }
                 console.log('jump2CurCue||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
                 var cue = findENCues()?.cues[audioPlayer.currentCueIndex];
-                audioPlayer.currentTime(cue.startTime + adjustTime);
+                audioPlayer.currentTime(cue.startTime + adjustStartTime);
                 // only improve ending time exceedence, couldn't solve it completely
-                setTimeout(timeUpdate, cue.endTime - cue.startTime - 0.1)
+                // setTimeout(timeUpdate, cue.endTime - cue.startTime - 0.1)
                 setTimeout(timeUpdate, cue.endTime - cue.startTime)
-                setTimeout(timeUpdate, cue.endTime - cue.startTime + 0.1)
+                // setTimeout(timeUpdate, cue.endTime - cue.startTime + 0.1)
 
                 storeLocalCurIndex();
             }
@@ -252,8 +322,8 @@
                 if (audioPlayer.currentCueIndex >= 0 && audioPlayer.currentCueIndex < cues.length) {
                     var cue = cues[audioPlayer.currentCueIndex];
                     // for more graceful ending
-                    const cueStarttime = cue.startTime + adjustTime - 0.01;
-                    const cueEndtime = cue.endTime + adjustTime;
+                    const cueStarttime = cue.startTime + adjustStartTime - 0.01;
+                    const cueEndtime = cue.endTime + adjustEndTime;
                     // Only when the end of a piece or progress bar operation
                     // We can't distinguish between progress bar change and timeupdate
                     // because currentTime change will also trigger seeking and seeked event.
@@ -486,7 +556,6 @@
         });
 
     </script>
-
 </body>
 
 </html>
