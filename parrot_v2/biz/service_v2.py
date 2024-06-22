@@ -4,6 +4,7 @@ from sqlalchemy import desc
 from parrot_v2 import Session, DEBUG, PW
 from parrot_v2.model import Item
 from parrot_v2.dal.aliyun_oss import oss_sington
+from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning
 
 
 def get_media_url(item_id):
@@ -80,3 +81,12 @@ def add_item(item_name, item_id, adjustment: float, item_type: int):
     session.commit()
     session.close()
     return True
+
+
+def blur_search(query: str):
+    '''返回结果[(word_text, meaning_id, meaning_meaning, 
+        meaning_use_case, meaning_phonetic_symbol, meaning_remark)]'''
+    session = Session()
+    meaning_list = get_related_meaning(session, query, output='html')
+    session.close()
+    return meaning_list

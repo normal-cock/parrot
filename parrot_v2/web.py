@@ -8,7 +8,7 @@ from markupsafe import Markup
 from parrot_v2.dal.aliyun_oss import oss_sington
 from werkzeug.middleware.proxy_fix import ProxyFix
 from parrot_v2 import DATA_DIR, PW
-from parrot_v2.biz.service_v2 import get_media_url, get_item_list, get_item_total
+from parrot_v2.biz.service_v2 import get_media_url, get_item_list, get_item_total, blur_search
 from parrot_v2.util import logger
 from flask_paginate import Pagination, get_page_parameter
 
@@ -82,7 +82,17 @@ def item_play_page(passport, item_id):
 def search(passport, q):
     if passport.upper() != PW.upper():
         return make_response('', 404)
-    return 'hellp world'
+    result_list = blur_search(q)
+    resp_list = []
+    for result in result_list:
+        resp_list.append({
+            'word': result[0],
+            'meaning': result[2],
+            'usecase': result[3],
+            'phonetic_symbol': result[4],
+            'remark': result[5],
+        })
+    return resp_list
 
 
 @app.route("/<passport>/clear_session/<item_id>")

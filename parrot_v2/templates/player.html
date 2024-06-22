@@ -8,8 +8,9 @@
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
     <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
-    <link href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <link href="https://cdn.staticfile.org/twitter-bootstrap/5.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/5.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.staticfile.net/hammer.js/2.0.8/hammer.min.js"></script>
     <!-- <script
         src="https://cdn.jsdelivr.net/npm/videojs-landscape-fullscreen@1.4.6/dist/videojs-landscape-fullscreen.min.js"></script> -->
 
@@ -21,7 +22,7 @@
             width: auto;
             margin: auto;
             max-width: 1200px;
-            height: 80vh;
+            height: 90vh;
         }
 
         .container-fluid {
@@ -31,16 +32,19 @@
 
         #audioPlayer {
             width: 100%;
-            height: 15vh;
+            /* height: 15vh; */
         }
 
         .custom-tool {
             background-color: lightgray;
         }
 
+        .highlight-span {
+            background-color: #d1e7dd;
+        }
 
         #subtitle-list {
-            height: 65vh;
+            height: 80vh;
             width: auto;
             overflow: auto;
             margin: 5%;
@@ -77,6 +81,34 @@
                 font-size: 3rem;
             }
         } */
+        .card-container {
+            position: absolute;
+            /* overflow: auto; */
+            width: 100vw;
+            max-height: 60%;
+            /* height: 60%; */
+            bottom: 0;
+            background-color: white;
+        }
+
+        #close-card-container {
+            float: right;
+            /* position: absolute; */
+        }
+
+        .card-list {
+            /* position: absolute; */
+            overflow: auto;
+            max-height: 55vh;
+            top: 0;
+            width: 100%;
+        }
+
+        .btn-close {
+            /* position: relative; */
+            /* right: 0; */
+            /* margin-right: 2%; */
+        }
 
         #contextMenu {
             position: absolute;
@@ -141,9 +173,17 @@
             <ul id="subtitle-list" class="list-group"></ul>
         </div>
     </div>
+    <div class="card-container" style="display:none">
+        <!-- <div class="card-container"> -->
+        <div class="card-container-button">
+            <button id="close-card-container" type="button" class="btn-close" aria-label="Close"></button>
+        </div>
+        <div id="card-list" class="card-list"></div>
+    </div>
     <!-- context menu -->
-    <div id="contextMenu" role="group" class="btn-group-vertical btn-group-lg" style="display:none">
-        <button id="httpRequest" type="button" class="btn btn-secondary">Query HTTP API</button>
+    <div id="contextMenu" role="group" class="btn-group-vertical" style="display:none">
+        <!-- <div id="contextMenu" role="group" class="btn-group-vertical"> -->
+        <button id="search" type="button" class="btn btn-secondary">Search</button>
         <button type="button" class="btn btn-secondary">Left</button>
         <button type="button" class="btn btn-secondary">Left</button>
         <button type="button" class="btn btn-secondary">Left</button>
@@ -151,42 +191,123 @@
     </div>
 
     <script>
-        function showContextMenu(e) {
-            e.preventDefault();
-            selectedText = window.getSelection().toString();
-            const contextMenu = $('#contextMenu');
-            contextMenu.css('display', 'block');
+        const cardContainer = $('.card-container');
+        const cardList = $('#card-list');
+        const contextMenu = $('#contextMenu');
+        $('#close-card-container').on('click', function () {
+            cardContainer.hide();
+            cardList.empty();
+        });
+        var selectedText = '';
+
+        function showContextMenu() {
+            contextMenu.show();
+            // $(document).on("click.custom", hideContextMenu);
+            // $(document).on('click', hideContextMenu);
+            // contextMenu.css('display', 'block');
             // contextMenu.css({
             //     left: e.pageX + 'px',
             //     top: e.pageY + 'px'
             // });
         };
         function hideContextMenu() {
-            const contextMenu = $('#contextMenu');
-            contextMenu.css('display', 'none');
+            console.log('hide context menu')
+            contextMenu.hide();
+            // $(document).off(".custom");
+            // contextMenu.show();
+            // contextMenu.css('display', 'none');
         };
 
-        function httpRequestCallback(response) {
-            const contextMenu = $('#contextMenu');
-            const httpRequestItem = $('#httpRequest');
-            const httpRequestResult = $('<p>').text(response);
-            httpRequestItem.append(httpRequestResult);
-            contextMenu.css('display', 'block');
+        function searchCallback(response) {
+            // var list = JSON.parse(response);
+            var list = response;
+            $.each(list, function (i, item) {
+                // 创建一个卡片元素
+                function genCard(word, meaning, usecase, phonetic_symbol, remark) {
+                    var card = $('<div class="card"></div>');
+                    var cardBody = $('<div class="card-body"></div>');
+                    var title = $('<h5 class="card-title">').text(word);
+                    var subTitle = $('<h6 class="card-subtitle mb-2 text-body-secondary">').text(phonetic_symbol + ' ' + meaning);
+                    var body = $('<p class="card-text">').html(usecase + '<br/>' + remark);
+                    cardBody.append(title, subTitle, body);
+                    card.append(cardBody);
+                    return card;
+                }
+                // var li = $('<li>')
+                // parse data
+                var card = genCard(item['word'], item['meaning'], item['usecase'], item['phonetic_symbol'], item['remark']);
+                // li.append(card);
+                // gen list
+                cardList.append(card);
+            });
+            if (list.length == 0) {
+                cardList.text('Empty!');
+            }
+            cardContainer.show();
         };
-        function httpRequest() {
-            var q = 'aaa';
+        function searchHttpRequest() {
+            // var q = window.getSelection();
+            var q = selectedText;
+            console.log('searchHttpRequest:' + q)
+            // q = 'more';
             $.ajax({
                 url: `/{{ passport }}/search/${q}`,
                 type: 'GET',
                 success: function (response) {
-                    httpRequestCallback(response);
+                    searchCallback(response);
                 }
             });
+            hideContextMenu();
         };
-        $('#httpRequest').on('click', httpRequest);
-        // $(document).on('mouseup', hideContextMenu);
-        $(document).on('contextmenu', showContextMenu);
-        $(document).on('click', hideContextMenu);
+
+        $('#search').on('click', searchHttpRequest);
+        $(document).on('contextmenu', function (e) {
+            e.preventDefault();
+            showContextMenu();
+        });
+
+
+        // const myDiv = document.getElementById('myDiv');
+        // myDiv.addEventListener('selectionchange', function () {
+        //     // 选中操作处理逻辑
+        //     const selection = window.getSelection();
+        //     if (selection.toString() !== '') {
+        //         alert(`选中了 ${selection.toString()}`);
+        //     }
+        // });
+        // TODO handle mouseup and click conflict
+        function selectEndHandle(e) {
+
+            sel = window.getSelection();
+            console.log('list-group mouseup:' + sel.toString());
+            if (sel.toString().length > 0) {
+                $(document).off(".custom");
+                console.log('list-group mouseup 2');
+                // e.preventDefault();
+                selectedText = sel.toString();
+                showContextMenu();
+                // contextMenu.css('display', 'block');
+            } else {
+                hideContextMenu();
+            }
+        }
+        $('.list-group').on('mouseup', selectEndHandle);
+        $('.list-group').on('touchend', selectEndHandle);
+
+        // Get a reference to an element.
+        var listGroup = document.querySelector('.list-group');
+
+        // Create an instance of Hammer with the reference.
+        // var hammer = new Hammer(listGroup);
+
+        // Subscribe to a quick start event: press, tap, or doubletap.
+        // For a full list of quick start events, read the documentation.
+        // hammer.on('pan', function (e) {
+        //     console.log("You're pressing me!");
+        //     console.log(e);
+        // });
+
+        // searchHttpRequest()
     </script>
 
     <script>
@@ -217,11 +338,218 @@
             window.location.href = `/{{ passport }}`;
         }
 
+        function findENCues() {
+            return Array.from(audioPlayer.textTracks()).find(track => track.language === 'en');
+        }
+        function findCNCues() {
+            return Array.from(audioPlayer.textTracks()).find(track => track.language === 'cn');
+        }
+
+        function findProperCueIndex(currentTime) {
+            const cues = Array.from(findENCues()?.cues || []);
+
+            //为每个cue分配一个唯一的ID
+            if (cues.length <= 1) {
+                return 0;
+            }
+            for (var i = 0; i < cues.length; i++) {
+                var cue = cues[i];
+                if (currentTime <= cue.endTime) {
+                    return i;
+                }
+            }
+            return cues.length - 1;
+        }
+        function getCuesLength() {
+            return Array.from(findENCues()?.cues || []).length;
+        }
+        function getSubCuesLength() {
+            return Array.from(findCNCues()?.cues || []).length;
+        }
+
+        function fetchLocalCurIndex() {
+            const curIndexValue = localStorage.getItem(localCurIndexKey);
+            if (curIndexValue == null) {
+                audioPlayer.currentCueIndex = 0
+            } else {
+                audioPlayer.currentCueIndex = parseInt(curIndexValue);
+            }
+            const tmpAdjustStartTime = localStorage.getItem(adjustStartTimeKey);
+            if (tmpAdjustStartTime != null) {
+                adjustStartTime = parseFloat(tmpAdjustStartTime);
+                $('#duration-starttime').val(adjustStartTime);
+            };
+            const tmpAdjustEndTime = localStorage.getItem(adjustEndTimeKey);
+            if (tmpAdjustEndTime != null) {
+                adjustEndTime = parseFloat(tmpAdjustEndTime);
+                $('#duration-endtime').val(adjustEndTime);
+            };
+        }
+
+        function storeLocalCurIndex() {
+            console.log('storeLocalCurIndex||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
+            localStorage.setItem(localCurIndexKey, audioPlayer.currentCueIndex);
+            localStorage.setItem(adjustStartTimeKey, adjustStartTime);
+            localStorage.setItem(adjustEndTimeKey, adjustEndTime);
+        }
+
+        function jump2CurCue() {
+            // https://docs.videojs.com/docs/api/player.html#MethodsreadyState
+            if (audioPlayer.readyState() < 1) {
+                return
+            }
+            console.log('jump2CurCue||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
+            var cue = findENCues()?.cues[audioPlayer.currentCueIndex];
+            audioPlayer.currentTime(cue.startTime + adjustStartTime);
+            // only improve ending time exceedence, couldn't solve it completely
+            // setTimeout(timeUpdate, cue.endTime - cue.startTime - 0.1)
+            setTimeout(timeUpdate, cue.endTime - cue.startTime)
+            // setTimeout(timeUpdate, cue.endTime - cue.startTime + 0.1)
+
+            storeLocalCurIndex();
+        }
+
+        function timeUpdate() {
+            // https://docs.videojs.com/docs/api/player.html#MethodsreadyState
+            if (audioPlayer.readyState() < 1) {
+                return
+            }
+            // console.log('timeUpdate||currentTime:' + audioPlayer.currentTime());
+
+            const currentTime = audioPlayer.currentTime();
+            const cues = Array.from(findENCues()?.cues || []);
+            if (audioPlayer.currentCueIndex >= 0 && audioPlayer.currentCueIndex < cues.length) {
+                var cue = cues[audioPlayer.currentCueIndex];
+                // for more graceful ending
+                const cueStarttime = cue.startTime + adjustStartTime - 0.01;
+                const cueEndtime = cue.endTime + adjustEndTime;
+                // Only when the end of a piece or progress bar operation
+                // We can't distinguish between progress bar change and timeupdate
+                // because currentTime change will also trigger seeking and seeked event.
+                // So here we differentiate them through duration between new_current_time 
+                // and cues[audioPlayer.currentCueIndex].endTime, if it's less than 1s, it's
+                // considered as ending of a piece, otherwise a manual progress bar operation
+                // because most of the time, mannual progess bar operation aimed at big
+                // time change
+                if (!(cueStarttime <= currentTime && currentTime < cueEndtime)) {
+                    // adjust cue index proactively is not often used, so cancel this temporarily
+                    if (Math.abs(currentTime - cueEndtime) > 1) {
+                        // audioPlayer.currentCueIndex = findProperCueIndex(currentTime)
+                    }
+
+                    flushListHighlight();
+                    // less than 0.1 is ok
+                    console.log('timeUpdate||Endtime exceedance:' + (audioPlayer.currentTime() - cueEndtime));
+                    jump2CurCue();
+                }
+            } else (
+                audioPlayer.pause()
+            )
+        }
+
+        function flushListHighlight() {
+            var highlightClass = 'list-group-item-success';
+            var list = $('#subtitle-list');
+            list.find('li').removeClass(highlightClass);
+            var li = list.children().eq(audioPlayer.currentCueIndex);
+            li.addClass(highlightClass);
+
+            var pos = (
+                li.offset().top + list.scrollTop()
+                - list.offset().top - list.height() / 2 + li.height() / 2);
+            // console.log('pos:' + pos);
+            list.animate({ scrollTop: pos });
+        }
+
+        function formatTime(seconds) {
+            var time = new Date(0, 0, 0, 0, 0, seconds.toFixed(2));
+            var hours = time.getHours().toString().padStart(2, '0');
+            var minutes = time.getMinutes().toString().padStart(2, '0');
+            var seconds = time.getSeconds().toString().padStart(2, '0');
+
+            return hours + ":" + minutes + ":" + seconds;
+        }
+
+        function loadedmetadata() {
+            // 获取第一个 TextTrack
+            console.log('loadedmetadata||Subtitles loaded cue:' + getCuesLength());
+
+            setTimeout(function () {
+                console.log('loadedmetadata||time trigger');
+                console.log('loadedmetadata||Subtitles loaded cue:' + getCuesLength());
+                const cues = Array.from(findENCues()?.cues || []);
+                //为每个cue分配一个唯一的ID
+                for (var i = 0; i < cues.length; i++) {
+                    cues[i].id = i.toString();
+                }
+                const subCues = Array.from(findCNCues()?.cues || []);
+                var hasSubCue = false;
+                if (subCues.length != 0) {
+                    console.log('loadedmetadata||Subtitles 2 loaded:' + getSubCuesLength());
+                    hasSubCue = true;
+                }
+
+                var list = $('#subtitle-list');
+                for (var i = 0, j = 0; i < cues.length; i++) {
+                    let cue = cues[i];
+                    var startTime = formatTime(cue.startTime);
+                    // var li = $('<li class="list-group-item">').text(startTime + '-' + cue.text);
+                    var li = $('<li class="list-group-item">')
+                        .append($("<span>").html(startTime + '-' + cue.text));
+                    if (hasSubCue == true && j < subCues.length) {
+                        let subCue = subCues[j];
+                        // 应对en和cn部分字幕数量不匹配的问题
+                        for (; subCue.startTime < cue.startTime;) {
+                            j++;
+                            if (j < subCues.length) {
+                                subCue = subCues[j];
+                            } else {
+                                break;
+                            }
+                        }
+                        if (subCue.startTime == cue.startTime) {
+                            li = li.append("<br>")
+                                .append($("<span>").addClass("list-group-item-subcue").html("CN: " + subCue.text));
+                            j++;
+                        }
+                    }
+
+                    li.click(function () {
+                        const selction = document.getSelection();
+                        if (selction.type != 'Range') {
+                            audioPlayer.currentCueIndex = parseInt(cue.id);
+                            flushListHighlight();
+                            // audioPlayer.currentTime(cue.startTime);
+                            jump2CurCue();
+                            audioPlayer.play();
+                        }
+                    });
+                    list.append(li);
+                }
+                fetchLocalCurIndex();
+                flushListHighlight();
+                jump2CurCue();
+            }, 1000);
+        }
+
+        function previousAudio() {
+            audioPlayer.currentCueIndex -= 1;
+            audioPlayer.currentCueIndex %= getCuesLength();
+            flushListHighlight();
+            jump2CurCue();
+        };
+        function nextAudio() {
+            audioPlayer.currentCueIndex += 1;
+            audioPlayer.currentCueIndex %= getCuesLength();
+            flushListHighlight();
+            jump2CurCue();
+        };
+
         // https://videojs.com/guides/options/
         // videojs.getPlayer('audioPlayer').ready(
-        videojs('audioPlayer', null, function () {
+        var audioPlayer = videojs('audioPlayer', null, function () {
             // getPlayer may return null if player is not ready
-            const audioPlayer = videojs.getPlayer('audioPlayer');
+            audioPlayer = videojs.getPlayer('audioPlayer');
             audioPlayer.one('loadedmetadata', loadedmetadata);
             audioPlayer.options(initOptions);
 
@@ -240,199 +568,6 @@
                 storeLocalCurIndex();
             });
 
-            function findENCues() {
-                return Array.from(audioPlayer.textTracks()).find(track => track.language === 'en');
-            }
-            function findCNCues() {
-                return Array.from(audioPlayer.textTracks()).find(track => track.language === 'cn');
-            }
-
-            function findProperCueIndex(currentTime) {
-                const cues = Array.from(findENCues()?.cues || []);
-
-                //为每个cue分配一个唯一的ID
-                if (cues.length <= 1) {
-                    return 0;
-                }
-                for (var i = 0; i < cues.length; i++) {
-                    var cue = cues[i];
-                    if (currentTime <= cue.endTime) {
-                        return i;
-                    }
-                }
-                return cues.length - 1;
-            }
-            function getCuesLength() {
-                return Array.from(findENCues()?.cues || []).length;
-            }
-            function getSubCuesLength() {
-                return Array.from(findCNCues()?.cues || []).length;
-            }
-
-            function fetchLocalCurIndex() {
-                const curIndexValue = localStorage.getItem(localCurIndexKey);
-                if (curIndexValue == null) {
-                    audioPlayer.currentCueIndex = 0
-                } else {
-                    audioPlayer.currentCueIndex = parseInt(curIndexValue);
-                }
-                const tmpAdjustStartTime = localStorage.getItem(adjustStartTimeKey);
-                if (tmpAdjustStartTime != null) {
-                    adjustStartTime = parseFloat(tmpAdjustStartTime);
-                    $('#duration-starttime').val(adjustStartTime);
-                };
-                const tmpAdjustEndTime = localStorage.getItem(adjustEndTimeKey);
-                if (tmpAdjustEndTime != null) {
-                    adjustEndTime = parseFloat(tmpAdjustEndTime);
-                    $('#duration-endtime').val(adjustEndTime);
-                };
-            }
-
-            function storeLocalCurIndex() {
-                console.log('storeLocalCurIndex||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
-                localStorage.setItem(localCurIndexKey, audioPlayer.currentCueIndex);
-                localStorage.setItem(adjustStartTimeKey, adjustStartTime);
-                localStorage.setItem(adjustEndTimeKey, adjustEndTime);
-            }
-
-            function jump2CurCue() {
-                // https://docs.videojs.com/docs/api/player.html#MethodsreadyState
-                if (audioPlayer.readyState() < 1) {
-                    return
-                }
-                console.log('jump2CurCue||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
-                var cue = findENCues()?.cues[audioPlayer.currentCueIndex];
-                audioPlayer.currentTime(cue.startTime + adjustStartTime);
-                // only improve ending time exceedence, couldn't solve it completely
-                // setTimeout(timeUpdate, cue.endTime - cue.startTime - 0.1)
-                setTimeout(timeUpdate, cue.endTime - cue.startTime)
-                // setTimeout(timeUpdate, cue.endTime - cue.startTime + 0.1)
-
-                storeLocalCurIndex();
-            }
-
-            function timeUpdate() {
-                // https://docs.videojs.com/docs/api/player.html#MethodsreadyState
-                if (audioPlayer.readyState() < 1) {
-                    return
-                }
-                console.log('timeUpdate||currentTime:' + audioPlayer.currentTime());
-
-                const currentTime = audioPlayer.currentTime();
-                const cues = Array.from(findENCues()?.cues || []);
-                if (audioPlayer.currentCueIndex >= 0 && audioPlayer.currentCueIndex < cues.length) {
-                    var cue = cues[audioPlayer.currentCueIndex];
-                    // for more graceful ending
-                    const cueStarttime = cue.startTime + adjustStartTime - 0.01;
-                    const cueEndtime = cue.endTime + adjustEndTime;
-                    // Only when the end of a piece or progress bar operation
-                    // We can't distinguish between progress bar change and timeupdate
-                    // because currentTime change will also trigger seeking and seeked event.
-                    // So here we differentiate them through duration between new_current_time 
-                    // and cues[audioPlayer.currentCueIndex].endTime, if it's less than 1s, it's
-                    // considered as ending of a piece, otherwise a manual progress bar operation
-                    // because most of the time, mannual progess bar operation aimed at big
-                    // time change
-                    if (!(cueStarttime <= currentTime && currentTime < cueEndtime)) {
-                        // adjust cue index proactively is not often used, so cancel this temporarily
-                        if (Math.abs(currentTime - cueEndtime) > 1) {
-                            // audioPlayer.currentCueIndex = findProperCueIndex(currentTime)
-                        }
-
-                        flushListHighlight();
-                        // less than 0.1 is ok
-                        console.log('timeUpdate||Endtime exceedance:' + (audioPlayer.currentTime() - cueEndtime));
-                        jump2CurCue();
-                    }
-                } else (
-                    audioPlayer.pause()
-                )
-            }
-
-            function flushListHighlight() {
-                var highlightClass = 'list-group-item-success';
-                var list = $('#subtitle-list');
-                list.find('li').removeClass(highlightClass);
-                var li = list.children().eq(audioPlayer.currentCueIndex);
-                li.addClass(highlightClass);
-
-                var pos = (
-                    li.offset().top + list.scrollTop()
-                    - list.offset().top - list.height() / 2 + li.height() / 2);
-                // console.log('pos:' + pos);
-                list.animate({ scrollTop: pos });
-            }
-
-            function formatTime(seconds) {
-                var time = new Date(0, 0, 0, 0, 0, seconds.toFixed(2));
-                var hours = time.getHours().toString().padStart(2, '0');
-                var minutes = time.getMinutes().toString().padStart(2, '0');
-                var seconds = time.getSeconds().toString().padStart(2, '0');
-
-                return hours + ":" + minutes + ":" + seconds;
-            }
-
-            function loadedmetadata() {
-                // 获取第一个 TextTrack
-                console.log('loadedmetadata||Subtitles loaded cue:' + getCuesLength());
-
-                setTimeout(function () {
-                    console.log('loadedmetadata||time trigger');
-                    console.log('loadedmetadata||Subtitles loaded cue:' + getCuesLength());
-                    const cues = Array.from(findENCues()?.cues || []);
-                    //为每个cue分配一个唯一的ID
-                    for (var i = 0; i < cues.length; i++) {
-                        cues[i].id = i.toString();
-                    }
-                    const subCues = Array.from(findCNCues()?.cues || []);
-                    var hasSubCue = false;
-                    if (subCues.length != 0) {
-                        console.log('loadedmetadata||Subtitles 2 loaded:' + getSubCuesLength());
-                        hasSubCue = true;
-                    }
-
-                    var list = $('#subtitle-list');
-                    for (var i = 0, j = 0; i < cues.length; i++) {
-                        let cue = cues[i];
-                        var startTime = formatTime(cue.startTime);
-                        // var li = $('<li class="list-group-item">').text(startTime + '-' + cue.text);
-                        var li = $('<li class="list-group-item">')
-                            .append($("<span>").text(startTime + '-' + cue.text));
-                        if (hasSubCue == true && j < subCues.length) {
-                            let subCue = subCues[j];
-                            // 应对en和cn部分字幕数量不匹配的问题
-                            for (; subCue.startTime < cue.startTime;) {
-                                j++;
-                                if (j < subCues.length) {
-                                    subCue = subCues[j];
-                                } else {
-                                    break;
-                                }
-                            }
-                            if (subCue.startTime == cue.startTime) {
-                                li = li.append("<br>")
-                                    .append($("<span>").addClass("list-group-item-subcue").text("CN: " + subCue.text));
-                                j++;
-                            }
-                        }
-
-                        li.click(function () {
-                            const selction = document.getSelection();
-                            if (selction.type != 'Range') {
-                                audioPlayer.currentCueIndex = parseInt(cue.id);
-                                flushListHighlight();
-                                // audioPlayer.currentTime(cue.startTime);
-                                jump2CurCue();
-                                audioPlayer.play();
-                            }
-                        });
-                        list.append(li);
-                    }
-                    fetchLocalCurIndex();
-                    flushListHighlight();
-                    jump2CurCue();
-                }, 1000);
-            }
 
             if ($('#audioOnlyMode').is(':checked')) {
                 audioPlayer.audioOnlyMode(true);
@@ -470,24 +605,7 @@
                 }
             });
 
-            audioPlayer.on('seeking', function () {
-                // console.log('seeking currentTime:' + this.currentTime());
-            });
-            audioPlayer.on('seeked', function () {
-                // console.log('seeked currentTime:' + this.currentTime());
-            });
-            function previousAudio() {
-                audioPlayer.currentCueIndex -= 1;
-                audioPlayer.currentCueIndex %= getCuesLength();
-                flushListHighlight();
-                jump2CurCue();
-            };
-            function nextAudio() {
-                audioPlayer.currentCueIndex += 1;
-                audioPlayer.currentCueIndex %= getCuesLength();
-                flushListHighlight();
-                jump2CurCue();
-            };
+
 
             window.addEventListener('keydown', function (e) {
                 switch (e.keyCode) {

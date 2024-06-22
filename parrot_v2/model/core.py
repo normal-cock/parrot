@@ -373,19 +373,24 @@ class MeaningDTO(typing.NamedTuple):
     remark: str
 
 
-def get_related_meaning(session, query: str) -> typing.List[MeaningDTO]:
-    '''返回结果[(word_text, meaning_id, meaning_meaning, 
+def get_related_meaning(session, query: str, output='console') -> typing.List[MeaningDTO]:
+    '''
+    output console, html
+    返回结果[(word_text, meaning_id, meaning_meaning, 
         meaning_use_case, meaning_phonetic_symbol, meaning_remark)]'''
     # https: // stackoverflow.com/questions/287871/how-do-i-print-colored-text-to-the-terminal
     # https://stackoverflow.com/questions/53740460/ansi-escape-code-weird-behavior-at-end-of-line
+    highlight_style = ('\x1b[6;30;42m', '\x1b[0m\x1b[K')
+    if output == 'html':
+        highlight_style = ('<span class="highlight-span">', '</span>')
     search_sql = '''
         select word.text,meaning.id,meaning.meaning,
-            highlight(meaning_fts,0,'\x1b[6;30;42m','\x1b[0m\x1b[K'),
+            highlight(meaning_fts,0,'{}','{}'),
             meaning.phonetic_symbol,meaning.remark FROM meaning_fts 
                 LEFT JOIN meaning ON meaning_fts.rowid=meaning.id
                 LEFT JOIN word ON word.id=meaning.word_id
                 WHERE meaning_fts = :query order by rank limit 10;
-    '''
+    '''.format(*highlight_style)
     # result = session.execute(search_sql)
     result = session.execute(
         search_sql, {'query': query})
