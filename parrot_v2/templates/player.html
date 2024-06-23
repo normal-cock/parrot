@@ -184,6 +184,7 @@
     <div id="contextMenu" role="group" class="btn-group-vertical" style="display:none">
         <!-- <div id="contextMenu" role="group" class="btn-group-vertical"> -->
         <button id="search" type="button" class="btn btn-secondary">Search</button>
+        <button id="query-word" type="button" class="btn btn-secondary">Query Word</button>
         <button type="button" class="btn btn-secondary">Left</button>
         <button type="button" class="btn btn-secondary">Left</button>
         <button type="button" class="btn btn-secondary">Left</button>
@@ -202,20 +203,10 @@
 
         function showContextMenu() {
             contextMenu.show();
-            // $(document).on("click.custom", hideContextMenu);
-            // $(document).on('click', hideContextMenu);
-            // contextMenu.css('display', 'block');
-            // contextMenu.css({
-            //     left: e.pageX + 'px',
-            //     top: e.pageY + 'px'
-            // });
         };
         function hideContextMenu() {
             console.log('hide context menu')
             contextMenu.hide();
-            // $(document).off(".custom");
-            // contextMenu.show();
-            // contextMenu.css('display', 'none');
         };
 
         function searchCallback(response) {
@@ -260,22 +251,28 @@
             hideContextMenu();
         };
 
+        function querywordHttpRequest() {
+            // var q = window.getSelection();
+            var q = selectedText;
+            console.log('querywordHttpRequest:' + q)
+            // q = 'more';
+            $.ajax({
+                url: `/{{ passport }}/queryword/${q}`,
+                type: 'GET',
+                success: function (response) {
+                    searchCallback(response);
+                }
+            });
+            hideContextMenu();
+        };
+
         $('#search').on('click', searchHttpRequest);
+        $('#query-word').on('click', querywordHttpRequest);
         $(document).on('contextmenu', function (e) {
             e.preventDefault();
             showContextMenu();
         });
 
-
-        // const myDiv = document.getElementById('myDiv');
-        // myDiv.addEventListener('selectionchange', function () {
-        //     // 选中操作处理逻辑
-        //     const selection = window.getSelection();
-        //     if (selection.toString() !== '') {
-        //         alert(`选中了 ${selection.toString()}`);
-        //     }
-        // });
-        // TODO handle mouseup and click conflict
         function selectEndHandle(e) {
 
             sel = window.getSelection();

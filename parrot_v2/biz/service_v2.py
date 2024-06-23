@@ -2,9 +2,10 @@ import time
 import uuid
 from sqlalchemy import desc
 from parrot_v2 import Session, DEBUG, PW
-from parrot_v2.model import Item
+from parrot_v2.model import Item, Word
 from parrot_v2.dal.aliyun_oss import oss_sington
 from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning
+from parrot_v2.util import logger
 
 
 def get_media_url(item_id):
@@ -90,3 +91,28 @@ def blur_search(query: str):
     meaning_list = get_related_meaning(session, query, output='html')
     session.close()
     return meaning_list
+
+
+def query_word(word_text: str):
+    '''返回结果[(word_text, meaning_id, meaning_meaning, 
+        meaning_use_case, meaning_phonetic_symbol, meaning_remark)]'''
+    result_list = []
+    session = Session()
+    word = session.query(Word).filter(
+        Word.text == word_text).one_or_none()
+    if word == None:
+        logger.info('query_word||word not found')
+        return result_list
+
+    logger.info('query_word||word is found')
+    for i, meaning in enumerate(word.meanings):
+        result_list.append([
+            meaning.word.text,
+            meaning.id,
+            meaning.meaning,
+            meaning.use_case,
+            meaning.phonetic_symbol,
+            meaning.remark,
+        ])
+    session.close()
+    return result_list
