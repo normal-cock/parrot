@@ -1,11 +1,14 @@
 import time
 import uuid
+import nltk
+from nltk.corpus import wordnet
 from sqlalchemy import desc
 from parrot_v2 import Session, DEBUG, PW
 from parrot_v2.model import Item, Word
 from parrot_v2.dal.aliyun_oss import oss_sington
 from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning
 from parrot_v2.util import logger
+from parrot_v2.util import nlp_tool
 
 
 def get_media_url(item_id):
@@ -96,10 +99,11 @@ def blur_search(query: str):
 def query_word(word_text: str):
     '''返回结果[(word_text, meaning_id, meaning_meaning, 
         meaning_use_case, meaning_phonetic_symbol, meaning_remark)]'''
+    origin_word_text = nlp_tool.get_origin_morphy_4_phrase(word_text)
     result_list = []
     session = Session()
     word = session.query(Word).filter(
-        Word.text == word_text).one_or_none()
+        Word.text == origin_word_text).one_or_none()
     if word == None:
         logger.info('query_word||word not found')
         return result_list
@@ -116,3 +120,46 @@ def query_word(word_text: str):
         ])
     session.close()
     return result_list
+
+
+def unknown_checker_gen(session):
+    def _checker(word) -> bool:
+        lower_word = word.lower()
+        _, pos = nltk.pos_tag([lower_word])[0]
+        if pos.upper().startswith('PRP'):
+            return False
+        word = session.query(Word).filter(
+            Word.text == lower_word).one_or_none()
+        return word == None
+    return _checker
+
+
+def parse_sentence(selected, sentence):
+    '''
+        return {
+            'selected':{
+                'cleaned_word':'',
+                'qr':[{'pron':'', 'cn_def':'',}],
+            },
+            'unknown_words':{
+                'raw_word':[{'pron':'', 'cn_def':'',}],
+            }
+        }
+    '''
+    session = Session()
+    cleaned_selected, selected_qr, unknown_qr = nlp_tool.parse_sentence(
+        selected, sentence, unknown_checker_gen(session))
+    session.close()
+
+    return {
+        'selected': {
+            'cleaned_word': cleaned_selected,
+            'qr': selected_qr,
+        },
+        'unknown_words': unknown_qr,
+    }
+
+if __name__ == '__main__':
+    selected = 'dangerous'
+    sentence = 'sentence=more fearsome and dangerous than the old'
+    print(parse_sentence(selected, sentence))

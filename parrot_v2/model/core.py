@@ -397,3 +397,14 @@ def get_related_meaning(session, query: str, output='console') -> typing.List[Me
     return [MeaningDTO(word_text=row[0], id=row[1], meaning=row[2],
                        use_case=row[3], phonetic_symbol=row[4], remark=row[5])
             for row in result]
+
+
+class CWordPos(enum.Enum):
+    NOUN = 1
+    VERB = 2
+    ADJ = 3
+    ADV = 4
+    OTHER = 5
+
+    def may_have_different_pron_by_pos(self):
+        return self.value in [1, 2, 3]

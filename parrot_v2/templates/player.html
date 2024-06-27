@@ -67,11 +67,6 @@
             font-size: 0.7em;
         }
 
-        /* .control-item {
-            height: 39px;
-            width: 39px;
-        } */
-
         .video-js {
             width: 100vw;
         }
@@ -81,20 +76,7 @@
                 font-size: 3rem;
             }
         } */
-        .card-container {
-            position: absolute;
-            /* overflow: auto; */
-            width: 100vw;
-            max-height: 60%;
-            /* height: 60%; */
-            bottom: 0;
-            background-color: white;
-        }
 
-        #close-card-container {
-            float: right;
-            /* position: absolute; */
-        }
 
         .card-list {
             /* position: absolute; */
@@ -104,10 +86,27 @@
             width: 100%;
         }
 
-        .btn-close {
-            /* position: relative; */
-            /* right: 0; */
-            /* margin-right: 2%; */
+        .http-result-container {
+            position: absolute;
+            /* overflow: auto; */
+            width: 100vw;
+            max-height: 60%;
+            /* height: 60%; */
+            bottom: 0;
+            padding-left: 2%;
+            background-color: white;
+        }
+
+        .http-result-closer {
+            margin-top: 1%;
+            margin-right: 1%;
+            float: right;
+            /* position: absolute; */
+        }
+
+
+        .pr-item {
+            margin-bottom: 3%;
         }
 
         #contextMenu {
@@ -173,19 +172,32 @@
             <ul id="subtitle-list" class="list-group"></ul>
         </div>
     </div>
-    <div class="card-container" style="display:none">
-        <!-- <div class="card-container"> -->
+    <div class="http-result-container card-container card" style="display:none">
         <div class="card-container-button">
-            <button id="close-card-container" type="button" class="btn-close" aria-label="Close"></button>
+            <button id="close-card-container" type="button" class="btn-close http-result-closer"
+                aria-label="Close"></button>
         </div>
         <div id="card-list" class="card-list"></div>
+    </div>
+    <div class="http-result-container parse-result card" style="display:none">
+        <div class="card-container-button">
+            <button id="pr-close" type="button" class="btn-close http-result-closer" aria-label="Close"></button>
+        </div>
+        <div id="pr-review-record" class="pr-item">
+            <div id="pr-word"></div>
+            <div id="pr-pron"></div>
+            <div id="pr-cn-def"></div>
+            <div id="pr-sentence"></div>
+            <div id="pr-remark"></div>
+        </div>
+        <div id="pr-meaning-select" class="pr-item card-list"></div>
     </div>
     <!-- context menu -->
     <div id="contextMenu" role="group" class="btn-group-vertical" style="display:none">
         <!-- <div id="contextMenu" role="group" class="btn-group-vertical"> -->
         <button id="search" type="button" class="btn btn-secondary">Search</button>
         <button id="query-word" type="button" class="btn btn-secondary">Query Word</button>
-        <button type="button" class="btn btn-secondary">Left</button>
+        <button id="parse-sentence" type="button" class="btn btn-secondary">Parse Sentence</button>
         <button type="button" class="btn btn-secondary">Left</button>
         <button type="button" class="btn btn-secondary">Left</button>
         <button type="button" class="btn btn-secondary">Left</button>
@@ -193,12 +205,19 @@
 
     <script>
         const cardContainer = $('.card-container');
+        const parseResult = $('.parse-result');
         const cardList = $('#card-list');
+        const prMeaningSelect = $('#pr-meaning-select');
         const contextMenu = $('#contextMenu');
         $('#close-card-container').on('click', function () {
             cardContainer.hide();
             cardList.empty();
         });
+        $('#pr-close').on('click', function () {
+            parseResult.hide();
+            prMeaningSelect.empty();
+        });
+
         var selectedText = '';
 
         function showContextMenu() {
@@ -266,13 +285,6 @@
             hideContextMenu();
         };
 
-        $('#search').on('click', searchHttpRequest);
-        $('#query-word').on('click', querywordHttpRequest);
-        $(document).on('contextmenu', function (e) {
-            e.preventDefault();
-            showContextMenu();
-        });
-
         function selectEndHandle(e) {
 
             sel = window.getSelection();
@@ -288,11 +300,112 @@
                 hideContextMenu();
             }
         }
+
+        function parseSentenceCallback(response) {
+            var selectionCleanWord = response.selected.cleaned_word;
+            var selectionQRList = response.selected.qr;
+            var unknownWords = response.unknown_words;
+            const sentence = response.sentence;
+            var selectedSelectionIndex = 0;
+            var selectedUnknownQRIndex = {};
+            const prWord = $('#pr-word');
+            const prPron = $('#pr-pron');
+            const prCnDef = $('#pr-cn-def');
+            const prSentence = $('#pr-sentence');
+            const prRemark = $('#pr-remark');
+            const prMeaningSelectContainer = $("#pr-meaning-select");
+            prWord.text(selectionCleanWord);
+            function flushReviewRecord() {
+                // const selectionQR = selectionQRList[selectedSelectionIndex];
+                const selectionQR = selectionQRList[selectedUnknownQRIndex[selectionCleanWord]];
+                var selectionPron = '';
+                var selectionMeaning = '';
+                if (selectionQR !== undefined) {
+                    selectionPron = selectionQR['pron'] ?? '';
+                    selectionMeaning = selectionQR['pos'] + ' ' + selectionQR['cn_def'];
+                }
+                var parsedSentence = sentence;
+                const remarkList = [];
+                $.each(selectedUnknownQRIndex, function (word, i) {
+                    if (word != selectionCleanWord) {
+                        const qr = unknownWords[word][i];
+                        parsedSentence = parsedSentence.replace(word, `${word}[${qr['pron']}]`);
+                        remarkList.push(`${word} ${qr['pos']} ${qr['cn_def']}`);
+                    }
+                })
+                prPron.text(selectionPron);
+                prCnDef.text(selectionMeaning);
+                prSentence.text(parsedSentence);
+                prRemark.text(remarkList.join('; '));
+            }
+            function genRadio(word, queryResult) {
+                const radioCardDiv = $('<div class="pr-item">')
+                $.each(queryResult, function (i, qr) {
+                    const inputID = `${word}-${i}`;
+                    const radioText = `[${qr['pron']}] ${qr['pos']} ${qr['cn_def']}`;
+                    const radioItemDiv = $('<div class="form-check">');
+                    const input = $(`<input class="form-check-input" type="radio" name="${word}" id="${inputID}">`);
+                    const lable = $(`<label class="form-check-label" for="${inputID}">`).text(radioText);
+                    input.change(function () {
+                        selectedUnknownQRIndex[word] = i;
+                        flushReviewRecord();
+                    });
+                    if (i == 0) {
+                        input.prop('checked', true);
+                    }
+                    radioItemDiv.append(input);
+                    radioItemDiv.append(lable);
+                    radioCardDiv.append(radioItemDiv);
+                });
+                selectedUnknownQRIndex[word] = 0;
+                return radioCardDiv;
+            }
+            const selectDiv = genRadio(selectionCleanWord, selectionQRList);
+            prMeaningSelectContainer.append(selectDiv);
+            $.each(unknownWords, function (word, qrList) {
+                const tmpSelectDiv = genRadio(word, qrList);
+                prMeaningSelectContainer.append(tmpSelectDiv);
+            });
+            flushReviewRecord();
+            parseResult.show();
+        }
+
+        function parseSentence(e) {
+            // var q = window.getSelection();
+            var selected = selectedText;
+            var sentence = getCurrentCue().text;
+            // q = 'more';
+            var data = {
+                selected: selected,
+                sentence: sentence,
+            };
+            console.log('parseSentence:' + data)
+            $.ajax({
+                url: `/{{ passport }}/parsestc`,
+                type: 'POST',
+                data: data,
+                success: function (response) {
+                    parseSentenceCallback(response);
+                }
+            });
+            hideContextMenu();
+        }
+
         $('.list-group').on('mouseup', selectEndHandle);
         $('.list-group').on('touchend', selectEndHandle);
 
+        $('#search').on('click', searchHttpRequest);
+        $('#query-word').on('click', querywordHttpRequest);
+        $('#parse-sentence').on('click', parseSentence);
+        // $(document).on('contextmenu', function (e) {
+        //     e.preventDefault();
+        //     showContextMenu();
+        // });
+
+
+
         // Get a reference to an element.
-        var listGroup = document.querySelector('.list-group');
+        // var listGroup = document.querySelector('.list-group');
 
         // Create an instance of Hammer with the reference.
         // var hammer = new Hammer(listGroup);
@@ -390,6 +503,9 @@
             localStorage.setItem(adjustEndTimeKey, adjustEndTime);
         }
 
+        function getCurrentCue() {
+            return findENCues()?.cues[audioPlayer.currentCueIndex];
+        }
         function jump2CurCue() {
             // https://docs.videojs.com/docs/api/player.html#MethodsreadyState
             if (audioPlayer.readyState() < 1) {
