@@ -198,9 +198,6 @@
         <button id="search" type="button" class="btn btn-secondary">Search</button>
         <button id="query-word" type="button" class="btn btn-secondary">Query Word</button>
         <button id="parse-sentence" type="button" class="btn btn-secondary">Parse Sentence</button>
-        <button type="button" class="btn btn-secondary">Left</button>
-        <button type="button" class="btn btn-secondary">Left</button>
-        <button type="button" class="btn btn-secondary">Left</button>
     </div>
 
     <script>
@@ -339,7 +336,8 @@
                 prRemark.text(remarkList.join('; '));
             }
             function genRadio(word, queryResult) {
-                const radioCardDiv = $('<div class="pr-item">')
+                const radioCardDiv = $('<div class="pr-item">');
+                radioCardDiv.append($('<div>').text(word));
                 $.each(queryResult, function (i, qr) {
                     const inputID = `${word}-${i}`;
                     const radioText = `[${qr['pron']}] ${qr['pos']} ${qr['cn_def']}`;

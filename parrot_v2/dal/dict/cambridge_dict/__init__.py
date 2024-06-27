@@ -26,7 +26,13 @@ def entry_filter(soup):
 
 
 def meaning_filter(soup):
-    return soup.select('*.pr.dsense')
+    meanings = soup.select('.def-block')
+    meaning_list = []
+    for meaning in meanings:
+        if meaning.find_parent(class_='phrase-block'):
+            continue
+        meaning_list.append(meaning)
+    return meaning_list
 
 
 def get_pos(soup):
@@ -34,19 +40,26 @@ def get_pos(soup):
     if posgram:
         return posgram.get_text()
 
-    return soup.select_one('*.pos.dpos').get_text()
+    dpos = soup.select_one('*.pos.dpos')
+    if dpos:
+        return dpos.get_text()
+    return 'Non-Pos'
 
 
 def get_pron(soup):
     us_pron = soup.select_one(
-        '*.us.dpron-i').select_one('*.ipa.dipa.lpr-2.lpl-1')
+        '*.us.dpron-i')
     if us_pron != None:
-        return us_pron.get_text()
+        us_pron = us_pron.select_one('*.ipa.dipa.lpr-2.lpl-1')
+        if us_pron != None:
+            return us_pron.get_text()
     uk_pron = soup.select_one(
-        '*.uk.dpron-i').select_one('*.ipa.dipa.lpr-2.lpl-1')
+        '*.uk.dpron-i')
     if uk_pron != None:
-        return uk_pron.get_text()
-    return 'Non pron found'
+        uk_pron = uk_pron.select_one('*.ipa.dipa.lpr-2.lpl-1')
+        if uk_pron != None:
+            return uk_pron.get_text()
+    return 'Non-Pron'
 
 
 def get_en_def(soup):
@@ -146,7 +159,8 @@ def query_word_with_pos(word, cpos: CWordPos):
 
 
 if __name__ == '__main__':
-    meanings, err_str = raw_query('record')
+    # meanings, err_str = raw_query('record')
+    meanings, err_str = raw_query('be born')
     if len(err_str) != 0:
         print(err_str)
         exit(0)

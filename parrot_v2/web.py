@@ -1,7 +1,6 @@
 import json
 import time
 from cachelib.file import FileSystemCache
-from bs4 import BeautifulSoup
 from flask import Flask, session, request
 from flask import render_template, make_response
 from flask_session import Session
@@ -11,7 +10,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from parrot_v2 import DATA_DIR, PW
 from parrot_v2.biz import service_v2 as biz_v2
 from parrot_v2.biz.service_v2 import get_media_url, get_item_list, get_item_total, blur_search
-from parrot_v2.util import logger
+from parrot_v2.util import logger, nlp_tool
 from flask_paginate import Pagination, get_page_parameter
 
 app = Flask(__name__)
@@ -122,64 +121,11 @@ def parse_sentence(passport):
         return make_response('', 404)
     selected = request.form.get('selected')
     sentence = request.form.get('sentence')
-    selected = BeautifulSoup(selected, 'html.parser').get_text()
-    sentence = BeautifulSoup(sentence, 'html.parser').get_text()
+    selected = nlp_tool.clear_fmt(selected)
+    sentence = nlp_tool.clear_fmt(sentence)
+
     logger.info(
         f'selected={selected}||sentence={sentence}||begin biz_v2.parse_sentence')
-    # return {
-    #     "sentence": "more fearsome and dangerous than the old",
-    #     "selected": {
-    #         "cleaned_word": "dangerous",
-    #         "qr": [
-    #             {
-    #                 "cn_def": "\u5371\u9669\u7684\uff0c\u6709\u5a01\u80c1\u7684;\u4e0d\u5b89\u5168\u7684",
-    #                 "en_def": "A dangerous person, animal, thing, or activity could harm you.",
-    #                 "pos": "adjective",
-    #                 "pron": "\u02c8de\u026an.d\u0292\u025a.\u0259s",
-    #                 "word": "dangerous"
-    #             }
-    #         ]
-    #     },
-    #     "unknown_words": {
-    #         "old": [
-    #             {
-    #                 "cn_def": "\u8001\u7684;\u5e74\u8001\u7684;\u53e4\u8001\u7684",
-    #                 "en_def": "having lived or existed for many years",
-    #                 "pos": "adjective",
-    #                 "pron": "o\u028ald",
-    #                 "word": "old"
-    #             },
-    #             {
-    #                 "cn_def": "\u2026\u5c81\u7684",
-    #                 "en_def": "used to describe or ask about someone's age",
-    #                 "pos": "adjective",
-    #                 "pron": "o\u028ald",
-    #                 "word": "old"
-    #             },
-    #             {
-    #                 "cn_def": "\u8fc7\u53bb\u7684;\u65e7\u65f6\u7684\uff0c\u4ece\u524d\u7684\uff0c\u4ee5\u524d\u7684",
-    #                 "en_def": "from a period in the past",
-    #                 "pos": "adjective",
-    #                 "pron": "o\u028ald",
-    #                 "word": "old"
-    #             },
-    #             {
-    #                 "cn_def": "",
-    #                 "en_def": "a language when it was in an early stage in its development: ",
-    #                 "pos": "adjective",
-    #                 "pron": "o\u028ald",
-    #                 "word": "old"
-    #             },
-    #             {
-    #                 "cn_def": "\uff08\u5c24\u6307\u670b\u53cb\uff09\u8001\u7684\uff0c\u7ed3\u8bc6\u4e45\u7684",
-    #                 "en_def": "(especially of a friend) known for a long time",
-    #                 "pos": "adjective",
-    #                 "pron": "o\u028ald",
-    #                 "word": "old"
-    #             }
-    #         ]
-    #     }
-    # }
     resp_dict = biz_v2.parse_sentence(selected, sentence)
     resp_dict['sentence'] = sentence
     return resp_dict

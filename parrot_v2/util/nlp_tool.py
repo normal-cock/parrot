@@ -12,11 +12,18 @@ from collections import OrderedDict
 import nltk
 from nltk.corpus import wordnet
 from nltk.tokenize.treebank import TreebankWordDetokenizer
+from bs4 import BeautifulSoup
 from parrot_v2.model.core import CWordPos
 from parrot_v2.dal.dict.cambridge_dict import query_word_with_pos
 from parrot_v2.util import logger
 
 detokenizer = TreebankWordDetokenizer()
+
+
+def clear_fmt(input):
+    input = BeautifulSoup(input, 'html.parser').get_text()
+    tokens = nltk.word_tokenize(input)
+    return detokenizer.detokenize(tokens)
 
 
 def get_cwordpost_from_pos(pos: str) -> CWordPos:
@@ -36,15 +43,15 @@ def morphy_by_cpos(token: str, cpos: CWordPos) -> str:
     token = token.lower().strip()
     if len(token.strip()) == 0:
         raise Exception('empty token')
-    origin_token = ''
-    if cpos == CWordPos.VERB:
-        origin_token = wordnet.morphy(token, wordnet.VERB)
+    origin_token = token
     if cpos == CWordPos.NOUN:
         origin_token = wordnet.morphy(token, wordnet.NOUN)
-    if origin_token == None or len(origin_token) == 0:
-        origin_token = wordnet.morphy(token)
-        if origin_token == None:
-            origin_token = token
+    # if cpos == CWordPos.VERB:
+    #     origin_token = wordnet.morphy(token, wordnet.VERB)
+    # if origin_token == None or len(origin_token) == 0:
+    #     origin_token = wordnet.morphy(token)
+    #     if origin_token == None:
+    #         origin_token = token
     return origin_token
 
 
@@ -56,8 +63,7 @@ def get_origin_morphy_4_phrase(phrase: str):
     # https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html
     tags = nltk.pos_tag(tokens)
     is_start_with_be = False
-    # import ipdb
-    # ipdb.set_trace()
+
     for i, (token, pos) in enumerate(tags):
         origin_token = ''
         cpos = get_cwordpost_from_pos(pos)
@@ -92,8 +98,9 @@ def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str], boo
         origin_token = ''
         lower_token = token.lower()
         cpos = get_cwordpost_from_pos(pos)
-        if token in selected_tokens and word_cpos == None:
-            word_cpos = cpos
+        if token in selected_tokens:
+            if word_cpos == None:
+                word_cpos = cpos
         else:
             # import ipdb
             # ipdb.set_trace()
@@ -108,27 +115,6 @@ def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str], boo
 
     word_query_result = query_word_with_pos(word_text, word_cpos)
     return word_text, word_query_result, unknown_words
-
-    if len(word_query_result) != 0:
-        word_pron = word_query_result[0]['pron']
-        word_cn_def = f"{word_query_result[0]['pos']} {word_query_result[0]['cn_def']}"
-
-    new_sentence = sentence
-    for token, query_result_list in unknown_words.items():
-        query_result = query_result_list[0]
-        token_with_pron = f"{token}[{query_result['pron']}]"
-        new_sentence = new_sentence.replace(token, token_with_pron)
-
-    remark = ';'.join(
-        [f"{value['word']} {value['pos']} {value['cn_def']}" for value in unknown_words.values()])
-
-    return {
-        'word_text': word_text,
-        'pron': word_pron,
-        'cn_def': word_cn_def,
-        'new_sentence': new_sentence,
-        'remark': remark,
-    }
 
 
 if __name__ == '__main__':

@@ -129,6 +129,10 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 
 [P0]选中单词一键复制. 省去格式化时间和句子选中时间——Done
 [P0]一键生成生词记录。根据是否不在自己的词库中，来决定是否自动添加音标——Done
+[P1]unknown_words的顺序问题。向前端传list，而非dict
+[P2]看看能不能识别短语
+[P1]查询时间的优化
+
 
 input
     selected_word
@@ -142,11 +146,11 @@ output
 1. 单词进行词性判断并还原为原型
     1. 还原: https://www.nltk.org/howto/stem.html
 2. 然后用原型进行检查，如果不在库里和白名单里的，就自动根据词性查询单词的含义
-    3. 不如自己写。下面两个要么不全无法查询音标，要不复用性不强。
+    1. 不如自己写。下面两个要么不全无法查询音标，要不复用性不强。
         1. https://github.com/geekpradd/PyDictionary
         2. https://github.com/mhwgoo/cambridge
-    4. NLTK
-    5. chatgpt中“python如何查询英文单词的意思”
+    2. NLTK
+    3. chatgpt中“python如何查询英文单词的意思”
 3. 预览最终结果
 
 如果单词有多个意思，就选择一下；是在不行，退而求其次，只自动加音标

@@ -160,6 +160,6 @@ def parse_sentence(selected, sentence):
     }
 
 if __name__ == '__main__':
-    selected = 'dangerous'
+    selected = 'poor'
     sentence = 'sentence=more fearsome and dangerous than the old'
     print(parse_sentence(selected, sentence))
