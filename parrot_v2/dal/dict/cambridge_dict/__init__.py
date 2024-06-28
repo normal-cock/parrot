@@ -20,6 +20,9 @@ class==entry-body__el
 
 '''
 
+NON_POS = 'Non-Pos'
+NON_PRON = 'Non-Pron'
+
 
 def entry_filter(soup):
     return soup.select('div.entry-body__el')
@@ -43,7 +46,7 @@ def get_pos(soup):
     dpos = soup.select_one('*.pos.dpos')
     if dpos:
         return dpos.get_text()
-    return 'Non-Pos'
+    return NON_POS
 
 
 def get_pron(soup):
@@ -59,7 +62,7 @@ def get_pron(soup):
         uk_pron = uk_pron.select_one('*.ipa.dipa.lpr-2.lpl-1')
         if uk_pron != None:
             return uk_pron.get_text()
-    return 'Non-Pron'
+    return NON_PRON
 
 
 def get_en_def(soup):
@@ -152,7 +155,7 @@ def query_word_with_pos(word, cpos: CWordPos):
         raise Exception(err_str)
     filtered_result_list = []
     for result in result_list:
-        if _is_pos_match(result['pos'], cpos):
+        if _is_pos_match(result['pos'], cpos) or result['pos'] == NON_POS:
             filtered_result_list.append(result)
 
     return filtered_result_list
@@ -160,7 +163,8 @@ def query_word_with_pos(word, cpos: CWordPos):
 
 if __name__ == '__main__':
     # meanings, err_str = raw_query('record')
-    meanings, err_str = raw_query('be born')
+    # meanings, err_str = raw_query('be born')
+    meanings, err_str = raw_query('rang')
     if len(err_str) != 0:
         print(err_str)
         exit(0)

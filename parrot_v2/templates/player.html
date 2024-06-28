@@ -741,13 +741,17 @@
             }, true);
 
             document.addEventListener('copy', function (e) {
-                const selction = document.getSelection();
-                if (selction.type == 'Range') {
-                    const text_only = selction.toString();
-                    const clipdata = e.clipboardData || window.clipboardData;
-                    clipdata.setData('text/plain', text_only);
-                    clipdata.setData('text/html', text_only);
-                    e.preventDefault();
+                const selection = document.getSelection();
+                if (selection.type == 'Range') {
+                    var ele = $(selection.anchorNode);
+                    if (ele.closest('#subtitle-list').length > 0) {
+                        const text_only = selection.toString();
+                        const clipdata = e.clipboardData || window.clipboardData;
+                        console.log('clear paste format');
+                        clipdata.setData('text/plain', text_only);
+                        clipdata.setData('text/html', text_only);
+                        e.preventDefault();
+                    }
                 }
             });
 

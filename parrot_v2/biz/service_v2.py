@@ -150,6 +150,7 @@ def parse_sentence(selected, sentence):
     cleaned_selected, selected_qr, unknown_qr = nlp_tool.parse_sentence(
         selected, sentence, unknown_checker_gen(session))
     session.close()
+    logger.info('unkown words:' + ', '.join(unknown_qr.keys()))
 
     return {
         'selected': {
@@ -159,7 +160,10 @@ def parse_sentence(selected, sentence):
         'unknown_words': unknown_qr,
     }
 
+
 if __name__ == '__main__':
-    selected = 'poor'
-    sentence = 'sentence=more fearsome and dangerous than the old'
+    # selected = 'poor'
+    # sentence = 'sentence=more fearsome and dangerous than the old'
+    selected = 'notes'
+    sentence = 'The deep notes of Big Ben rang out into the night'
     print(parse_sentence(selected, sentence))
