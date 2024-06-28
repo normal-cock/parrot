@@ -132,10 +132,10 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 [P0]Rang查不到结果——Done
     过去式没有pos，所以pos过滤的时候过滤掉了
 [P0]复制的问题。换行被换成空格了——Done
-[P1]能够解析非当前播放的subtitle
+[P0]查`leaver`返回的是school-leaver
+[P1]能够解析非当前播放的subtitle——Done
 [P1]unknown_words的顺序问题。向前端传list，而非dict
 [P1]查询时间的优化
-[P1]remark应该显示原型和小写，目前显示的是句子中的样子
 [P1]remark应该显示原型和小写，目前显示的是句子中的样子
 [P1]设计新的协议，既有原句单词，又有原型，字典返回单词
 [P1]网络请求失败的提示

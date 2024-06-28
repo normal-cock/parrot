@@ -217,6 +217,7 @@
         });
 
         var selectedText = '';
+        var selectedTextSentence = '';
 
         function showContextMenu() {
             contextMenu.show();
@@ -284,14 +285,15 @@
         };
 
         function selectEndHandle(e) {
-
-            sel = window.getSelection();
+            const sel = window.getSelection();
             console.log('list-group mouseup:' + sel.toString());
             if (sel.toString().length > 0) {
                 $(document).off(".custom");
                 console.log('list-group mouseup 2');
                 // e.preventDefault();
                 selectedText = sel.toString();
+                selectedTextSentence = $(sel.anchorNode).closest(
+                    '.subtitle-item').text();
                 showContextMenu();
                 // contextMenu.css('display', 'block');
             } else {
@@ -372,7 +374,7 @@
         function parseSentence(e) {
             // var q = window.getSelection();
             var selected = selectedText;
-            var sentence = getCurrentCue().text;
+            var sentence = selectedTextSentence;
             // q = 'more';
             var data = {
                 selected: selected,
@@ -606,8 +608,10 @@
                     let cue = cues[i];
                     var startTime = formatTime(cue.startTime);
                     // var li = $('<li class="list-group-item">').text(startTime + '-' + cue.text);
-                    var li = $('<li class="list-group-item">')
-                        .append($("<span>").html(startTime + '-' + cue.text));
+                    var li = $('<li class="list-group-item">').text(startTime + ' ')
+                    const span = $('<span class="subtitle-item">').html(cue.text);
+                    li.append(span);
+                    // .append($("<span>").html(startTime + '-' + cue.text));
                     if (hasSubCue == true && j < subCues.length) {
                         let subCue = subCues[j];
                         // 应对en和cn部分字幕数量不匹配的问题
