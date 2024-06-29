@@ -95,6 +95,7 @@ def search(passport, q):
             'phonetic_symbol': result[4],
             'remark': result[5],
         })
+
     return resp_list
 
 
@@ -117,6 +118,18 @@ def query_word(passport, q):
 
 @app.route("/<passport>/parsestc", methods=['POST'])
 def parse_sentence(passport):
+    '''
+        qr_result: {
+            'raw_word':'',
+            'word':'', # cleaned word
+            'qr_list':[{'pron':'', 'cn_def':'',}],
+        }
+        return {
+            'raw_sentence':'',
+            'selected':qr_result,
+            'unknown_words':[qr_result, qr_result],
+        }
+    '''
     if passport.upper() != PW.upper():
         return make_response('', 404)
     selected = request.form.get('selected')
@@ -126,8 +139,27 @@ def parse_sentence(passport):
 
     logger.info(
         f'selected={selected}||sentence={sentence}||begin biz_v2.parse_sentence')
-    resp_dict = biz_v2.parse_sentence(selected, sentence)
-    resp_dict['sentence'] = sentence
+    result_dict = biz_v2.parse_sentence(selected, sentence)
+
+    def qr_result_gen(raw_word, word, qr_list):
+        return {
+            'raw_word': raw_word,
+            'word': word,
+            'qr_list': qr_list,
+        }
+    resp_dict = {}
+    result_selected = result_dict['selected']
+    resp_dict['selected'] = qr_result_gen(
+        selected, result_selected['cleaned_word'], result_selected['qr'])
+    resp_dict['raw_sentence'] = sentence
+    resp_dict['unknown_words'] = []
+    for raw_word, qr_list in result_dict['unknown_words'].items():
+        word = ''
+        if len(qr_list) > 0:
+            word = qr_list[0]['word']
+        resp_dict['unknown_words'].append(
+            qr_result_gen(raw_word, word, qr_list)
+        )
     return resp_dict
 
 

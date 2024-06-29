@@ -20,6 +20,7 @@ class==entry-body__el
 
 '''
 
+NON_TITLE = 'Non-Title'
 NON_POS = 'Non-Pos'
 NON_PRON = 'Non-Pron'
 
@@ -38,14 +39,30 @@ def meaning_filter(soup):
     return meaning_list
 
 
+def get_title(soup):
+    title = soup.select_one('*.di-title')
+    if title:
+        return title.get_text().strip()
+    return NON_TITLE
+
+
 def get_pos(soup):
+    pos = ''
     posgram = soup.select_one('*.posgram')
     if posgram:
-        return posgram.get_text()
-
-    dpos = soup.select_one('*.pos.dpos')
-    if dpos:
-        return dpos.get_text()
+        pos = posgram.get_text()
+    else:
+        dpos = soup.select_one('*.pos.dpos')
+        if dpos:
+            pos = dpos.get_text()
+    if len(pos) != 0:
+        pos = pos.replace('noun', 'n.')
+        pos = pos.replace('verb', 'v.')
+        pos = pos.replace('adjective', 'adj.')
+        pos = pos.replace('determiner', 'adj.')
+        pos = pos.replace('adverb', 'adv.')
+        pos = pos.replace('preposition', 'prep.')
+        return pos
     return NON_POS
 
 
@@ -82,6 +99,7 @@ def get_cn_def(soup):
 
 def raw_query(word):
     '''
+        word: origin state for noun and verb
         return [meaning1, ], ''
             meaning {
                 'word': '',
@@ -107,6 +125,9 @@ def raw_query(word):
     for entry in entries:
         # import ipdb
         # ipdb.set_trace()
+        title = get_title(entry)
+        if title != word:
+            continue
         pos = get_pos(entry)
         pron = get_pron(entry)
         meanings = meaning_filter(entry)
@@ -114,7 +135,7 @@ def raw_query(word):
             en_def = get_en_def(meaning)
             cn_def = get_cn_def(meaning)
             query_result.append({
-                'word': word,
+                'word': title,
                 'pos': pos,
                 'pron': pron,
                 'en_def': en_def,
@@ -126,9 +147,11 @@ def raw_query(word):
 
 def _is_pos_match(pos: str, cpos: CWordPos) -> bool:
     pos = pos.lower()
-    if ((cpos == CWordPos.NOUN and 'noun' in pos)
-        or (cpos == CWordPos.VERB and 'verb' in pos)
-            or (cpos == CWordPos.ADJ and 'adj' in pos)):
+    if ((cpos == CWordPos.NOUN and 'n.' in pos)
+        or (cpos == CWordPos.VERB and 'v.' in pos)
+            or (cpos == CWordPos.ADJ and 'adj.' in pos)
+            or (cpos == CWordPos.ADV and 'adv.' in pos)
+            or (cpos == CWordPos.PREP and 'prep.' in pos)):
         return True
     return False
 
@@ -164,9 +187,10 @@ def query_word_with_pos(word, cpos: CWordPos):
 if __name__ == '__main__':
     # meanings, err_str = raw_query('record')
     # meanings, err_str = raw_query('be born')
-    meanings, err_str = raw_query('rang')
-    if len(err_str) != 0:
-        print(err_str)
-        exit(0)
+    # meanings, err_str = raw_query('first')
+    meanings = query_word_with_pos('first', CWordPos.ADJ)
+    # if len(err_str) != 0:
+    #     print(err_str)
+    #     exit(0)
     for meaning in meanings:
         print(meaning['pos'], meaning['pron'], meaning['cn_def'])

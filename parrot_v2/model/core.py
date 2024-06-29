@@ -404,7 +404,8 @@ class CWordPos(enum.Enum):
     VERB = 2
     ADJ = 3
     ADV = 4
-    OTHER = 5
+    PREP = 5
+    OTHER = 6
 
     def may_have_different_pron_by_pos(self):
         return self.value in [1, 2, 3]

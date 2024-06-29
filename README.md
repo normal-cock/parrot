@@ -127,19 +127,31 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 
 #### 减少单词录入时间 P0
 
+**TODO**
+[P1]网络请求失败的提示
+[P1]接入youdao，提供更多的查询结果
+[P2]待思考：句子中的动词，什么时候直接查raw(ed or ing)，什么时候查origin。当前都是查origin
+    ing是形容词不太好识别，比如: `a grinding process`
+[P2]查询时间的优化
+[P2]看看能不能识别短语
+
+**Done**
 [P0]选中单词一键复制. 省去格式化时间和句子选中时间——Done
 [P0]一键生成生词记录。根据是否不在自己的词库中，来决定是否自动添加音标——Done
 [P0]Rang查不到结果——Done
     过去式没有pos，所以pos过滤的时候过滤掉了
 [P0]复制的问题。换行被换成空格了——Done
-[P0]查`leaver`返回的是school-leaver
+[P0]查`leaver`返回的是school-leaver——Done
+[P0]解析失败`selected=Whenever||sentence=Whenever Princip missed the target people standing around would laugh at him`——Done
+[P0]-Be加到已知单词中。前端支持uncheck某个unknown 单词——Done
+[P1]-starving查不到a slow, grinding process of blockade, of starving the enemy out.——Done
+[P1]-with the largest navy in the world, to fight a sea war里面in被解释为了名词——Done
+[P1]-The Foreign Secretary reassured the nation[ˈneɪ.ʃən]. reassured没有显示原型——Done
 [P1]能够解析非当前播放的subtitle——Done
-[P1]unknown_words的顺序问题。向前端传list，而非dict
-[P1]查询时间的优化
-[P1]remark应该显示原型和小写，目前显示的是句子中的样子
-[P1]设计新的协议，既有原句单词，又有原型，字典返回单词
-[P1]网络请求失败的提示
-[P2]看看能不能识别短语
+[P1]adj的first查不出来——Done
+[P1]unknown_words的顺序问题。向前端传list，而非dict——Done
+[P1]remark应该显示原型和小写，目前显示的是句子中的样子——Done
+[P1]设计新的协议，既有原句单词，又有原型，字典返回单词——Done
 
 
 input

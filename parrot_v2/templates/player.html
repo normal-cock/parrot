@@ -10,6 +10,7 @@
     <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
     <link href="https://cdn.staticfile.org/twitter-bootstrap/5.3.1/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.staticfile.org/twitter-bootstrap/5.3.1/js/bootstrap.min.js"></script>
+    <link href="https://getbootstrap.com/docs/5.3/assets/css/docs.css" rel="stylesheet">
     <script src="https://cdn.staticfile.net/hammer.js/2.0.8/hammer.min.js"></script>
     <!-- <script
         src="https://cdn.jsdelivr.net/npm/videojs-landscape-fullscreen@1.4.6/dist/videojs-landscape-fullscreen.min.js"></script> -->
@@ -134,6 +135,16 @@
         </div>
     </div>
 
+    <div id="c-toast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true"
+        style="display:none">
+        <div class="d-flex">
+            <div class="toast-body">
+                Hello, world! This is a toast message.
+            </div>
+            <button id="c-toast-button" type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"
+                aria-label="Close"></button>
+        </div>
+    </div>
     <div class="custom-area">
         <div class="custom-tool">
             <div class="btn-group" role="group" aria-label="Media Player Control Buttons">
@@ -207,6 +218,7 @@
         const cardList = $('#card-list');
         const prMeaningSelect = $('#pr-meaning-select');
         const contextMenu = $('#contextMenu');
+        const toast = $('#c-toast');
         $('#close-card-container').on('click', function () {
             cardContainer.hide();
             cardList.empty();
@@ -219,12 +231,26 @@
         var selectedText = '';
         var selectedTextSentence = '';
 
+        function customToast(msg) {
+            const toastBody = toast.find('.toast-body');
+            toastBody.text(msg);
+            toast.show();
+        }
+        $('#c-toast-button').on('click', function () {
+            toast.hide();
+            prMeaningSelect.empty();
+        });
+
         function showContextMenu() {
             contextMenu.show();
         };
         function hideContextMenu() {
             console.log('hide context menu')
             contextMenu.hide();
+        };
+
+        function httpErrorFunc(jqXHR, textStatus, errorThrown) {
+            customToast(`${jqXHR.status}\t${errorThrown}`);
         };
 
         function searchCallback(response) {
@@ -264,7 +290,8 @@
                 type: 'GET',
                 success: function (response) {
                     searchCallback(response);
-                }
+                },
+                error: httpErrorFunc,
             });
             hideContextMenu();
         };
@@ -279,7 +306,8 @@
                 type: 'GET',
                 success: function (response) {
                     searchCallback(response);
-                }
+                },
+                error: httpErrorFunc,
             });
             hideContextMenu();
         };
@@ -302,10 +330,10 @@
         }
 
         function parseSentenceCallback(response) {
-            var selectionCleanWord = response.selected.cleaned_word;
-            var selectionQRList = response.selected.qr;
-            var unknownWords = response.unknown_words;
-            const sentence = response.sentence;
+            var selectionCleanWord = response.selected.word;
+            var selectionQRList = response.selected.qr_list;
+            const unknownWords = response.unknown_words;
+            const sentence = response.raw_sentence;
             var selectedSelectionIndex = 0;
             var selectedUnknownQRIndex = {};
             const prWord = $('#pr-word');
@@ -326,29 +354,55 @@
                 }
                 var parsedSentence = sentence;
                 const remarkList = [];
-                $.each(selectedUnknownQRIndex, function (word, i) {
-                    if (word != selectionCleanWord) {
-                        const qr = unknownWords[word][i];
-                        parsedSentence = parsedSentence.replace(word, `${word}[${qr['pron']}]`);
-                        remarkList.push(`${word} ${qr['pos']} ${qr['cn_def']}`);
+                $.each(unknownWords, function (i, uw) {
+                    if (uw.word != selectionCleanWord && uw.raw_word in selectedUnknownQRIndex) {
+                        const selMeaningIndex = selectedUnknownQRIndex[uw.raw_word];
+                        const qr = uw.qr_list[selMeaningIndex];
+                        parsedSentence = parsedSentence.replace(uw.raw_word, `${uw.raw_word}[${qr['pron']}]`);
+                        remarkList.push(`${qr['word']} ${qr['pos']} ${qr['cn_def']}`);
                     }
                 })
+                // $.each(selectedUnknownQRIndex, function (word, i) {
+                //     if (word != selectionCleanWord) {
+                //         const qr = unknownWordsDict[word][i];
+                //         parsedSentence = parsedSentence.replace(word, `${word}[${qr['pron']}]`);
+                //         remarkList.push(`${qr['word']} ${qr['pos']} ${qr['cn_def']}`);
+                //     }
+                // })
                 prPron.text(selectionPron);
                 prCnDef.text(selectionMeaning);
                 prSentence.text(parsedSentence);
                 prRemark.text(remarkList.join('; '));
             }
-            function genRadio(word, queryResult) {
+            function genRadio(raw_word, word, queryResult) {
                 const radioCardDiv = $('<div class="pr-item">');
-                radioCardDiv.append($('<div>').text(word));
+                const switchDiv = $('<div class="form-check form-switch">');
+                const switchInput = $(`<input class="form-check-input" type="checkbox" role="switch" id="${raw_word}-switch" checked>`);
+                const switchLabel = $(`<label class="form-check-label" for="${raw_word}-switch">`).text(word);
+                switchInput.change(function () {
+                    const checked = $(this).prop('checked');
+                    const radio = $(`input[name="${raw_word}"]:radio`);
+                    const checkedRadio = radio.filter(':checked');
+                    if (checked == true) {
+                        radio.prop('disabled', false);
+                        checkedRadio.trigger('change');
+                    } else {
+                        radio.prop('disabled', true);
+                        delete selectedUnknownQRIndex[raw_word];
+                        flushReviewRecord();
+                    }
+                });
+                switchDiv.append(switchInput);
+                switchDiv.append(switchLabel);
+                radioCardDiv.append(switchDiv);
                 $.each(queryResult, function (i, qr) {
-                    const inputID = `${word}-${i}`;
+                    const inputID = `${raw_word}-${i}`;
                     const radioText = `[${qr['pron']}] ${qr['pos']} ${qr['cn_def']}`;
                     const radioItemDiv = $('<div class="form-check">');
-                    const input = $(`<input class="form-check-input" type="radio" name="${word}" id="${inputID}">`);
+                    const input = $(`<input class="form-check-input" type="radio" name="${raw_word}" id="${inputID}">`);
                     const lable = $(`<label class="form-check-label" for="${inputID}">`).text(radioText);
                     input.change(function () {
-                        selectedUnknownQRIndex[word] = i;
+                        selectedUnknownQRIndex[raw_word] = i;
                         flushReviewRecord();
                     });
                     if (i == 0) {
@@ -358,15 +412,19 @@
                     radioItemDiv.append(lable);
                     radioCardDiv.append(radioItemDiv);
                 });
-                selectedUnknownQRIndex[word] = 0;
+                selectedUnknownQRIndex[raw_word] = 0;
                 return radioCardDiv;
             }
-            const selectDiv = genRadio(selectionCleanWord, selectionQRList);
+            const selectDiv = genRadio(selectionCleanWord, selectionCleanWord, selectionQRList);
             prMeaningSelectContainer.append(selectDiv);
-            $.each(unknownWords, function (word, qrList) {
-                const tmpSelectDiv = genRadio(word, qrList);
+            $.each(unknownWords, function (i, uw) {
+                const tmpSelectDiv = genRadio(uw.raw_word, uw.word, uw.qr_list);
                 prMeaningSelectContainer.append(tmpSelectDiv);
             });
+            // $.each(unknownWordsDict, function (word, qrList) {
+            //     const tmpSelectDiv = genRadio(word, qrList);
+            //     prMeaningSelectContainer.append(tmpSelectDiv);
+            // });
             flushReviewRecord();
             parseResult.show();
         }
@@ -387,7 +445,8 @@
                 data: data,
                 success: function (response) {
                     parseSentenceCallback(response);
-                }
+                },
+                error: httpErrorFunc,
             });
             hideContextMenu();
         }

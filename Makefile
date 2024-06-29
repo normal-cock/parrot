@@ -25,3 +25,6 @@ extract_mp3:
 
 convert_subtitle_from_srt:
 	pysubs2 --to vtt {xxx.srt}
+
+test_cb_dict:
+	python parrot_v2/dal/dict/cambridge_dict/__init__.py

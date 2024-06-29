@@ -27,14 +27,17 @@ def clear_fmt(input):
 
 
 def get_cwordpost_from_pos(pos: str) -> CWordPos:
-    if pos.lower().startswith('nn'):
+    pos = pos.lower()
+    if pos.startswith('nn'):
         return CWordPos.NOUN
-    elif pos.lower().startswith('vb'):
+    elif pos.startswith('vb'):
         return CWordPos.VERB
-    elif pos.lower().startswith('jj'):
+    elif pos.startswith('jj'):
         return CWordPos.ADJ
-    elif pos.lower().startswith('rb'):
+    elif pos.startswith('rb') or pos.endswith('wrb'):
         return CWordPos.ADV
+    elif pos.startswith('in'):
+        return CWordPos.PREP
     else:
         return CWordPos.OTHER
 
@@ -46,12 +49,12 @@ def morphy_by_cpos(token: str, cpos: CWordPos) -> str:
     origin_token = token
     if cpos == CWordPos.NOUN:
         origin_token = wordnet.morphy(token, wordnet.NOUN)
-    # if cpos == CWordPos.VERB:
-    #     origin_token = wordnet.morphy(token, wordnet.VERB)
-    # if origin_token == None or len(origin_token) == 0:
-    #     origin_token = wordnet.morphy(token)
-    #     if origin_token == None:
-    #         origin_token = token
+    elif cpos == CWordPos.VERB:
+        origin_token = wordnet.morphy(token, wordnet.VERB)
+    if origin_token == None or len(origin_token) == 0:
+        origin_token = wordnet.morphy(token)
+        if origin_token == None:
+            origin_token = token
     return origin_token
 
 
@@ -71,6 +74,8 @@ def get_origin_morphy_4_phrase(phrase: str):
             origin_token = morphy_by_cpos(token, cpos)
             if i == 0 and origin_token == 'be':
                 is_start_with_be = True
+            if origin_token == None:
+                origin_token = token
         else:
             origin_token = token
         origin_tokens.append(origin_token)
@@ -78,17 +83,18 @@ def get_origin_morphy_4_phrase(phrase: str):
     return detokenizer.detokenize(origin_tokens)
 
 
-def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str], bool]):
+def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str, str, str], bool]):
     '''
     support noun verb adj adv frist
     return cleaned_selected, selected_query_result, unknown_query_result
     '''
     selected_tokens = nltk.word_tokenize(selected)
     sentence_tokens = nltk.word_tokenize(sentence)
-    word_text = get_origin_morphy_4_phrase(selected)
+    selected_word_text = get_origin_morphy_4_phrase(selected)
     word_pron = ''
     word_cn_def = ''
-    word_cpos = None
+    selected_word_pos = None
+    selected_word_cpos = None
     # key: token, value: query_result
     unknown_words = OrderedDict()
 
@@ -97,24 +103,33 @@ def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str], boo
     for token, pos in tags:
         origin_token = ''
         lower_token = token.lower()
+        # import ipdb
+        # ipdb.set_trace()
         cpos = get_cwordpost_from_pos(pos)
         if token in selected_tokens:
-            if word_cpos == None:
-                word_cpos = cpos
+            if selected_word_pos == None or selected_word_cpos == None:
+                selected_word_pos = pos
+                selected_word_cpos = cpos
         else:
-            # import ipdb
-            # ipdb.set_trace()
             origin_token = morphy_by_cpos(lower_token, cpos)
             if origin_token == None:
                 logger.info(f'token={token}||origin_token is None')
                 continue
-            if unknown_checker(origin_token) == True:
+            if unknown_checker(origin_token, pos, cpos) == True:
+                logger.debug(
+                    f'pos={pos}||cpos={cpos}||word={origin_token}||found unknwon word')
                 query_result_list = query_word_with_pos(origin_token, cpos)
                 if len(query_result_list) != 0:
                     unknown_words[token] = query_result_list
+                else:
+                    logger.debug(
+                        f"pos={pos}||cpos={cpos}||word={origin_token}||can't identify unknwon word")
 
-    word_query_result = query_word_with_pos(word_text, word_cpos)
-    return word_text, word_query_result, unknown_words
+    logger.debug(
+        f"pos={selected_word_pos}||cpos={selected_word_cpos}||word={selected_word_text}||selected word")
+    word_query_result = query_word_with_pos(
+        selected_word_text, selected_word_cpos)
+    return selected_word_text, word_query_result, unknown_words
 
 
 if __name__ == '__main__':

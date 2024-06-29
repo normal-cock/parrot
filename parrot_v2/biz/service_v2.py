@@ -6,7 +6,7 @@ from sqlalchemy import desc
 from parrot_v2 import Session, DEBUG, PW
 from parrot_v2.model import Item, Word
 from parrot_v2.dal.aliyun_oss import oss_sington
-from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning
+from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning, CWordPos
 from parrot_v2.util import logger
 from parrot_v2.util import nlp_tool
 
@@ -123,13 +123,18 @@ def query_word(word_text: str):
 
 
 def unknown_checker_gen(session):
-    def _checker(word) -> bool:
-        lower_word = word.lower()
-        _, pos = nltk.pos_tag([lower_word])[0]
+    def _checker(origin_word, pos, cpos) -> bool:
+        '''
+            origin_word: lower
+        '''
         if pos.upper().startswith('PRP'):
             return False
+        if cpos == CWordPos.PREP:
+            return False
+        if origin_word in ['be', 'the', 'most']:
+            return False
         word = session.query(Word).filter(
-            Word.text == lower_word).one_or_none()
+            Word.text == origin_word).one_or_none()
         return word == None
     return _checker
 
@@ -164,6 +169,21 @@ def parse_sentence(selected, sentence):
 if __name__ == '__main__':
     # selected = 'poor'
     # sentence = 'sentence=more fearsome and dangerous than the old'
-    selected = 'notes'
-    sentence = 'The deep notes of Big Ben rang out into the night'
-    print(parse_sentence(selected, sentence))
+    # selected = 'notes'
+    # sentence = 'The deep notes of Big Ben rang out into the night'
+    # selected = 'Whenever'
+    # sentence = 'Whenever Princip missed the target people standing around would laugh at him'
+    selected = 'starving'
+    sentence = 'a slow, grinding process of blockade, of starving the enemy out.'
+    print(selected)
+    print(sentence)
+    result_dict = parse_sentence(selected, sentence)
+    print(result_dict['selected']['cleaned_word'])
+    for qr in result_dict['selected']['qr']:
+        print(qr)
+    print('\n')
+    for w, qr_list in result_dict['unknown_words'].items():
+        print(w)
+        for qr in qr_list:
+            print(qr)
+        print('\n')
