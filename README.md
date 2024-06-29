@@ -130,8 +130,11 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 **TODO**
 [P1]网络请求失败的提示
 [P1]接入youdao，提供更多的查询结果
-[P2]待思考：句子中的动词，什么时候直接查raw(ed or ing)，什么时候查origin。当前都是查origin
+[P2]待思考：句子中的**动词**，什么时候直接查raw(ed or ing)，什么时候查origin。当前都是查origin
     ing是形容词不太好识别，比如: `a grinding process`
+    可能得思路
+        * 寻找更准确的pos识别
+        * 先查一遍，查不到再还原来查询
 [P2]查询时间的优化
 [P2]看看能不能识别短语
 

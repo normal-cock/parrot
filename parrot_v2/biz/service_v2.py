@@ -131,7 +131,7 @@ def unknown_checker_gen(session):
             return False
         if cpos == CWordPos.PREP:
             return False
-        if origin_word in ['be', 'the', 'most']:
+        if origin_word in ['be', 'the', 'most', 'so', "'s", 'about']:
             return False
         word = session.query(Word).filter(
             Word.text == origin_word).one_or_none()
@@ -173,17 +173,24 @@ if __name__ == '__main__':
     # sentence = 'The deep notes of Big Ben rang out into the night'
     # selected = 'Whenever'
     # sentence = 'Whenever Princip missed the target people standing around would laugh at him'
-    selected = 'starving'
-    sentence = 'a slow, grinding process of blockade, of starving the enemy out.'
+    # selected = 'extreme'
+    # sentence = 'It was filled with demands so extreme and insulting that Serbia could never accept them.'
+    selected = 'indignation'
+    sentence = '''The indignation in Russia is enormous'''
     print(selected)
     print(sentence)
     result_dict = parse_sentence(selected, sentence)
     print(result_dict['selected']['cleaned_word'])
     for qr in result_dict['selected']['qr']:
-        print(qr)
-    print('\n')
+        print(qr['pron'])
+        print(qr['pos'] + ' ' + qr['cn_def'])
+
+    for w, qr_list in result_dict['unknown_words'].items():
+        sentence = sentence.replace(w, f"{w}[{qr_list[0]['pron']}]")
+    print(sentence)
+
     for w, qr_list in result_dict['unknown_words'].items():
         print(w)
         for qr in qr_list:
-            print(qr)
+            print(' '.join([qr['word'], qr['pos'], qr['cn_def']]))
         print('\n')

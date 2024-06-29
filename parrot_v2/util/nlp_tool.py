@@ -26,7 +26,7 @@ def clear_fmt(input):
     return detokenizer.detokenize(tokens)
 
 
-def get_cwordpost_from_pos(pos: str) -> CWordPos:
+def get_cpos_from_pos(pos: str) -> CWordPos:
     pos = pos.lower()
     if pos.startswith('nn'):
         return CWordPos.NOUN
@@ -69,7 +69,7 @@ def get_origin_morphy_4_phrase(phrase: str):
 
     for i, (token, pos) in enumerate(tags):
         origin_token = ''
-        cpos = get_cwordpost_from_pos(pos)
+        cpos = get_cpos_from_pos(pos)
         if is_start_with_be == False:
             origin_token = morphy_by_cpos(token, cpos)
             if i == 0 and origin_token == 'be':
@@ -105,7 +105,7 @@ def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str, str,
         lower_token = token.lower()
         # import ipdb
         # ipdb.set_trace()
-        cpos = get_cwordpost_from_pos(pos)
+        cpos = get_cpos_from_pos(pos)
         if token in selected_tokens:
             if selected_word_pos == None or selected_word_cpos == None:
                 selected_word_pos = pos
@@ -115,6 +115,8 @@ def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str, str,
             if origin_token == None:
                 logger.info(f'token={token}||origin_token is None')
                 continue
+            logger.debug(
+                f'pos={pos}||cpos={cpos}||raw_word={lower_token}||word={origin_token}||found token')
             if unknown_checker(origin_token, pos, cpos) == True:
                 logger.debug(
                     f'pos={pos}||cpos={cpos}||word={origin_token}||found unknwon word')
