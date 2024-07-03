@@ -23,7 +23,7 @@
             width: auto;
             margin: auto;
             max-width: 1200px;
-            height: 90vh;
+            height: 100vh;
         }
 
         .container-fluid {
@@ -45,12 +45,12 @@
         }
 
         #subtitle-list {
-            height: 80vh;
+            height: 85vh;
             width: auto;
             overflow: auto;
             margin: 5%;
             margin-top: 0%;
-            font-size: 1.5em;
+            font-size: 1.3em;
         }
 
         .list-group-item {
@@ -72,11 +72,15 @@
             width: 100vw;
         }
 
-        /* @media only screen and (hover: none) and (pointer: coarse) {
-            #subtitle-list {
-                font-size: 3rem;
+        @media only screen and (hover: none) and (pointer: coarse) {
+            body {
+                height: 85vh;
             }
-        } */
+
+            #subtitle-list {
+                height: 65vh;
+            }
+        }
 
 
         .card-list {
@@ -283,6 +287,7 @@
         function searchHttpRequest() {
             // var q = window.getSelection();
             var q = selectedText;
+            selectedText = '';
             console.log('searchHttpRequest:' + q)
             // q = 'more';
             $.ajax({
@@ -299,6 +304,7 @@
         function querywordHttpRequest() {
             // var q = window.getSelection();
             var q = selectedText;
+            selectedText = '';
             console.log('querywordHttpRequest:' + q)
             // q = 'more';
             $.ajax({
@@ -314,14 +320,14 @@
 
         function selectEndHandle(e) {
             const sel = window.getSelection();
-            console.log('list-group mouseup:' + sel.toString());
+            console.info('list-group mouseup:' + sel.toString());
             if (sel.toString().length > 0) {
                 $(document).off(".custom");
-                console.log('list-group mouseup 2');
                 // e.preventDefault();
                 selectedText = sel.toString();
-                selectedTextSentence = $(sel.anchorNode).closest(
-                    '.subtitle-item').text();
+                const selectedGroupItem = $(sel.anchorNode).closest('.list-group-item');
+                selectedTextSentence = selectedGroupItem.find('.subtitle-item').text();
+                console.info(`sel=${selectedText}||selStc=${selectedTextSentence}||list-group mouseup 2`);
                 showContextMenu();
                 // contextMenu.css('display', 'block');
             } else {
@@ -344,6 +350,7 @@
             const prMeaningSelectContainer = $("#pr-meaning-select");
             prWord.text(selectionCleanWord);
             function flushReviewRecord() {
+                console.log('flushReviewRecord called');
                 // const selectionQR = selectionQRList[selectedSelectionIndex];
                 const selectionQR = selectionQRList[selectedUnknownQRIndex[selectionCleanWord]];
                 var selectionPron = '';
@@ -433,6 +440,8 @@
             // var q = window.getSelection();
             var selected = selectedText;
             var sentence = selectedTextSentence;
+            selectedText = '';
+            selectedTextSentence = '';
             // q = 'more';
             var data = {
                 selected: selected,
@@ -502,6 +511,11 @@
             // techOrder: ["html5", "flash", "youtube"],
             techOrder: ["html5"],
             autoplay: false, controls: true, mute: false, playsinline: true,
+        };
+
+        function isActive() {
+            // 判断程序是否处于前台和设备是否解锁
+            return !document.hidden && document.visibilityState === 'visible';
         };
 
         function goHome() {
@@ -621,17 +635,20 @@
         }
 
         function flushListHighlight() {
-            var highlightClass = 'list-group-item-success';
-            var list = $('#subtitle-list');
-            list.find('li').removeClass(highlightClass);
-            var li = list.children().eq(audioPlayer.currentCueIndex);
-            li.addClass(highlightClass);
+            if (isActive() == true) {
+                console.log('flushListHighlight');
+                var highlightClass = 'list-group-item-success';
+                var list = $('#subtitle-list');
+                list.find('li').removeClass(highlightClass);
+                var li = list.children().eq(audioPlayer.currentCueIndex);
+                li.addClass(highlightClass);
 
-            var pos = (
-                li.offset().top + list.scrollTop()
-                - list.offset().top - list.height() / 2 + li.height() / 2);
-            // console.log('pos:' + pos);
-            list.animate({ scrollTop: pos });
+                var pos = (
+                    li.offset().top + list.scrollTop()
+                    - list.offset().top - list.height() / 2 + li.height() / 2);
+                // console.log('pos:' + pos);
+                list.animate({ scrollTop: pos });
+            }
         }
 
         function formatTime(seconds) {
@@ -667,10 +684,11 @@
                     let cue = cues[i];
                     var startTime = formatTime(cue.startTime);
                     // var li = $('<li class="list-group-item">').text(startTime + '-' + cue.text);
-                    var li = $('<li class="list-group-item">').text(startTime + ' ')
-                    const span = $('<span class="subtitle-item">').html(cue.text);
-                    li.append(span);
-                    // .append($("<span>").html(startTime + '-' + cue.text));
+                    var li = $('<li class="list-group-item">')
+                    const spanTime = $('<span class="subtitle-meta">').text(startTime + ' ');
+                    const spanText = $('<span class="subtitle-item">').html(cue.text);
+                    li.append(spanTime);
+                    li.append(spanText);
                     if (hasSubCue == true && j < subCues.length) {
                         let subCue = subCues[j];
                         // 应对en和cn部分字幕数量不匹配的问题
@@ -804,6 +822,7 @@
             }, true);
 
             document.addEventListener('copy', function (e) {
+                console.log('copied');
                 const selection = document.getSelection();
                 if (selection.type == 'Range') {
                     var ele = $(selection.anchorNode);

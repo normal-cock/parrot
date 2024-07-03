@@ -128,6 +128,9 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 #### 减少单词录入时间 P0
 
 **TODO**
+[P1]跨句选择
+[P1]锁屏的时候下一句，页面自动跳转有点问题——Done，加了active的判断，待观察
+[P2]针对每一句字幕的时间调节
 [P1]网络请求失败的提示
 [P1]接入youdao，提供更多的查询结果
 [P2]待思考：句子中的**动词**，什么时候直接查raw(ed or ing)，什么时候查origin。当前都是查origin
@@ -139,6 +142,15 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 [P2]看看能不能识别短语
 
 **Done**
+[P0]dead查不到。dead in a ditch by the road——Done
+	移动端元素选择的兼容问题
+[P0]在解释页面上选中，copy，然后切到其他应用，并停留10秒以上。
+	可能是保存了select的问题？主动清理了，在观察观察
+[P0]numbers查不出来gathering numbers as it went.——Done
+	单词还原的问题，将还原算法先换成WordNetLemmatizer了，并打印diff
+[P0]Drivers搜不到。Drivers whipped their horses officers and soldiers shoved and squeezed through——Done
+[P0]ploughed 搜不到Do you ever think of your daddy walking day and night over ploughed fields——Done。使用句子中的pos还原sel，而非独自还原sel
+[P0]高度调整为展示区域的高度——Done
 [P0]选中单词一键复制. 省去格式化时间和句子选中时间——Done
 [P0]一键生成生词记录。根据是否不在自己的词库中，来决定是否自动添加音标——Done
 [P0]Rang查不到结果——Done

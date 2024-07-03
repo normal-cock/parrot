@@ -11,13 +11,16 @@ from typing import Callable
 from collections import OrderedDict
 import nltk
 from nltk.corpus import wordnet
+from nltk.stem import WordNetLemmatizer
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 from bs4 import BeautifulSoup
 from parrot_v2.model.core import CWordPos
 from parrot_v2.dal.dict.cambridge_dict import query_word_with_pos
 from parrot_v2.util import logger
 
+
 detokenizer = TreebankWordDetokenizer()
+lemmatizer = WordNetLemmatizer()
 
 
 def clear_fmt(input):
@@ -47,18 +50,25 @@ def morphy_by_cpos(token: str, cpos: CWordPos) -> str:
     if len(token.strip()) == 0:
         raise Exception('empty token')
     origin_token = token
+    origin_token1 = token
+    origin_token2 = token
     if cpos == CWordPos.NOUN:
-        origin_token = wordnet.morphy(token, wordnet.NOUN)
+        origin_token1 = wordnet.morphy(token, wordnet.NOUN)
+        origin_token2 = lemmatizer.lemmatize(token, 'n')
     elif cpos == CWordPos.VERB:
-        origin_token = wordnet.morphy(token, wordnet.VERB)
-    if origin_token == None or len(origin_token) == 0:
-        origin_token = wordnet.morphy(token)
-        if origin_token == None:
-            origin_token = token
+        origin_token1 = wordnet.morphy(token, wordnet.VERB)
+        origin_token2 = lemmatizer.lemmatize(token, 'v')
+    origin_token = origin_token2
+    if origin_token1 != origin_token2:
+        logger.warn(
+            f'origin_token1={origin_token1}||origin_token2={origin_token2}||diff origin_token1 and origin_token2')
     return origin_token
 
 
 def get_origin_morphy_4_phrase(phrase: str):
+    '''
+        20240703 暂时废弃该方法，sel的还原也使用整句解析出来的pos
+    '''
     # word_text = wordnet.morphy(word_text)
     lower_phrase = phrase.lower()
     origin_tokens = []
@@ -80,7 +90,10 @@ def get_origin_morphy_4_phrase(phrase: str):
             origin_token = token
         origin_tokens.append(origin_token)
 
-    return detokenizer.detokenize(origin_tokens)
+    origin_phrase = detokenizer.detokenize(origin_tokens)
+    logger.debug(
+        f'raw_sel={phrase}||origin_sel={origin_phrase}||get_origin_morphy_4_phrase')
+    return origin_phrase
 
 
 def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str, str, str], bool]):
@@ -90,7 +103,7 @@ def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str, str,
     '''
     selected_tokens = nltk.word_tokenize(selected)
     sentence_tokens = nltk.word_tokenize(sentence)
-    selected_word_text = get_origin_morphy_4_phrase(selected)
+    selected_origin_tokens = []
     word_pron = ''
     word_cn_def = ''
     selected_word_pos = None
@@ -101,17 +114,18 @@ def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str, str,
     tags = nltk.pos_tag(sentence_tokens)
 
     for token, pos in tags:
-        origin_token = ''
-        lower_token = token.lower()
         # import ipdb
         # ipdb.set_trace()
+        lower_token = token.lower()
         cpos = get_cpos_from_pos(pos)
+        origin_token = morphy_by_cpos(lower_token, cpos)
         if token in selected_tokens:
             if selected_word_pos == None or selected_word_cpos == None:
                 selected_word_pos = pos
                 selected_word_cpos = cpos
+            if origin_token not in selected_origin_tokens:
+                selected_origin_tokens.append(origin_token)
         else:
-            origin_token = morphy_by_cpos(lower_token, cpos)
             if origin_token == None:
                 logger.info(f'token={token}||origin_token is None')
                 continue
@@ -127,6 +141,7 @@ def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str, str,
                     logger.debug(
                         f"pos={pos}||cpos={cpos}||word={origin_token}||can't identify unknwon word")
 
+    selected_word_text = detokenizer.detokenize(selected_origin_tokens)
     logger.debug(
         f"pos={selected_word_pos}||cpos={selected_word_cpos}||word={selected_word_text}||selected word")
     word_query_result = query_word_with_pos(

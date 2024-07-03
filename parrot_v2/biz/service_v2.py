@@ -131,7 +131,7 @@ def unknown_checker_gen(session):
             return False
         if cpos == CWordPos.PREP:
             return False
-        if origin_word in ['be', 'the', 'most', 'so', "'s", 'about']:
+        if origin_word in ['be', 'the', 'most', 'so', "'s", 'about', 'think', 'ever']:
             return False
         word = session.query(Word).filter(
             Word.text == origin_word).one_or_none()
@@ -175,8 +175,8 @@ if __name__ == '__main__':
     # sentence = 'Whenever Princip missed the target people standing around would laugh at him'
     # selected = 'extreme'
     # sentence = 'It was filled with demands so extreme and insulting that Serbia could never accept them.'
-    selected = 'indignation'
-    sentence = '''The indignation in Russia is enormous'''
+    selected = 'ploughed'
+    sentence = '''Do you ever think of your daddy walking day and night over ploughed fields'''
     print(selected)
     print(sentence)
     result_dict = parse_sentence(selected, sentence)
