@@ -128,11 +128,24 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 #### 减少单词录入时间 P0
 
 **TODO**
-[P1]跨句选择
+[P0]词性识别错误。At the Serbian town of Prnjavor, this memorial commemorates[kəˈmem.ə.reɪt] those who died.
+    commemorates没有查出来，memorial应该是名词，但识别成了adj
+    方法1：未识别出memorial是n（识别成adj了），识别出了commemorate是动词
+        import spacy
+        doc = nlp(text)
+        for token in doc:
+            print(f"{token.text} ({token.pos_})")
+[P1]搜索opponent's报500
+[P1]解释区域不足，固定解释区域和选择区域最大高度，同时点击时自动复制——Done
+[P1]去掉说话人
+[P1]从视频切换回音频的时候，大小没有调整
+纠正一下字幕
+[P1]And, you know, the fact of the matter is that we prime ourself in a situation where his economy, he rewarded the wealthy. wealthy搜不到
 [P1]锁屏的时候下一句，页面自动跳转有点问题——Done，加了active的判断，待观察
-[P2]针对每一句字幕的时间调节
-[P1]网络请求失败的提示
+[P1]网络请求失败的提示——Done
 [P1]接入youdao，提供更多的查询结果
+[P2]针对每一句字幕的时间调节
+[P2]跨句选择
 [P2]待思考：句子中的**动词**，什么时候直接查raw(ed or ing)，什么时候查origin。当前都是查origin
     ing是形容词不太好识别，比如: `a grinding process`
     可能得思路

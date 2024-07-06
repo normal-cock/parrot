@@ -175,8 +175,8 @@ if __name__ == '__main__':
     # sentence = 'Whenever Princip missed the target people standing around would laugh at him'
     # selected = 'extreme'
     # sentence = 'It was filled with demands so extreme and insulting that Serbia could never accept them.'
-    selected = 'ploughed'
-    sentence = '''Do you ever think of your daddy walking day and night over ploughed fields'''
+    selected = 'commemorates'
+    sentence = '''At the Serbian town of Prnjavor, this memorial commemorates those who died.'''
     print(selected)
     print(sentence)
     result_dict = parse_sentence(selected, sentence)

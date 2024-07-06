@@ -96,6 +96,7 @@
             /* overflow: auto; */
             width: 100vw;
             max-height: 60%;
+            height: 100%;
             /* height: 60%; */
             bottom: 0;
             padding-left: 2%;
@@ -110,9 +111,18 @@
             /* position: absolute; */
         }
 
-
         .pr-item {
             margin-bottom: 3%;
+        }
+
+        #pr-review-record {
+            max-height: 60%;
+            overflow-y: auto;
+        }
+
+        #pr-meaning-select {
+            max-height: 30%;
+            overflow-y: auto;
         }
 
         #contextMenu {
@@ -460,9 +470,33 @@
             hideContextMenu();
         }
 
+        function copyReviewCard() {
+            const prWord = $('#pr-word');
+            const prPron = $('#pr-pron');
+            const prCnDef = $('#pr-cn-def');
+            const prSentence = $('#pr-sentence');
+            const prRemark = $('#pr-remark');
+            const textToCopy = [
+                prWord.text(),
+                prPron.text(),
+                prCnDef.text(),
+                prSentence.text(),
+                prRemark.text(),
+            ].join('\n');
+            // console.log('textToCopy is:' + textToCopy);
+
+            var tempTextarea = $('<textarea>');
+            tempTextarea.val(textToCopy);
+            $('body').append(tempTextarea);
+            tempTextarea.select();
+            document.execCommand('copy');
+            tempTextarea.remove();
+        };
+
         $('.list-group').on('mouseup', selectEndHandle);
         $('.list-group').on('touchend', selectEndHandle);
 
+        $('#pr-review-record').on('click', copyReviewCard);
         $('#search').on('click', searchHttpRequest);
         $('#query-word').on('click', querywordHttpRequest);
         $('#parse-sentence').on('click', parseSentence);
