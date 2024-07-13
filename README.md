@@ -135,6 +135,7 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
         doc = nlp(text)
         for token in doc:
             print(f"{token.text} ({token.pos_})")
+    方法2: 共同识别，把识别到的词性都查一下，手动选择
 [P1]搜索opponent's报500
 [P1]解释区域不足，固定解释区域和选择区域最大高度，同时点击时自动复制——Done
 [P1]去掉说话人
@@ -180,6 +181,16 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 [P1]unknown_words的顺序问题。向前端传list，而非dict——Done
 [P1]remark应该显示原型和小写，目前显示的是句子中的样子——Done
 [P1]设计新的协议，既有原句单词，又有原型，字典返回单词——Done
+
+nltk在mac上下载时报错：
+```
+[nltk_data] Error loading punkt: <urlopen error [SSL:
+[nltk_data]     CERTIFICATE_VERIFY_FAILED] certificate verify failed:
+[nltk_data]     unable to get local issuer certificate (_ssl.c:992)>
+```
+依次执行下面的命令：
+* `sudo /Applications/Python\ 3.7/Install\ Certificates.command`
+* `pip install --upgrade certifi`
 
 
 input
