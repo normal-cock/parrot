@@ -397,6 +397,7 @@
             function genRadio(raw_word, word, queryResult) {
                 const radioCardDiv = $('<div class="pr-item">');
                 const switchDiv = $('<div class="form-check form-switch">');
+                const radioListDiv = $('<div class="form-check">');
                 const switchInput = $(`<input class="form-check-input" type="checkbox" role="switch" id="${raw_word}-switch" checked>`);
                 const switchLabel = $(`<label class="form-check-label" for="${raw_word}-switch">`).text(word);
                 switchInput.change(function () {
@@ -406,10 +407,12 @@
                     if (checked == true) {
                         radio.prop('disabled', false);
                         checkedRadio.trigger('change');
+                        radioListDiv.show();
                     } else {
                         radio.prop('disabled', true);
                         delete selectedUnknownQRIndex[raw_word];
                         flushReviewRecord();
+                        radioListDiv.hide();
                     }
                 });
                 switchDiv.append(switchInput);
@@ -430,8 +433,9 @@
                     }
                     radioItemDiv.append(input);
                     radioItemDiv.append(lable);
-                    radioCardDiv.append(radioItemDiv);
+                    radioListDiv.append(radioItemDiv);
                 });
+                radioCardDiv.append(radioListDiv);
                 selectedUnknownQRIndex[raw_word] = 0;
                 return radioCardDiv;
             }
