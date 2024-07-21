@@ -24,13 +24,14 @@
         body {
             width: auto;
             margin: auto;
-            max-width: 1200px;
+            max-width: 800px;
             height: 100vh;
         }
 
         .container-fluid {
             padding-left: 0;
             padding-right: 0;
+            max-height: 50%;
         }
 
         #audioPlayer {
@@ -42,12 +43,20 @@
             background-color: lightgray;
         }
 
+        .custom-area {
+            height: 90%;
+        }
+
         .highlight-span {
             background-color: #d1e7dd;
         }
 
+        .subtitle-container {
+            height: 90%;
+        }
+
         #subtitle-list {
-            height: 85vh;
+            height: 100%;
             width: auto;
             overflow: auto;
             margin: 5%;
@@ -197,7 +206,7 @@
                 <button type="button" class="btn btn-link" onclick="goHome()">Home</button>
             </div>
         </div>
-        <div>
+        <div class="subtitle-container">
             <ul id="subtitle-list" class="list-group"></ul>
         </div>
     </div>
@@ -532,6 +541,7 @@
     </script>
 
     <script>
+        const customArea = $('.custom-area');
         const audioSrc = '{{ audio_url }}';
         const videoSrc = '{{ video_url }}';
         const subtitleSrc = '{ { subtitle_url } }';
@@ -809,6 +819,7 @@
             }
             $('#audioOnlyMode').change(function () {
                 if ($('#audioOnlyMode').is(':checked')) {
+                    customArea.height('90%');
                     audioPlayer.pause();
                     audioPlayer.src({
                         src: audioSrc,
@@ -820,6 +831,7 @@
                     jump2CurCue();
                     console.log('audioOnlyMode||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
                 } else {
+                    customArea.height('50%');
                     audioPlayer.pause();
                     audioPlayer.src({
                         src: videoSrc,
