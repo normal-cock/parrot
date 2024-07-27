@@ -134,7 +134,8 @@ def raw_query(word):
         for meaning in meanings:
             en_def = get_en_def(meaning)
             cn_def = get_cn_def(meaning)
-            for cd in cn_def.split(';'):
+
+            for cd in cn_def.replace('；', ';').split(';'):
                 query_result.append({
                     'word': title,
                     'pos': pos,

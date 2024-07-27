@@ -4,7 +4,6 @@ import os
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import diskcache as dc
 from parrot_v2.dal.local_cache import CustmLocalCache
 
 DEBUG = (os.getenv("DEBUG") == "True")

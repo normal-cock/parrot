@@ -141,6 +141,10 @@
             position: absolute;
             bottom: 0;
         }
+
+        #c-toast {
+            background-color: red;
+        }
     </style>
 </head>
 
@@ -148,7 +152,7 @@
     <div class="container-fluid">
         <div data-vjs-player="true">
             <video id="audioPlayer" class="vjs-fluid video-js vjs-theme-city" controls preload="metadata" width="100%"
-                data-setup='{}' crossorigin="anonymous">
+                data-setup='{}' crossorigin="anonymous" playsinline>
                 <p class="vjs-no-js">
                     您的浏览器不支持 HTML5 视频播放器，请升级浏览器。
                 </p>
@@ -547,6 +551,7 @@
         const subtitleSrc = '{ { subtitle_url } }';
         var adjustStartTime = {{ adjust_time }};
         var adjustEndTime = {{ adjust_time }};
+        var curHBVersion = 0;
         const localCurIndexKey = 'parrot:{{ item_id }}:local_cur_index';
         const adjustStartTimeKey = 'parrot:{{ item_id }}:local_adjust_start_time';
         const adjustEndTimeKey = 'parrot:{{ item_id }}:local_adjust_end_time';
@@ -564,6 +569,51 @@
             techOrder: ["html5"],
             autoplay: false, controls: true, mute: false, playsinline: true,
         };
+
+        function heartbeat() {
+            console.info('begin heartbeat');
+            function heartbeatCallback(response) {
+                const newHB = response;
+
+                curHBVersion = newHB.version;
+                audioPlayer.currentCueIndex = newHB.cue_index;
+                adjustStartTime = newHB.adjust_st;
+                $('#duration-starttime').val(adjustStartTime);
+                adjustEndTime = newHB.adjust_et;
+                $('#duration-endtime').val(adjustEndTime);
+                flushListHighlight();
+            };
+
+            const data = {
+                version: curHBVersion + 1,
+                cue_index: audioPlayer.currentCueIndex || 0,
+                adjust_st: adjustStartTime,
+                adjust_et: adjustEndTime,
+            };
+
+            console.info('begin real heartbeat');
+            $.ajax({
+                url: `/{{ passport }}/heartbeat/{{ item_id }}`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function (response) {
+                    heartbeatCallback(response);
+                },
+                error: httpErrorFunc,
+            });
+        };
+
+        // setTimeout(function () {
+        //     heartbeat(); // 调用你的函数
+
+        //     // 使用 setInterval 来设置函数每5秒执行一次
+        // }, 10 * 1000);
+        setInterval(function () {
+            if (!audioPlayer.paused()) {
+                heartbeat();
+            };
+        }, 10 * 1000); // 5000 表示5秒，单位是毫秒
 
         function isActive() {
             // 判断程序是否处于前台和设备是否解锁
@@ -604,6 +654,8 @@
         }
 
         function fetchLocalCurIndex() {
+            heartbeat();
+            return;
             const curIndexValue = localStorage.getItem(localCurIndexKey);
             if (curIndexValue == null) {
                 audioPlayer.currentCueIndex = 0
@@ -623,6 +675,7 @@
         }
 
         function storeLocalCurIndex() {
+            return;
             console.log('storeLocalCurIndex||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
             localStorage.setItem(localCurIndexKey, audioPlayer.currentCueIndex);
             localStorage.setItem(adjustStartTimeKey, adjustStartTime);
@@ -767,6 +820,7 @@
                             // audioPlayer.currentTime(cue.startTime);
                             jump2CurCue();
                             audioPlayer.play();
+                            heartbeat();
                         }
                     });
                     list.append(li);
@@ -891,6 +945,9 @@
                 }
             });
 
+            audioPlayer.on('play', function () {
+                heartbeat();
+            });
             navigator.mediaSession.setActionHandler('play', function () {
                 audioPlayer.play();
             });
@@ -899,9 +956,11 @@
             });
             navigator.mediaSession.setActionHandler('previoustrack', function () {
                 previousAudio();
+                heartbeat();
             });
             navigator.mediaSession.setActionHandler('nexttrack', function () {
                 nextAudio();
+                heartbeat();
             });
 
             // audioPlayer.ready(function () {

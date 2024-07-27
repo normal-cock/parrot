@@ -8,6 +8,7 @@ class CustmLocalCache(object):
     def __init__(self, dir) -> None:
         self._duration = 2*24*60*60
         self._cache = dc.Cache(dir)
+        self._lock = dc.Lock(self._cache, 'heartbeat-lock')
         # pass
 
     def _gen_rplan_key(self) -> str:
@@ -46,3 +47,30 @@ class CustmLocalCache(object):
             self._gen_rplan_last_index_key(),
             '-1', expire=self._duration
         )
+
+
+    def update_item_heartbeat(self, item_id, hb_dict):
+        '''
+            hb_data {
+                "version":0, // auto increase
+                "cue_index":22, // 
+                "adjust_st": 0.1, // float
+                "adjust_et": 0.1, // float
+            }
+            return bool, hb_dict
+                bool, if update successfully
+                hb_dict, final data in the db
+        '''
+        key = f'hb:{item_id}'
+        hb_data = json.dumps(hb_dict)
+        with self._lock:
+            old_hb = self._cache.get(key)
+            if old_hb == None:
+                self._cache.set(key, hb_data, tag='hb')
+                return True, hb_dict
+            old_hb_dict = json.loads(old_hb)
+            if hb_dict['version'] == (old_hb_dict['version'] + 1):
+                self._cache.set(key, hb_data, tag='hb')
+                return True, hb_dict
+            else:
+                return False, old_hb_dict

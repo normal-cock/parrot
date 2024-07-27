@@ -7,7 +7,7 @@ from flask_session import Session
 from markupsafe import Markup
 from parrot_v2.dal.aliyun_oss import oss_sington
 from werkzeug.middleware.proxy_fix import ProxyFix
-from parrot_v2 import DATA_DIR, PW
+from parrot_v2 import DATA_DIR, PW, cache, CustmLocalCache
 from parrot_v2.biz import service_v2 as biz_v2
 from parrot_v2.biz.service_v2 import get_media_url, get_item_list, get_item_total, blur_search
 from parrot_v2.util import logger, nlp_tool
@@ -22,6 +22,12 @@ SESSION_CACHELIB = FileSystemCache(
     threshold=500, cache_dir=f"{DATA_DIR}/sessions")
 app.config.from_object(__name__)
 Session(app)
+
+cache_in_flask = cache
+if app.debug == True:
+    cache_path = f'{DATA_DIR}/diskcache_dev'
+    logger.info(f'path=={cache_path}||cache inited')
+    cache_in_flask = CustmLocalCache(cache_path)
 
 app.wsgi_app = ProxyFix(
     app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
@@ -163,6 +169,25 @@ def parse_sentence(passport):
     return resp_dict
 
 
+@app.route("/<passport>/heartbeat/<item_id>", methods=['POST'])
+def heartbeat(passport, item_id):
+    logger.info('begin heartbeat')
+    if passport.upper() != PW.upper():
+        return make_response('', 404)
+    new_hb_data = request.get_json()
+    if (
+        new_hb_data == None or 'version' not in new_hb_data or 'cue_index' not in new_hb_data
+        or 'adjust_st' not in new_hb_data or 'adjust_et' not in new_hb_data
+        ):
+        logger.error(f'input={new_hb_data}||400')
+        return make_response('', 400)
+    
+    succeed, final_hb_data = cache_in_flask.update_item_heartbeat(item_id, new_hb_data)
+    if succeed == False:
+        logger.info(f"input={new_hb_data}||heartbeat update failed")
+    return final_hb_data
+
+
 @app.route("/<passport>/clear_session/<item_id>")
 def clear_session(passport, item_id):
     if passport.upper() != PW.upper():
@@ -170,3 +195,5 @@ def clear_session(passport, item_id):
     _media_url_key = f'media_url_dict:{item_id}'
     session.pop(_media_url_key)
     return "<p>Hello, World!</p>"
+
+
