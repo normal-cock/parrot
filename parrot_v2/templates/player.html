@@ -113,6 +113,13 @@
             padding-left: 2%;
             background-color: white;
             max-width: 800px;
+            /* border: 2px solid black; */
+            /* 这里的display是为了取消bootstrap中的card导致的display:flex的显示问题 */
+            display: block;
+        }
+
+        .card-container-button {
+            height: 5%;
         }
 
         .http-result-closer {
@@ -127,13 +134,12 @@
         }
 
         #pr-review-record {
-            min-height: 40%;
-            max-height: 60%;
+            max-height: 40%;
             overflow-y: auto;
         }
 
         #pr-meaning-select {
-            /* max-height: 30%; */
+            max-height: 55%;
             overflow-y: auto;
         }
 
