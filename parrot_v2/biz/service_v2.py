@@ -131,7 +131,7 @@ def unknown_checker_gen(session):
             return False
         if cpos == CWordPos.PREP:
             return False
-        if origin_word in ['be', 'the', 'most', 'so', "'s", 'about', 'think', 'ever']:
+        if origin_word in ['be', 'the', 'most', 'so', "'s", 'about', 'think', 'ever', 'go']:
             return False
         word = session.query(Word).filter(
             Word.text == origin_word).one_or_none()

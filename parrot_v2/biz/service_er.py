@@ -1,10 +1,13 @@
 import datetime
+import signal
+import random
 from typing import List
-from parrot_v2 import Session, DEBUG
+from parrot_v2 import Session, DEBUG, cache
 from parrot_v2.model import Word, Meaning, ERLookupRecord
 from parrot_v2.util import rlinput
 
 _REVIEW_RANGE_DAY = 7
+_REVIEW_RANGE_DAY = 5
 
 
 def add_er_lookup_record():
@@ -52,20 +55,45 @@ def add_er_lookup_record():
 
 
 def begin_er_lookup_review():
+    start_time = datetime.datetime.now()
+    this_time_reviewed_plan_count = 0
+
+    def ctrlc_handler(signum, frame):
+        print("\n\nReview Finished and reviewed {} words, costing {}".format(
+            this_time_reviewed_plan_count,
+            datetime.datetime.now() - start_time,
+        ))
+        exit()
+    signal.signal(signal.SIGINT, ctrlc_handler)
+
     begin_time = datetime.date.today() - datetime.timedelta(days=_REVIEW_RANGE_DAY)
     end_time = datetime.date.today()
     if DEBUG == True:
         end_time = datetime.date.today() + datetime.timedelta(days=1)
     session = Session()
-    lookup_records: List[ERLookupRecord] = session.query(ERLookupRecord).filter(
-        ERLookupRecord.created_time >= begin_time,
-        ERLookupRecord.created_time < end_time,
-    ).order_by(-ERLookupRecord.created_time)
-    total_len = lookup_records.count()
-    # total_len = len(lookup_records)
-    print("lookup records since {}".format(begin_time))
 
-    for index, lookup_record in enumerate(lookup_records):
+    print("lookup records since {}".format(begin_time))
+    lookup_record_id_list = cache.get_erplan_today()
+    if len(lookup_record_id_list) == 0:
+        lookup_records: List[ERLookupRecord] = session.query(ERLookupRecord).filter(
+            ERLookupRecord.created_time >= begin_time,
+            ERLookupRecord.created_time < end_time,
+        ).order_by(-ERLookupRecord.created_time)
+        lookup_record_id_list = [record.id for record in lookup_records]
+        random.shuffle(lookup_record_id_list)
+        cache.set_erplan_today(lookup_record_id_list)
+
+    total_len = len(lookup_record_id_list)
+    er_review_index = cache.get_erplan_last_index_today()
+
+    er_lookup_records = session.query(ERLookupRecord).filter(
+        ERLookupRecord.id.in_(lookup_record_id_list)).all()
+    er_lookup_records: List[ERLookupRecord] = sorted(
+        er_lookup_records, key=lambda o: lookup_record_id_list.index(o.id))
+
+    for index, lookup_record in enumerate(er_lookup_records):
+        if index <= er_review_index:
+            continue
         meaning = lookup_record.meaning
         print("")
         print("Progress: {}/{}".format(index+1, total_len))
@@ -74,9 +102,14 @@ def begin_er_lookup_review():
         print('use case:', meaning.use_case)
         input()
         print('meaning:', meaning.meaning, meaning.remark)
-        print('added at {}'.format(lookup_record.created_time))
+        print('added at {}'.format(lookup_record.created_time.date()))
+        cache.set_erplan_last_index_today(index)
+        this_time_reviewed_plan_count += 1
 
-    print('\nFinished Review')
+    print("\n\nReview Finished and reviewed {} words, costing {}".format(
+            this_time_reviewed_plan_count,
+            datetime.datetime.now() - start_time,
+        ))
 
 
 def predict_er():
@@ -85,18 +118,13 @@ def predict_er():
     if DEBUG == True:
         end_time = datetime.date.today() + datetime.timedelta(days=1)
     session = Session()
-    for i in range(_REVIEW_RANGE_DAY):
-        tmp_begin_time = datetime.date.today() - datetime.timedelta(days=i+1)
-        if DEBUG == True:
-            tmp_begin_time = datetime.date.today() - datetime.timedelta(days=i)
-        tmp_end_time = tmp_begin_time + datetime.timedelta(days=1)
-        tmp_count = session.query(ERLookupRecord).filter(
-            ERLookupRecord.created_time >= tmp_begin_time,
-            ERLookupRecord.created_time < tmp_end_time,
+    for i in range(10):
+        cur_begin_time = begin_time + datetime.timedelta(days=i)
+        cur_end_time = end_time + datetime.timedelta(days=i)
+        review_date = datetime.date.today() +  + datetime.timedelta(days=i)
+        total_count = session.query(ERLookupRecord).filter(
+            ERLookupRecord.created_time >= cur_begin_time,
+            ERLookupRecord.created_time < cur_end_time,
         ).count()
-        print("{}:{}".format(tmp_begin_time, tmp_count))
-    total_count = session.query(ERLookupRecord).filter(
-        ERLookupRecord.created_time >= begin_time,
-        ERLookupRecord.created_time < end_time,
-    ).count()
-    print("Total:{}".format(total_count))
+        print(f"{review_date} : {total_count}")
+

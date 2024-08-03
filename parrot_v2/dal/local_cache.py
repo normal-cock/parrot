@@ -48,6 +48,34 @@ class CustmLocalCache(object):
             '-1', expire=self._duration
         )
 
+    def _gen_erplan_key(self) -> str:
+        return f'erplan_cache:{datetime.date.today()}'
+
+    def _gen_erplan_last_index_key(self) -> str:
+        return f'last_erplan_index:{datetime.date.today()}'
+
+    def get_erplan_today(self) -> List[int]:
+        '''return [meaning_id, meaning_id, ]'''
+        return json.loads(self._cache.get(self._gen_erplan_key(), '[]'))
+
+    def set_erplan_today(self, erplan: List[int]):
+        '''
+            erplan: [meaning_id, meaning_id, ]
+        '''
+        self._cache.set(self._gen_erplan_key(), json.dumps(
+            erplan), expire=self._duration)
+
+    def get_erplan_last_index_today(self) -> int:
+        '''
+            这里的index是以review的erplan的index，-1代表还未开始
+        '''
+        return int(self._cache.get(self._gen_erplan_last_index_key(), '-1'))
+
+    def set_erplan_last_index_today(self, reviewed_index: int):
+        self._cache.set(
+            self._gen_erplan_last_index_key(),
+            str(reviewed_index), expire=self._duration
+        )
 
     def update_item_heartbeat(self, item_id, hb_dict):
         '''
