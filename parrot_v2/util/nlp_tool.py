@@ -7,8 +7,9 @@ premise
     nltk.download('cmudict')
 pos values: https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html
 '''
-from typing import Callable
-from collections import OrderedDict
+from typing import Callable, List
+from collections import OrderedDict, defaultdict
+import spacy
 import nltk
 from nltk.corpus import wordnet
 from nltk.stem import WordNetLemmatizer
@@ -22,6 +23,8 @@ from parrot_v2.util import logger
 detokenizer = TreebankWordDetokenizer()
 lemmatizer = WordNetLemmatizer()
 
+nlp = spacy.load("en_core_web_sm")
+
 
 def clear_fmt(input):
     input = BeautifulSoup(input, 'html.parser').get_text()
@@ -31,31 +34,31 @@ def clear_fmt(input):
 
 def get_cpos_from_pos(pos: str) -> CWordPos:
     pos = pos.lower()
-    if pos.startswith('nn'):
+    if pos.startswith('nn') or 'noun' in pos:
         return CWordPos.NOUN
-    elif pos.startswith('vb'):
+    elif pos.startswith('vb') or 'verb' in pos:
         return CWordPos.VERB
-    elif pos.startswith('jj'):
+    elif pos.startswith('jj') or 'adj' in pos:
         return CWordPos.ADJ
-    elif pos.startswith('rb') or pos.endswith('wrb'):
+    elif pos.startswith('rb') or pos.endswith('wrb') or 'adv' in pos:
         return CWordPos.ADV
-    elif pos.startswith('in'):
+    elif pos.startswith('in') or 'adp' in pos:
         return CWordPos.PREP
     else:
         return CWordPos.OTHER
 
 
-def morphy_by_cpos(token: str, cpos: CWordPos) -> str:
+def morphy_by_cpos(token: str, cpos_list: List[CWordPos]) -> str:
     token = token.lower().strip()
     if len(token.strip()) == 0:
         raise Exception('empty token')
     origin_token = token
     origin_token1 = token
     origin_token2 = token
-    if cpos == CWordPos.NOUN:
+    if CWordPos.NOUN in cpos_list:
         origin_token1 = wordnet.morphy(token, wordnet.NOUN)
         origin_token2 = lemmatizer.lemmatize(token, 'n')
-    elif cpos == CWordPos.VERB:
+    if CWordPos.VERB in cpos_list:
         origin_token1 = wordnet.morphy(token, wordnet.VERB)
         origin_token2 = lemmatizer.lemmatize(token, 'v')
     origin_token = origin_token2
@@ -81,7 +84,7 @@ def get_origin_morphy_4_phrase(phrase: str):
         origin_token = ''
         cpos = get_cpos_from_pos(pos)
         if is_start_with_be == False:
-            origin_token = morphy_by_cpos(token, cpos)
+            origin_token = morphy_by_cpos(token, [cpos])
             if i == 0 and origin_token == 'be':
                 is_start_with_be = True
             if origin_token == None:
@@ -96,7 +99,7 @@ def get_origin_morphy_4_phrase(phrase: str):
     return origin_phrase
 
 
-def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str, str, str], bool]):
+def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str, str, List[CWordPos]], bool]):
     '''
     support noun verb adj adv frist
     return cleaned_selected, selected_query_result, unknown_query_result
@@ -106,23 +109,40 @@ def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str, str,
     selected_origin_tokens = []
     word_pron = ''
     word_cn_def = ''
-    selected_word_pos = None
-    selected_word_cpos = None
+    selected_word_pos = []
+    selected_word_cpos = []
     # key: token, value: query_result
     unknown_words = OrderedDict()
 
-    tags = nltk.pos_tag(sentence_tokens)
+    token_pos_dict = defaultdict(set)
 
+    tags = nltk.pos_tag(sentence_tokens)
     for token, pos in tags:
+        cpos = get_cpos_from_pos(pos)
+        token_pos_dict[token].add(cpos)
+
+    alternative_pos = nlp(sentence)
+    for token in alternative_pos:
+        cpos = get_cpos_from_pos(token.pos_)
+        token_pos_dict[token.text].add(cpos)
+
+    # for token, pos in tags:
+    for token_item in alternative_pos:
+        token = token_item.text
+        pos = token_item.pos_
+        cpos_list = list(token_pos_dict[token])
+
         # import ipdb
         # ipdb.set_trace()
         lower_token = token.lower()
-        cpos = get_cpos_from_pos(pos)
-        origin_token = morphy_by_cpos(lower_token, cpos)
+        origin_token = token_item.lemma_
+        origin_token = origin_token.lower()
+        if origin_token == lower_token:
+            origin_token = morphy_by_cpos(lower_token, cpos_list)
         if token in selected_tokens:
-            if selected_word_pos == None or selected_word_cpos == None:
-                selected_word_pos = pos
-                selected_word_cpos = cpos
+            selected_word_pos.append(pos)
+            selected_word_cpos += cpos_list
+                
             if origin_token not in selected_origin_tokens:
                 selected_origin_tokens.append(origin_token)
         else:
@@ -130,16 +150,16 @@ def parse_sentence(selected, sentence: str, unknown_checker: Callable[[str, str,
                 logger.info(f'token={token}||origin_token is None')
                 continue
             logger.debug(
-                f'pos={pos}||cpos={cpos}||raw_word={lower_token}||word={origin_token}||found token')
-            if unknown_checker(origin_token, pos, cpos) == True:
+                f'pos={pos}||cpos={cpos_list}||raw_word={lower_token}||word={origin_token}||found token')
+            if unknown_checker(origin_token, pos, cpos_list) == True:
                 logger.debug(
-                    f'pos={pos}||cpos={cpos}||word={origin_token}||found unknwon word')
-                query_result_list = query_word_with_pos(origin_token, cpos)
+                    f'pos={pos}||cpos={cpos_list}||word={origin_token}||found unknwon word')
+                query_result_list = query_word_with_pos(origin_token, cpos_list)
                 if len(query_result_list) != 0:
                     unknown_words[token] = query_result_list
                 else:
                     logger.debug(
-                        f"pos={pos}||cpos={cpos}||word={origin_token}||can't identify unknwon word")
+                        f"pos={pos}||cpos={cpos_list}||word={origin_token}||can't identify unknwon word")
 
     selected_word_text = detokenizer.detokenize(selected_origin_tokens)
     logger.debug(

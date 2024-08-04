@@ -1,6 +1,7 @@
 import time
 import uuid
 import nltk
+from typing import List
 from nltk.corpus import wordnet
 from sqlalchemy import desc
 from parrot_v2 import Session, DEBUG, PW
@@ -123,15 +124,15 @@ def query_word(word_text: str):
 
 
 def unknown_checker_gen(session):
-    def _checker(origin_word, pos, cpos) -> bool:
+    def _checker(origin_word:str, pos:str, cpos_list:List[CWordPos]) -> bool:
         '''
             origin_word: lower
         '''
-        if pos.upper().startswith('PRP'):
+        if pos.upper().startswith('PRP') or pos.upper().startswith('PRON'):
             return False
-        if cpos == CWordPos.PREP:
+        if CWordPos.PREP in cpos_list:
             return False
-        if origin_word in ['be', 'the', 'most', 'so', "'s", 'about', 'think', 'ever', 'go']:
+        if origin_word in ['be', 'the', 'most', 'so', "'s", 'about', 'think', 'ever', 'go', 'year']:
             return False
         word = session.query(Word).filter(
             Word.text == origin_word).one_or_none()

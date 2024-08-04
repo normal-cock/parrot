@@ -1,4 +1,5 @@
 import requests
+from typing import List
 from bs4 import BeautifulSoup
 from parrot_v2.model.core import CWordPos
 ''' 
@@ -126,7 +127,7 @@ def raw_query(word):
         # import ipdb
         # ipdb.set_trace()
         title = get_title(entry)
-        if title != word:
+        if title.lower() != word.lower():
             continue
         pos = get_pos(entry)
         pron = get_pron(entry)
@@ -147,13 +148,13 @@ def raw_query(word):
     return query_result, ''
 
 
-def _is_pos_match(pos: str, cpos: CWordPos) -> bool:
+def _is_pos_match(pos: str, cpos_list: List[CWordPos]) -> bool:
     pos = pos.lower()
-    if ((cpos == CWordPos.NOUN and 'n.' in pos)
-        or (cpos == CWordPos.VERB and 'v.' in pos)
-            or (cpos == CWordPos.ADJ and 'adj.' in pos)
-            or (cpos == CWordPos.ADV and 'adv.' in pos)
-            or (cpos == CWordPos.PREP and 'prep.' in pos)):
+    if ((CWordPos.NOUN in cpos_list and 'n.' in pos)
+        or (CWordPos.VERB in cpos_list and 'v.' in pos)
+            or (CWordPos.ADJ in cpos_list and 'adj.' in pos)
+            or (CWordPos.ADV in cpos_list and 'adv.' in pos)
+            or (CWordPos.PREP in cpos_list and 'prep.' in pos)):
         return True
     return False
 
@@ -166,7 +167,7 @@ def query_pron_with_pos(word, cpos: CWordPos):
         return ''
     if cpos.may_have_different_pron_by_pos():
         for result in result_list:
-            if _is_pos_match(result['pos'], cpos):
+            if _is_pos_match(result['pos'], [cpos]):
                 return result['pron']
     else:
         return result_list[0]['pron']
@@ -174,23 +175,23 @@ def query_pron_with_pos(word, cpos: CWordPos):
     return ''
 
 
-def query_word_with_pos(word, cpos: CWordPos):
+def query_word_with_pos(word, cpos_list: List[CWordPos]):
     result_list, err_str = raw_query(word)
     if len(err_str) != 0:
         raise Exception(err_str)
     filtered_result_list = []
     for result in result_list:
-        if _is_pos_match(result['pos'], cpos) or result['pos'] == NON_POS:
+        if _is_pos_match(result['pos'], cpos_list) or result['pos'] == NON_POS:
             filtered_result_list.append(result)
 
     return filtered_result_list
 
 
 if __name__ == '__main__':
-    # meanings, err_str = raw_query('record')
+    meanings, err_str = raw_query('Manchurian candidate')
     # meanings, err_str = raw_query('be born')
     # meanings, err_str = raw_query('first')
-    meanings = query_word_with_pos('first', CWordPos.ADJ)
+    # meanings = query_word_with_pos('first', [CWordPos.ADJ])
     # if len(err_str) != 0:
     #     print(err_str)
     #     exit(0)
