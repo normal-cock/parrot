@@ -551,7 +551,9 @@
     </script>
 
     <script>
+        const playerArea = $('.container-fluid');
         const customArea = $('.custom-area');
+        const bodyArea = $('body');
         const audioSrc = '{{ audio_url }}';
         const videoSrc = '{{ video_url }}';
         const subtitleSrc = '{ { subtitle_url } }';
@@ -880,6 +882,13 @@
             $('#audioOnlyMode').change(function () {
                 if ($('#audioOnlyMode').is(':checked')) {
                     customArea.height('90%');
+
+                    bodyArea.css('max-width', '800px');
+                    playerArea.css('float', '');
+                    playerArea.width('100%');
+                    customArea.css('float', '');
+                    customArea.width('100%');
+
                     audioPlayer.pause();
                     audioPlayer.src({
                         src: audioSrc,
@@ -891,7 +900,15 @@
                     jump2CurCue();
                     console.log('audioOnlyMode||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
                 } else {
-                    customArea.height('50%');
+                    customArea.height('100%');
+
+                    bodyArea.css('max-width', '100%');
+                    playerArea.css('float', 'left');
+                    playerArea.width('60%');
+                    customArea.css('float', 'right');
+                    customArea.width('40%');
+
+
                     audioPlayer.pause();
                     audioPlayer.src({
                         src: videoSrc,

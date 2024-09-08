@@ -23,12 +23,14 @@ class Word(Base):
     changed_time = Column(
         DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
-    def get_other_meaning_without_review_plan(self):
+    def get_other_meaning_without_review_plan(self, ignored_mid=set()):
         other_meanings = []
         for meaning in self.meanings:
-            if meaning.review_plans.filter(
-                    ReviewPlan.time_to_review >= datetime.datetime.today().date()
-            ).count() == 0:
+            if (
+                (meaning.id not in ignored_mid)
+                    and (meaning.review_plans.filter(
+                        ReviewPlan.time_to_review >= datetime.datetime.today().date()
+                    ).count() == 0)):
                 other_meanings.append(meaning)
         return other_meanings
 

@@ -4,6 +4,7 @@ import argparse
 import datetime
 import signal
 
+
 from parrot_v2.biz.service import (
     get_word_or_none,
     add_new_word_and_meaning,
@@ -26,8 +27,6 @@ from parrot_v2 import DATA_DIR
 from parrot_v2.util import rlinput
 
 # 定义信号处理函数
-
-
 def handler(signum, frame):
     print('\n\nExit')
     exit()

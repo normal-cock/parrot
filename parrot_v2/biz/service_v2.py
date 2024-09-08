@@ -1,15 +1,17 @@
+
 import time
 import uuid
 import nltk
 from typing import List
-from nltk.corpus import wordnet
 from sqlalchemy import desc
 from parrot_v2 import Session, DEBUG, PW
+
 from parrot_v2.model import Item, Word
-from parrot_v2.dal.aliyun_oss import oss_sington
+
+# from parrot_v2.dal.aliyun_oss import oss_sington
 from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning, CWordPos
 from parrot_v2.util import logger
-from parrot_v2.util import nlp_tool
+
 
 
 def get_media_url(item_id):
@@ -22,6 +24,8 @@ def get_media_url(item_id):
             'expiration_time':timestamp
         }, err_string
     '''
+    from parrot_v2.dal.aliyun_oss import oss_sington
+
     session = Session()
     item = session.query(Item).filter(
         Item.item_id == item_id).one_or_none()
@@ -100,6 +104,8 @@ def blur_search(query: str):
 def query_word(word_text: str):
     '''返回结果[(word_text, meaning_id, meaning_meaning, 
         meaning_use_case, meaning_phonetic_symbol, meaning_remark)]'''
+    from parrot_v2.util import nlp_tool
+
     origin_word_text = nlp_tool.get_origin_morphy_4_phrase(word_text)
     result_list = []
     session = Session()
@@ -152,6 +158,8 @@ def parse_sentence(selected, sentence):
             }
         }
     '''
+    from parrot_v2.util import nlp_tool
+
     session = Session()
     cleaned_selected, selected_qr, unknown_qr = nlp_tool.parse_sentence(
         selected, sentence, unknown_checker_gen(session))

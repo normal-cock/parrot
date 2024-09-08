@@ -4,6 +4,7 @@ import random
 from typing import List
 from parrot_v2 import Session, DEBUG, cache
 from parrot_v2.model import Word, Meaning, ERLookupRecord
+from parrot_v2.model.core import update_meaning_fts
 from parrot_v2.util import rlinput
 
 _REVIEW_RANGE_DAY = 7
@@ -16,6 +17,7 @@ def add_er_lookup_record():
     word = session.query(Word).filter(
         Word.text == text).one_or_none()
     meaning_obj: Meaning = None
+    old_meaning_usecase = ''
     if word != None:
         tmp_meaning_dict = {}
         print("found the following existing meanings:")
@@ -29,6 +31,7 @@ def add_er_lookup_record():
 
         if meaning_choice != "-1":
             meaning_obj = tmp_meaning_dict[meaning_choice]
+            old_meaning_usecase = meaning_obj.use_case
 
     phonetic_symbol = rlinput(
         'phonetic_symbol:', meaning_obj.phonetic_symbol if meaning_obj else '')
@@ -42,11 +45,20 @@ def add_er_lookup_record():
         word = Word.new_word_during_er(
             text, phonetic_symbol, meaning, use_case, remark)
         session.add(word)
+        update_meaning_fts(session, None, None, word.meanings[0])
     elif meaning_obj == None:
         meaning_obj = Meaning.new_meaning_during_er(
             word, phonetic_symbol, meaning, use_case, remark)
+        update_meaning_fts(session, None, None, meaning_obj)
     else:
+        meaning_obj.phonetic_symbol = phonetic_symbol
+        meaning_obj.meaning = meaning
+        meaning_obj.use_case = use_case
+        meaning_obj.remark = remark
         meaning_obj.add_er_lookup_record()
+        update_meaning_fts(session, meaning_obj.id,
+                           old_meaning_usecase, meaning_obj)
+
     added_count = session.query(ERLookupRecord).filter(
         ERLookupRecord.created_time >= datetime.date.today()).count()
     session.commit()
@@ -74,12 +86,15 @@ def begin_er_lookup_review():
 
     print("lookup records since {}".format(begin_time))
     lookup_record_id_list = cache.get_erplan_today()
+    lookup_meaning_id_set = set()
     if len(lookup_record_id_list) == 0:
         lookup_records: List[ERLookupRecord] = session.query(ERLookupRecord).filter(
             ERLookupRecord.created_time >= begin_time,
             ERLookupRecord.created_time < end_time,
         ).order_by(-ERLookupRecord.created_time)
         lookup_record_id_list = [record.id for record in lookup_records]
+        for record in lookup_record:
+            lookup_meaning_id_set.add(record.meaning_id)
         random.shuffle(lookup_record_id_list)
         cache.set_erplan_today(lookup_record_id_list)
 
@@ -103,13 +118,32 @@ def begin_er_lookup_review():
         input()
         print('meaning:', meaning.meaning, meaning.remark)
         print('added at {}'.format(lookup_record.created_time.date()))
+        input()
+
+        other_meanings: List[Meaning] = meaning.word.get_other_meaning_without_review_plan(
+            lookup_meaning_id_set
+        )
+        other_meanings = [
+            m for m in other_meanings if m.id != meaning.id]
+        if len(other_meanings) > 0:
+            print("This word has multiple meanings:")
+            for i, meaning in enumerate(other_meanings):
+                print("{}. {}".format(i+1, meaning.meaning))
+            review_choice = rlinput(
+                "Want to review anyone?Input the index(-1 means don't want to):", "-1")
+            if review_choice != '-1':
+                other_meaning_to_review = other_meanings[int(
+                    review_choice)-1]
+                other_meaning_to_review.add_er_lookup_record()
+                session.commit()
+
         cache.set_erplan_last_index_today(index)
         this_time_reviewed_plan_count += 1
 
     print("\n\nReview Finished and reviewed {} words, costing {}".format(
-            this_time_reviewed_plan_count,
-            datetime.datetime.now() - start_time,
-        ))
+        this_time_reviewed_plan_count,
+        datetime.datetime.now() - start_time,
+    ))
 
 
 def predict_er():
@@ -121,10 +155,9 @@ def predict_er():
     for i in range(10):
         cur_begin_time = begin_time + datetime.timedelta(days=i)
         cur_end_time = end_time + datetime.timedelta(days=i)
-        review_date = datetime.date.today() +  + datetime.timedelta(days=i)
+        review_date = datetime.date.today() + + datetime.timedelta(days=i)
         total_count = session.query(ERLookupRecord).filter(
             ERLookupRecord.created_time >= cur_begin_time,
             ERLookupRecord.created_time < cur_end_time,
         ).count()
         print(f"{review_date} : {total_count}")
-
