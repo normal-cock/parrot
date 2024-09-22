@@ -93,7 +93,7 @@ def begin_er_lookup_review():
             ERLookupRecord.created_time < end_time,
         ).order_by(-ERLookupRecord.created_time)
         lookup_record_id_list = [record.id for record in lookup_records]
-        for record in lookup_record:
+        for record in lookup_records:
             lookup_meaning_id_set.add(record.meaning_id)
         random.shuffle(lookup_record_id_list)
         cache.set_erplan_today(lookup_record_id_list)

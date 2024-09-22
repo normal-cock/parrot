@@ -572,6 +572,6 @@ def rebuild_fts():
     result = session.execute(create_sql)
     result = session.execute(delete_all_sql)
     result = session.execute(rebuild_sql)
-    print('rebuild {} records'.format(result.rowcount))
+    print('rebuilt {} records'.format(result.rowcount))
     session.commit()
     return

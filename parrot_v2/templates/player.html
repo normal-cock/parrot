@@ -255,13 +255,21 @@
         const prMeaningSelect = $('#pr-meaning-select');
         const contextMenu = $('#contextMenu');
         const toast = $('#c-toast');
-        $('#close-card-container').on('click', function () {
+        function closePopup() {
             cardContainer.hide();
             cardList.empty();
-        });
-        $('#pr-close').on('click', function () {
             parseResult.hide();
             prMeaningSelect.empty();
+        }
+        $('#close-card-container').on('click', function () {
+            closePopup();
+            // cardContainer.hide();
+            // cardList.empty();
+        });
+        $('#pr-close').on('click', function () {
+            closePopup();
+            // parseResult.hide();
+            // prMeaningSelect.empty();
         });
 
         var selectedText = '';
@@ -787,12 +795,14 @@
                 }
                 const subCues = Array.from(findCNCues()?.cues || []);
                 var hasSubCue = false;
+                var list = $('#subtitle-list');
+
                 if (subCues.length != 0) {
                     console.log('loadedmetadata||Subtitles 2 loaded:' + getSubCuesLength());
                     hasSubCue = true;
+                    list.empty();
                 }
 
-                var list = $('#subtitle-list');
                 for (var i = 0, j = 0; i < cues.length; i++) {
                     let cue = cues[i];
                     var startTime = formatTime(cue.startTime);
@@ -948,6 +958,9 @@
                     case 39: // 右箭头键
                         nextAudio()
                         e.preventDefault();
+                        break;
+                    case 27: // ESC
+                        closePopup();
                         break;
                 }
             }, true);
