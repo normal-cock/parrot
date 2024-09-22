@@ -1,17 +1,17 @@
 
 import time
+import datetime
 import uuid
 import nltk
 from typing import List
 from sqlalchemy import desc
 from parrot_v2 import Session, DEBUG, PW
 
-from parrot_v2.model import Item, Word
+from parrot_v2.model import Item, Word, Meaning, ERLookupRecord, ER_REVIEW_RANGE_DAY
 
 # from parrot_v2.dal.aliyun_oss import oss_sington
 from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning, CWordPos
 from parrot_v2.util import logger
-
 
 
 def get_media_url(item_id):
@@ -130,7 +130,7 @@ def query_word(word_text: str):
 
 
 def unknown_checker_gen(session):
-    def _checker(origin_word:str, pos:str, cpos_list:List[CWordPos]) -> bool:
+    def _checker(origin_word: str, pos: str, cpos_list: List[CWordPos]) -> bool:
         '''
             origin_word: lower
         '''
@@ -173,6 +173,23 @@ def parse_sentence(selected, sentence):
         },
         'unknown_words': unknown_qr,
     }
+
+
+def readd_er(meaning_id: int) -> str:
+    begin_time = datetime.date.today() - datetime.timedelta(days=ER_REVIEW_RANGE_DAY)
+    session = Session()
+    if session.query(ERLookupRecord).filter(
+            ERLookupRecord.meaning_id == meaning_id,
+            ERLookupRecord.created_time >= begin_time).count() > 0:
+        return 'already in ER review plan'
+    m: Meaning | None = session.query(Meaning).filter(
+        Meaning.id == meaning_id).one_or_none()
+    if m == None:
+        return 'non-exist'
+    m.add_er_lookup_record()
+    session.commit()
+    session.close()
+    return ''
 
 
 if __name__ == '__main__':

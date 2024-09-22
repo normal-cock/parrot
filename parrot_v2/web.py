@@ -9,12 +9,11 @@ from parrot_v2.dal.aliyun_oss import oss_sington
 from werkzeug.middleware.proxy_fix import ProxyFix
 from parrot_v2 import DATA_DIR, PW, cache, CustmLocalCache
 from parrot_v2.biz import service_v2 as biz_v2
-from parrot_v2.biz.service_v2 import get_media_url, get_item_list, get_item_total, blur_search
 from parrot_v2.util import logger, nlp_tool
 from flask_paginate import Pagination, get_page_parameter
 
-app = Flask(__name__)
-
+# app = Flask(__name__)
+from parrot_v2 import app
 
 SESSION_TYPE = 'cachelib'
 SESSION_SERIALIZATION_FORMAT = 'json'
@@ -40,11 +39,11 @@ def index(passport):
         return make_response('', 404)
 
     page = request.args.get(get_page_parameter(), type=int, default=1)
-    item_total = get_item_total()
+    item_total = biz_v2.get_item_total()
     pagination = Pagination(page=page, total=item_total, css_framework='bootstrap5',
                             search=False, record_name='items')
     offsite = (page - 1) * pagination.per_page
-    item_list = get_item_list(offsite, pagination.per_page)
+    item_list = biz_v2.get_item_list(offsite, pagination.per_page)
 
     return render_template(
         'index.html',
@@ -60,7 +59,7 @@ def item_play_page(passport, item_id):
     _media_url_key = f'media_url_dict:{item_id}'
     media_url_dict = json.loads(session.get(_media_url_key, '{}'))
     if not ('expiration_time' in media_url_dict and time.time() < media_url_dict['expiration_time']):
-        media_url_dict, err_string = get_media_url(item_id)
+        media_url_dict, err_string = biz_v2.get_media_url(item_id)
         if len(err_string) != 0:
             logger.error(err_string)
             return make_response(err_string, 404)
@@ -91,11 +90,12 @@ def item_play_page(passport, item_id):
 def search(passport, q):
     if passport.upper() != PW.upper():
         return make_response('', 404)
-    result_list = blur_search(q.strip())
+    result_list = biz_v2.blur_search(q.strip())
     resp_list = []
     for result in result_list:
         resp_list.append({
             'word': result[0],
+            'meaning_id': result[1],
             'meaning': result[2],
             'usecase': result[3],
             'phonetic_symbol': result[4],
@@ -114,12 +114,25 @@ def query_word(passport, q):
     for result in result_list:
         resp_list.append({
             'word': result[0],
+            'meaning_id': result[1],
             'meaning': result[2],
             'usecase': result[3],
             'phonetic_symbol': result[4],
             'remark': result[5],
         })
     return resp_list
+
+
+@app.route("/<passport>/readd-er/<m_id>", methods=['POST'])
+def readd_er(passport, m_id):
+    if passport.upper() != PW.upper():
+        return make_response('', 404)
+    if m_id.isdigit() == False:
+        return make_response('', 400)
+    err_str = biz_v2.readd_er(int(m_id))
+    if len(err_str) != 0:
+        return make_response(err_str, 400)
+    return 'readd succeed'
 
 
 @app.route("/<passport>/parsestc", methods=['POST'])
@@ -178,11 +191,12 @@ def heartbeat(passport, item_id):
     if (
         new_hb_data == None or 'version' not in new_hb_data or 'cue_index' not in new_hb_data
         or 'adjust_st' not in new_hb_data or 'adjust_et' not in new_hb_data
-        ):
+    ):
         logger.error(f'input={new_hb_data}||400')
         return make_response('', 400)
-    
-    succeed, final_hb_data = cache_in_flask.update_item_heartbeat(item_id, new_hb_data)
+
+    succeed, final_hb_data = cache_in_flask.update_item_heartbeat(
+        item_id, new_hb_data)
     if succeed == False:
         logger.info(f"input={new_hb_data}||heartbeat update failed")
     return final_hb_data
@@ -195,5 +209,3 @@ def clear_session(passport, item_id):
     _media_url_key = f'media_url_dict:{item_id}'
     session.pop(_media_url_key)
     return "<p>Hello, World!</p>"
-
-

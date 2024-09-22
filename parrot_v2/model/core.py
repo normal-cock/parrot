@@ -14,6 +14,8 @@ from parrot_v2 import DEBUG
 from parrot_v2.model import Base
 import typing
 
+ER_REVIEW_RANGE_DAY = 5
+
 
 class Word(Base):
     __tablename__ = 'word'

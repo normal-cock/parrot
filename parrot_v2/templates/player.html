@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video.js Audio Player Demo</title>
+    <title>{{item_id}}</title>
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
     <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
@@ -294,7 +294,7 @@
         };
 
         function httpErrorFunc(jqXHR, textStatus, errorThrown) {
-            customToast(`${jqXHR.status}\t${errorThrown}`);
+            customToast(`${jqXHR.status}\t${errorThrown}: ${jqXHR.responseText}`);
         };
 
         function searchCallback(response) {
@@ -302,19 +302,32 @@
             var list = response;
             $.each(list, function (i, item) {
                 // 创建一个卡片元素
-                function genCard(word, meaning, usecase, phonetic_symbol, remark) {
+                function genCard(word, m_id, meaning, usecase, phonetic_symbol, remark) {
                     var card = $('<div class="card"></div>');
                     var cardBody = $('<div class="card-body"></div>');
                     var title = $('<h5 class="card-title">').text(word);
                     var subTitle = $('<h6 class="card-subtitle mb-2 text-body-secondary">').text(phonetic_symbol + ' ' + meaning);
                     var body = $('<p class="card-text">').html(usecase + '<br/>' + remark);
-                    cardBody.append(title, subTitle, body);
+                    var addERBtn = $('<button type="button" class="btn btn-primary">Add ER</button>');
+                    addERBtn.on('click', function () {
+                        $.ajax({
+                            url: `/{{ passport }}/readd-er/${m_id}`,
+                            type: 'POST',
+                            success: function (response) {
+                                // searchCallback(response);
+                                const msg = `add_er successfully: ${word} ${meaning}`;
+                                toastr.info(msg, '', { timeOut: 2000 });
+                            },
+                            error: httpErrorFunc,
+                        });
+                    });
+                    cardBody.append(title, subTitle, body, addERBtn);
                     card.append(cardBody);
                     return card;
                 }
                 // var li = $('<li>')
                 // parse data
-                var card = genCard(item['word'], item['meaning'], item['usecase'], item['phonetic_symbol'], item['remark']);
+                var card = genCard(item['word'], item['meaning_id'], item['meaning'], item['usecase'], item['phonetic_symbol'], item['remark']);
                 // li.append(card);
                 // gen list
                 cardList.append(card);

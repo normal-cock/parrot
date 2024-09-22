@@ -3,12 +3,9 @@ import signal
 import random
 from typing import List
 from parrot_v2 import Session, DEBUG, cache
-from parrot_v2.model import Word, Meaning, ERLookupRecord
+from parrot_v2.model import Word, Meaning, ERLookupRecord, ER_REVIEW_RANGE_DAY
 from parrot_v2.model.core import update_meaning_fts
 from parrot_v2.util import rlinput
-
-_REVIEW_RANGE_DAY = 7
-_REVIEW_RANGE_DAY = 5
 
 
 def add_er_lookup_record():
@@ -78,7 +75,7 @@ def begin_er_lookup_review():
         exit()
     signal.signal(signal.SIGINT, ctrlc_handler)
 
-    begin_time = datetime.date.today() - datetime.timedelta(days=_REVIEW_RANGE_DAY)
+    begin_time = datetime.date.today() - datetime.timedelta(days=ER_REVIEW_RANGE_DAY)
     end_time = datetime.date.today()
     if DEBUG == True:
         end_time = datetime.date.today() + datetime.timedelta(days=1)
@@ -147,7 +144,7 @@ def begin_er_lookup_review():
 
 
 def predict_er():
-    begin_time = datetime.date.today() - datetime.timedelta(days=_REVIEW_RANGE_DAY)
+    begin_time = datetime.date.today() - datetime.timedelta(days=ER_REVIEW_RANGE_DAY)
     end_time = datetime.date.today()
     if DEBUG == True:
         end_time = datetime.date.today() + datetime.timedelta(days=1)
