@@ -97,7 +97,10 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 未来优化思路:
 * [P0]提高碎片化时间的利用率
     * [P0]支持声音背单词，背单词就不需要电脑了。录入单词时，可以将句子的文件名和时间段存下来，第一版先只读句子就可以
-* [P0]html页面支持一键将老单词录入ER中 P0
+        * [不可行]思路1: http的range不可以，因为range只能控制bytes的范围，无法转化为视频或音频时间
+        * 思路2: 使用hls。
+            * https://help.aliyun.com/zh/oss/use-cases/create-hls-streams-based-on-oss?spm=a2c4g.11186623.0.i25
+* [P0]html页面支持一键将老单词录入ER中 P0——Done
 * [P0]add er支持自动增加全文检索——Done
 * [P0]review_er每个单词背完后，增加单词的其他意思的列表总结——Done
 * [P1]提高背单词效率

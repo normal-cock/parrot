@@ -77,7 +77,8 @@ class Meaning(Base):
 
     # foreign key
     word_id = Column(Integer, ForeignKey('word.id', ondelete='CASCADE'))
-    word: Word = relationship("Word", back_populates="meanings")
+    word: Word = relationship(
+        "Word", back_populates="meanings", lazy="immediate")
 
     def modify_meaning(self, phonetic_symbol, meaning, use_case, remark, unremember=True):
         self.phonetic_symbol = phonetic_symbol

@@ -3,6 +3,8 @@ import os
 import argparse
 import datetime
 import signal
+from parrot_v2 import Session
+from parrot_v2.model import Word
 
 
 from parrot_v2.biz.service import (
@@ -27,6 +29,8 @@ from parrot_v2 import DATA_DIR
 from parrot_v2.util import rlinput
 
 # 定义信号处理函数
+
+
 def handler(signum, frame):
     print('\n\nExit')
     exit()
@@ -137,7 +141,10 @@ def run():
         if not word_text:
             exit('Error: empty word')
 
-        word = get_word_or_none(word_text)
+        session = Session()
+        word = session.query(Word).filter(
+            Word.text == word_text).one_or_none()
+        # word = get_word_or_none(word_text)
         if word == None:
             exit(f'word not found')
 
