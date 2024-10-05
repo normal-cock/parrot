@@ -124,6 +124,7 @@ def query_word(word_text: str):
             meaning.use_case,
             meaning.phonetic_symbol,
             meaning.remark,
+            meaning.created_time,
         ])
     session.close()
     return result_list

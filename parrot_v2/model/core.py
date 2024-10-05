@@ -1,6 +1,7 @@
 # coding=utf8
 import re
 import datetime
+from dateutil.parser import parse
 import enum
 from random import randint
 import collections
@@ -348,7 +349,7 @@ def update_meaning_fts(
     session.flush()
     if old_meaning_id != None:
         delete_sql = '''
-        INSERT INTO meaning_fts(meaning_fts, rowid, use_case) 
+        INSERT INTO meaning_fts(meaning_fts, rowid, use_case)
             VALUES('delete', :rowid, :use_case);
         '''
         session.execute(
@@ -376,12 +377,13 @@ class MeaningDTO(typing.NamedTuple):
     use_case: str
     phonetic_symbol: str
     remark: str
+    created_time: datetime.datetime
 
 
 def get_related_meaning(session, query: str, output='console') -> typing.List[MeaningDTO]:
     '''
     output console, html
-    返回结果[(word_text, meaning_id, meaning_meaning, 
+    返回结果[(word_text, meaning_id, meaning_meaning,
         meaning_use_case, meaning_phonetic_symbol, meaning_remark)]'''
     # https: // stackoverflow.com/questions/287871/how-do-i-print-colored-text-to-the-terminal
     # https://stackoverflow.com/questions/53740460/ansi-escape-code-weird-behavior-at-end-of-line
@@ -391,7 +393,7 @@ def get_related_meaning(session, query: str, output='console') -> typing.List[Me
     search_sql = '''
         select word.text,meaning.id,meaning.meaning,
             highlight(meaning_fts,0,'{}','{}'),
-            meaning.phonetic_symbol,meaning.remark FROM meaning_fts 
+            meaning.phonetic_symbol,meaning.remark,meaning.created_time FROM meaning_fts
                 LEFT JOIN meaning ON meaning_fts.rowid=meaning.id
                 LEFT JOIN word ON word.id=meaning.word_id
                 WHERE meaning_fts = :query order by rank limit 10;
@@ -399,9 +401,16 @@ def get_related_meaning(session, query: str, output='console') -> typing.List[Me
     # result = session.execute(search_sql)
     result = session.execute(
         search_sql, {'query': query})
-    return [MeaningDTO(word_text=row[0], id=row[1], meaning=row[2],
-                       use_case=row[3], phonetic_symbol=row[4], remark=row[5])
-            for row in result]
+    result_list = []
+    for row in result:
+        result_list.append(
+            MeaningDTO(
+                word_text=row[0], id=row[1], meaning=row[2],
+                use_case=row[3], phonetic_symbol=row[4], remark=row[5],
+                created_time=parse(row[6])
+            )
+        )
+    return result_list
 
 
 class CWordPos(enum.Enum):

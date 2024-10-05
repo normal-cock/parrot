@@ -552,6 +552,8 @@ def search(query: str):
         use_case = print(
             'use case:', meaning_dto.use_case)
         remark = print('remark:', meaning_dto.remark)
+        created_time = print(
+            'create time:', meaning_dto.created_time.strftime("%Y-%m-%d %H:%M"))
     else:
         print("not found")
     session.close()

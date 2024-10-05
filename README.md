@@ -21,7 +21,7 @@
     - [changelog](#changelog)
         - [Future](#future)
             - [背单词效率 P0——Done](#背单词效率-p0done)
-            - [优化PC播放视频的体验 P0](#优化pc播放视频的体验-p0)
+            - [优化PC播放视频的体验 P0——Done](#优化pc播放视频的体验-p0done)
             - [优化 P1](#优化-p1)
         - [v2.2.0](#v220)
             - [手机和电脑端的信息的同步 P0——Done](#手机和电脑端的信息的同步-p0done)
@@ -99,7 +99,23 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
     * [P0]支持声音背单词，背单词就不需要电脑了。录入单词时，可以将句子的文件名和时间段存下来，第一版先只读句子就可以
         * [不可行]思路1: http的range不可以，因为range只能控制bytes的范围，无法转化为视频或音频时间
         * 思路2: 使用hls。
-            * https://help.aliyun.com/zh/oss/use-cases/create-hls-streams-based-on-oss?spm=a2c4g.11186623.0.i25
+            * 思路2.1: aliyun的点播——不支持生成子m3u8文件
+            * 思路2.2: 使用oss的流媒体能力——必须包含视频
+                * https://help.aliyun.com/zh/oss/use-cases/create-hls-streams-based-on-oss?spm=a2c4g.11186623.0.i25
+                * 上传时，貌似必须包含视频: https://help.aliyun.com/zh/oss/user-guide/rtmp-based-stream-ingest?spm=a2c4g.11186623.0.0.b2aa152ai6s40D#concept-vbb-dmb-5db 中的使用限制
+                * 看看工单的回复——没有有用信息
+            * 思路2.3: 基于oss自行实现
+                * 测试一下，videojs能否播放m3u8
+                * 自行处理m3u8文件的生成，下发给客户端
+                    * 全文件播放
+                    * 部分播放
+                * 自动上传的工具
+                    * input: 字幕、视频
+                    * output: oss目录，名称为item_name, 包含:
+                        * 音频的m3u8和切片
+                        * 视频
+                        * 字幕
+                * oss目录结构设计
 * [P0]html页面支持一键将老单词录入ER中 P0——Done
 * [P0]add er支持自动增加全文检索——Done
 * [P0]review_er每个单词背完后，增加单词的其他意思的列表总结——Done
@@ -117,7 +133,7 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
 ER背过的2遍，又遇到且忘记的，再精背
     筛选出常用单词来精背
 
-#### 优化PC播放视频的体验 P0
+#### 优化PC播放视频的体验 P0——Done
 
 参考feishu minutes的体验
 

@@ -100,6 +100,7 @@ def search(passport, q):
             'usecase': result[3],
             'phonetic_symbol': result[4],
             'remark': result[5],
+            'created_time': result.created_time.strftime("%Y-%m-%d %H:%M"),
         })
 
     return resp_list
@@ -119,6 +120,7 @@ def query_word(passport, q):
             'usecase': result[3],
             'phonetic_symbol': result[4],
             'remark': result[5],
+            'created_time': result[6].strftime("%Y-%m-%d %H:%M"),
         })
     return resp_list
 

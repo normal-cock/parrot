@@ -187,6 +187,8 @@ def run():
             print('meaning:', meaning.meaning)
             print(f'use case: {meaning.use_case}')
             print(f'remark: {meaning.remark}')
+            print(
+                f'create time: {meaning.created_time.strftime("%Y-%m-%d %H:%M")}')
 
     if args.command == 'report':
         report_stats = get_report_stats()
