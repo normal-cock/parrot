@@ -26,13 +26,18 @@
         #review-body {
             margin: 10%;
             font-size: 1.3em;
+            height: 90%;
         }
 
         .btn-primary {
             width: 100%;
-            height: 30%;
+            height: 10%;
             font-size: 1.2em;
             margin-top: 5%;
+        }
+
+        .form-switch {
+            margin-right: 2%;
         }
     </style>
 </head>
@@ -105,9 +110,11 @@
                     response.meaning.meaning + '\t' + response.meaning.remark);
                 usecaseDiv.hide();
                 meaningDiv.hide();
+
+                const switchGroupDiv = $('<div class="input-group">');
                 const usecaseSwitchDiv = $('<div class="form-check form-switch">');
                 const usecaseSwitchInput = $(`<input class="form-check-input" type="checkbox" role="switch" id="use-case-switch">`);
-                const usecaseSwitchLabel = $(`<label class="form-check-label" for="use-case-switch">`).text('use case');
+                const usecaseSwitchLabel = $(`<label class="form-check-label" for="use-case-switch">`).text('Use Case');
                 usecaseSwitchInput.change(function () {
                     const checked = $(this).prop('checked');
                     if (checked == true) {
@@ -121,7 +128,7 @@
 
                 const meaningSwitchDiv = $('<div class="form-check form-switch">');
                 const meaningSwitchInput = $(`<input class="form-check-input" type="checkbox" role="switch" id="meaning-switch">`);
-                const meaningSwitchLabel = $(`<label class="form-check-label" for="meaning-switch">`).text('meaning');
+                const meaningSwitchLabel = $(`<label class="form-check-label" for="meaning-switch">`).text('Meaning');
                 meaningSwitchInput.change(function () {
                     const checked = $(this).prop('checked');
                     if (checked == true) {
@@ -133,10 +140,12 @@
                 meaningSwitchDiv.append(meaningSwitchInput);
                 meaningSwitchDiv.append(meaningSwitchLabel);
 
+                switchGroupDiv.append(usecaseSwitchDiv);
+                switchGroupDiv.append(meaningSwitchDiv);
+
                 meaningBodyDiv.append(progressDiv);
                 meaningBodyDiv.append(wordDiv);
-                meaningBodyDiv.append(usecaseSwitchDiv);
-                meaningBodyDiv.append(meaningSwitchDiv);
+                meaningBodyDiv.append(switchGroupDiv);
                 meaningBodyDiv.append(usecaseDiv);
                 meaningBodyDiv.append(meaningDiv);
 
