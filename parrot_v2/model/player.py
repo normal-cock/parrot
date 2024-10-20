@@ -10,7 +10,10 @@ from parrot_v2.model import Base
 
 
 class ItemType(enum.Enum):
-    '''1:MP3 only 2:MP4+MP3'''
+    '''
+        1:MP3 only 
+        2:MP4+MP3
+    '''
     MP3 = 1
     MP4 = 2
 

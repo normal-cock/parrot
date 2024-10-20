@@ -38,6 +38,11 @@
 </head>
 
 <body class="d-flex flex-column h-100">
+    <div class="btn-group me-2" role="group" aria-label="First group">
+        <button type="button" class="btn btn-link" onclick="window.location.href = `/{{ passport }}`">Home</button>
+        <button type="button" class="btn btn-link" onclick="window.location.href = `/{{ passport }}/review-page`">Begin
+            Review</button>
+    </div>
     {{ pagination.info }}
     {{ pagination.links }}
     <table>

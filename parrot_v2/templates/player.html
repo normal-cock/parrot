@@ -163,7 +163,7 @@
                 <p class="vjs-no-js">
                     您的浏览器不支持 HTML5 视频播放器，请升级浏览器。
                 </p>
-                <source src="{{ audio_url }}" type="audio/mp3">
+                <source src="{{ audio_url }}" type="{{ audio_type }}">
                 <track label="English" kind="metadata" srclang="en" src="{{ subtitle_url }}" default>
                 {% if subtitle_url_2|length != 0 %}
                 <track label="Chinese" kind="metadata" srclang="cn" src="{{ subtitle_url_2 }}" default>
@@ -582,8 +582,10 @@
         const customArea = $('.custom-area');
         const bodyArea = $('body');
         const audioSrc = '{{ audio_url }}';
+        const audioType = '{{ audio_type }}';
         const videoSrc = '{{ video_url }}';
-        const subtitleSrc = '{ { subtitle_url } }';
+        const videoType = '{{ video_type }}';
+        const subtitleSrc = '{{ subtitle_url }}';
         var adjustStartTime = {{ adjust_time }};
         var adjustEndTime = {{ adjust_time }};
         var curHBVersion = 0;
@@ -892,7 +894,7 @@
             // this logic is used to avoid cases when loadedmetadata is not triggered
             audioPlayer.src({
                 src: audioSrc,
-                type: 'audio/mp3',
+                type: audioType,
             });
 
             $('#duration-starttime').on('input', function () {
@@ -921,7 +923,7 @@
                     audioPlayer.pause();
                     audioPlayer.src({
                         src: audioSrc,
-                        type: 'audio/mp3',
+                        type: audioType,
                     });
                     audioPlayer.audioOnlyMode(true);
                     audioPlayer.load();
@@ -941,7 +943,7 @@
                     audioPlayer.pause();
                     audioPlayer.src({
                         src: videoSrc,
-                        type: 'video/mp4',
+                        type: videoType,
                     });
                     audioPlayer.audioOnlyMode(false);
                     audioPlayer.load();

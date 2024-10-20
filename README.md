@@ -105,7 +105,7 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
                 * 上传时，貌似必须包含视频: https://help.aliyun.com/zh/oss/user-guide/rtmp-based-stream-ingest?spm=a2c4g.11186623.0.0.b2aa152ai6s40D#concept-vbb-dmb-5db 中的使用限制
                 * 看看工单的回复——没有有用信息
             * 思路2.3: 基于oss自行实现
-                * 测试一下，videojs能否播放m3u8
+                * 测试一下，videojs能否播放m3u8——Done,需要将type变成`type='application/x-mpegURL'`
                 * 自行处理m3u8文件的生成，下发给客户端
                     * 全文件播放
                     * 部分播放

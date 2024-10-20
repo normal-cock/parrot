@@ -9,10 +9,10 @@ from flask import Flask
 
 app = Flask(__name__)
 
-DEBUG = (os.getenv("DEBUG") == "True")
+DEBUG = (os.getenv("DEBUG") == "True" or app.debug == True)
 # DEBUG = True
 DATA_DIR = "{}/.parrot_v2".format(os.environ['HOME'])
-if DEBUG or app.debug == True:
+if DEBUG:
     DATA_DIR = "{}/.parrot_v2_test".format(os.environ['HOME'])
 print("work dir is:", DATA_DIR)
 

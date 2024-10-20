@@ -2,6 +2,7 @@ import datetime
 import diskcache as dc
 import json
 from typing import List
+from parrot_v2.util import logger
 
 
 class CustmLocalCache(object):
@@ -71,11 +72,28 @@ class CustmLocalCache(object):
         '''
         return int(self._cache.get(self._gen_erplan_last_index_key(), '-1'))
 
-    def set_erplan_last_index_today(self, reviewed_index: int):
-        self._cache.set(
-            self._gen_erplan_last_index_key(),
-            str(reviewed_index), expire=self._duration
-        )
+    def set_erplan_last_index_today(self, reviewed_index: int) -> bool:
+        with self._lock:
+            index_key = self._gen_erplan_last_index_key()
+            old_er_index_str = self._cache.get(index_key)
+            if old_er_index_str == None:
+                if reviewed_index == 0:
+                    self._cache.set(
+                        index_key,
+                        str(reviewed_index), expire=self._duration
+                    )
+                    return True
+                else:
+                    return False
+            else:
+                old_er_index = int(old_er_index_str)
+                if old_er_index + 1 == reviewed_index:
+                    self._cache.set(
+                        index_key,
+                        str(reviewed_index), expire=self._duration
+                    )
+                    return True
+            return False
 
     def update_item_heartbeat(self, item_id, hb_dict):
         '''

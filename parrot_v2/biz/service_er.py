@@ -5,7 +5,7 @@ from typing import List
 from parrot_v2 import Session, DEBUG, cache
 from parrot_v2.model import Word, Meaning, ERLookupRecord, ER_REVIEW_RANGE_DAY
 from parrot_v2.model.core import update_meaning_fts
-from parrot_v2.util import rlinput
+from parrot_v2.util import rlinput, logger
 
 
 def add_er_lookup_record():
@@ -63,6 +63,77 @@ def add_er_lookup_record():
     return True
 
 
+def _gen_er_lookup_records(session, begin_time, end_time) -> List[ERLookupRecord]:
+    lookup_record_id_list = cache.get_erplan_today()
+    if len(lookup_record_id_list) == 0:
+        lookup_records: List[ERLookupRecord] = session.query(ERLookupRecord).filter(
+            ERLookupRecord.created_time >= begin_time,
+            ERLookupRecord.created_time < end_time,
+        ).order_by(-ERLookupRecord.created_time)
+        lookup_record_id_list = [record.id for record in lookup_records]
+        if len(lookup_record_id_list) == 0:
+            return []
+        random.shuffle(lookup_record_id_list)
+        cache.set_erplan_today(lookup_record_id_list)
+        logger.debug('lookup_record_id_list' + list(lookup_record_id_list))
+
+    er_lookup_records = session.query(ERLookupRecord).filter(
+        ERLookupRecord.id.in_(lookup_record_id_list)).all()
+    er_lookup_records: List[ERLookupRecord] = sorted(
+        er_lookup_records, key=lambda o: lookup_record_id_list.index(o.id))
+    return er_lookup_records
+
+
+def fetch_next_er_lookup_record():
+    begin_time = datetime.date.today() - datetime.timedelta(days=ER_REVIEW_RANGE_DAY)
+    end_time = datetime.date.today()
+    if DEBUG == True:
+        end_time = datetime.date.today() + datetime.timedelta(days=1)
+    session = Session()
+
+    er_lookup_records = _gen_er_lookup_records(
+        session, begin_time, end_time)
+    total_len = len(er_lookup_records)
+    logger.info(
+        f"lookup records since {begin_time} to {end_time}. Total {total_len}")
+
+    er_review_index = cache.get_erplan_last_index_today()
+
+    lookup_meaning_id_set = set()
+    for record in er_lookup_records:
+        lookup_meaning_id_set.add(record.meaning_id)
+
+    next_review_record = None
+    next_review_index = -1
+    for index, lookup_record in enumerate(er_lookup_records):
+        if index <= er_review_index:
+            continue
+        next_review_record = lookup_record
+        next_review_index = index
+        break
+
+    if next_review_record == None:
+        return None
+    meaning = next_review_record.meaning
+    return {
+        'review_index': next_review_index,
+        'total_len': total_len,
+        'meaning': {
+            'id': meaning.id,
+            'word': meaning.word.text,
+            'meaning': meaning.meaning,
+            'phonetic_symbol': meaning.phonetic_symbol,
+            'use_case': meaning.use_case,
+            'remark': meaning.remark,
+            'created_time': meaning.created_time,
+        }
+    }
+
+
+def complete_er_lookup_record_review(index: int):
+    return cache.set_erplan_last_index_today(index)
+
+
 def begin_er_lookup_review():
     start_time = datetime.datetime.now()
     this_time_reviewed_plan_count = 0
@@ -81,27 +152,17 @@ def begin_er_lookup_review():
         end_time = datetime.date.today() + datetime.timedelta(days=1)
     session = Session()
 
-    print("lookup records since {}".format(begin_time))
-    lookup_record_id_list = cache.get_erplan_today()
-    lookup_meaning_id_set = set()
-    if len(lookup_record_id_list) == 0:
-        lookup_records: List[ERLookupRecord] = session.query(ERLookupRecord).filter(
-            ERLookupRecord.created_time >= begin_time,
-            ERLookupRecord.created_time < end_time,
-        ).order_by(-ERLookupRecord.created_time)
-        lookup_record_id_list = [record.id for record in lookup_records]
-        for record in lookup_records:
-            lookup_meaning_id_set.add(record.meaning_id)
-        random.shuffle(lookup_record_id_list)
-        cache.set_erplan_today(lookup_record_id_list)
+    er_lookup_records = _gen_er_lookup_records(
+        session, begin_time, end_time)
+    total_len = len(er_lookup_records)
+    logger.info(
+        f"lookup records since {begin_time} to {end_time}. Total {total_len}")
 
-    total_len = len(lookup_record_id_list)
     er_review_index = cache.get_erplan_last_index_today()
 
-    er_lookup_records = session.query(ERLookupRecord).filter(
-        ERLookupRecord.id.in_(lookup_record_id_list)).all()
-    er_lookup_records: List[ERLookupRecord] = sorted(
-        er_lookup_records, key=lambda o: lookup_record_id_list.index(o.id))
+    lookup_meaning_id_set = set()
+    for record in er_lookup_records:
+        lookup_meaning_id_set.add(record.meaning_id)
 
     for index, lookup_record in enumerate(er_lookup_records):
         if index <= er_review_index:
@@ -134,7 +195,9 @@ def begin_er_lookup_review():
                 other_meaning_to_review.add_er_lookup_record()
                 session.commit()
 
-        cache.set_erplan_last_index_today(index)
+        if cache.set_erplan_last_index_today(index) == False:
+            print('set_erplan_last_index_today error, try again')
+            exit()
         this_time_reviewed_plan_count += 1
 
     print("\n\nReview Finished and reviewed {} words, costing {}".format(

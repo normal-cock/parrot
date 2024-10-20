@@ -23,6 +23,10 @@ run_nginx:
 extract_mp3:
 	ffmpeg -i test2.mp4 -vn -acodec libmp3lame test2.mp3
 
+mp3_2_m3u8:
+	ffmpeg -i {item_name}.mp3 -hls_time 20 -hls_list_size 0 -hls_segment_filename 'ts_file/{item_name}-%d.ts' \
+		-hls_base_url 'ts_file/' {item_name}.m3u8
+
 convert_subtitle_from_srt:
 	pysubs2 --to vtt {xxx.srt}
 

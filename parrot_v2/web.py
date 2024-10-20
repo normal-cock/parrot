@@ -9,6 +9,7 @@ from parrot_v2.dal.aliyun_oss import oss_sington
 from werkzeug.middleware.proxy_fix import ProxyFix
 from parrot_v2 import DATA_DIR, PW, cache, CustmLocalCache
 from parrot_v2.biz import service_v2 as biz_v2
+from parrot_v2.biz import service_er as biz_er
 from parrot_v2.util import logger, nlp_tool
 from flask_paginate import Pagination, get_page_parameter
 
@@ -23,10 +24,6 @@ app.config.from_object(__name__)
 Session(app)
 
 cache_in_flask = cache
-if app.debug == True:
-    cache_path = f'{DATA_DIR}/diskcache_dev'
-    logger.info(f'path=={cache_path}||cache inited')
-    cache_in_flask = CustmLocalCache(cache_path)
 
 app.wsgi_app = ProxyFix(
     app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
@@ -48,6 +45,7 @@ def index(passport):
     return render_template(
         'index.html',
         items=item_list,
+        passport=passport,
         pagination=pagination,
     )
 
@@ -71,8 +69,13 @@ def item_play_page(passport, item_id):
         logger.info(f'reuse media url')
     subtitle_url = Markup(media_url_dict['subtitle_url'])
     subtitle_url_2 = Markup(media_url_dict.get('subtitle_url_2', ''))
-    audio_url = Markup(media_url_dict['audio_url'])
-    video_url = Markup(media_url_dict['video_url'])
+    # audio_url = Markup(media_url_dict['audio_url'])
+    audio_url = Markup('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8')
+    audio_type = Markup('audio/mp3')
+    audio_type = Markup('application/x-mpegURL')
+    # video_url = Markup(media_url_dict['video_url'])
+    video_url = Markup('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8')
+    video_type = Markup('video/mp4')
     adjust_time = media_url_dict.get('adjustment', 10)
     return render_template(
         'player.html',
@@ -80,8 +83,20 @@ def item_play_page(passport, item_id):
         subtitle_url=subtitle_url,
         subtitle_url_2=subtitle_url_2,
         audio_url=audio_url,
+        audio_type=audio_type,
         video_url=video_url,
+        video_type=video_type,
         adjust_time=adjust_time,
+        passport=passport,
+    )
+
+
+@app.route("/<passport>/review-page")
+def review_page(passport):
+    if passport.upper() != PW.upper():
+        return make_response('', 404)
+    return render_template(
+        'review.html',
         passport=passport,
     )
 
@@ -182,6 +197,33 @@ def parse_sentence(passport):
             qr_result_gen(raw_word, word, qr_list)
         )
     return resp_dict
+
+
+@app.route("/<passport>/fetch-review-record", methods=['GET'])
+def fetch_review_record(passport):
+    logger.info('begin fetch_review_record')
+    if passport.upper() != PW.upper():
+        return make_response('', 404)
+    review_record = biz_er.fetch_next_er_lookup_record()
+    if review_record == None:
+        return make_response('', 204)
+    return review_record
+
+
+@app.route("/<passport>/complete-review-record/<review_index>", methods=['POST'])
+def complete_review_record(passport, review_index):
+    logger.info('begin complete_review_record')
+    if passport.upper() != PW.upper():
+        return make_response('', 404)
+
+    index = int(review_index)
+    if biz_er.complete_er_lookup_record_review(index) == False:
+        return make_response('complete failed', 400)
+
+    review_record = biz_er.fetch_next_er_lookup_record()
+    if review_record == None:
+        return make_response('', 204)
+    return review_record
 
 
 @app.route("/<passport>/heartbeat/<item_id>", methods=['POST'])
