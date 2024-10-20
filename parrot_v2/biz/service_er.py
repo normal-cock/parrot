@@ -75,7 +75,7 @@ def _gen_er_lookup_records(session, begin_time, end_time) -> List[ERLookupRecord
             return []
         random.shuffle(lookup_record_id_list)
         cache.set_erplan_today(lookup_record_id_list)
-        logger.debug('lookup_record_id_list' + list(lookup_record_id_list))
+        logger.debug('lookup_record_id_list' + str(lookup_record_id_list))
 
     er_lookup_records = session.query(ERLookupRecord).filter(
         ERLookupRecord.id.in_(lookup_record_id_list)).all()
