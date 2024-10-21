@@ -37,21 +37,24 @@ def add_er_lookup_record():
     use_case = rlinput(
         'use case:', meaning_obj.use_case if meaning_obj else '')
     remark = rlinput('remark:', meaning_obj.remark if meaning_obj else '')
+    use_case_voice = rlinput(
+        'use case voice:', meaning_obj.use_case_voice if meaning_obj else '')
 
     if word == None:
         word = Word.new_word_during_er(
-            text, phonetic_symbol, meaning, use_case, remark)
+            text, phonetic_symbol, meaning, use_case, remark, use_case_voice)
         session.add(word)
         update_meaning_fts(session, None, None, word.meanings[0])
     elif meaning_obj == None:
         meaning_obj = Meaning.new_meaning_during_er(
-            word, phonetic_symbol, meaning, use_case, remark)
+            word, phonetic_symbol, meaning, use_case, remark, use_case_voice)
         update_meaning_fts(session, None, None, meaning_obj)
     else:
         meaning_obj.phonetic_symbol = phonetic_symbol
         meaning_obj.meaning = meaning
         meaning_obj.use_case = use_case
         meaning_obj.remark = remark
+        meaning_obj.use_case_voice = use_case_voice
         meaning_obj.add_er_lookup_record()
         update_meaning_fts(session, meaning_obj.id,
                            old_meaning_usecase, meaning_obj)
@@ -115,7 +118,7 @@ def fetch_next_er_lookup_record():
     if next_review_record == None:
         return None
     meaning = next_review_record.meaning
-    return {
+    result = {
         'review_index': next_review_index,
         'total_len': total_len,
         'meaning': {
@@ -128,6 +131,15 @@ def fetch_next_er_lookup_record():
             'created_time': meaning.created_time,
         }
     }
+
+    if meaning.has_use_case_voice():
+        result['meaning']['use_case_media'] = {
+            # 'play_url': 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+            'play_url': f'/Rkf7br9rmUMB/meaning-m3u8/{meaning.id}',
+            'offset': meaning.ucv_offset(),
+            'duration': meaning.ucv_duration(),
+        }
+    return result
 
 
 def complete_er_lookup_record_review(index: int):

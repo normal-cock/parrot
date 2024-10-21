@@ -13,9 +13,11 @@ class ItemType(enum.Enum):
     '''
         1:MP3 only 
         2:MP4+MP3
+        3:M3U8+MP4+MP3
     '''
     MP3 = 1
     MP4 = 2
+    MP5 = 3
 
 
 class Item(Base):

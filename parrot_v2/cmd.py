@@ -86,16 +86,19 @@ def run():
             'use case:', meaning_obj.use_case if meaning_obj else '').strip()
         remark = rlinput(
             'remark:', meaning_obj.remark if meaning_obj else '').strip()
+        use_case_voice = rlinput(
+            'use case voice:', meaning_obj.use_case_voice if meaning_obj else '').strip()
 
         if word == None:
             add_new_word_and_meaning(
-                word_text, phonetic_symbol, meaning, use_case, remark)
+                word_text, phonetic_symbol, meaning, use_case, remark, use_case_voice)
         elif meaning_obj == None:
             add_new_meaning_to_exist_word(
-                word.id, phonetic_symbol, meaning, use_case, remark)
+                word.id, phonetic_symbol, meaning, use_case, remark, use_case_voice)
         else:
             modify_exist_meaning(
-                meaning_obj.id, phonetic_symbol, meaning, use_case, remark)
+                meaning_obj.id, phonetic_symbol, meaning,
+                use_case, remark, use_case_voice)
     if args.command == 'review':
         begin_time = datetime.date.today() - datetime.timedelta(days=60)
         end_time = datetime.date.today() + datetime.timedelta(days=1)
@@ -168,9 +171,11 @@ def run():
             'use case:', meaning_obj.use_case if meaning_obj else '').strip()
         remark = rlinput(
             'remark:', meaning_obj.remark if meaning_obj else '').strip()
+        use_case_voice = rlinput(
+            'use case voice:', meaning_obj.use_case_voice if meaning_obj else '').strip()
 
         modify_exist_meaning(
-            meaning_obj.id, phonetic_symbol, meaning, use_case, remark, unremember=False)
+            meaning_obj.id, phonetic_symbol, meaning, use_case, remark, use_case_voice, unremember=False)
     if args.command == 'query_word':
         word_text = rlinput('word_text:', '').strip()
         if not word_text:
@@ -203,7 +208,7 @@ def run():
         item_id = rlinput(
             'Item ID(leave empty for auto generation):', item_name).strip()
         item_type = int(
-            rlinput('Item Type(1:MP3 only 2:MP4+MP3):', '2').strip())
+            rlinput('Item Type(1:MP3 only 2:MP4+MP3 3:M3U8+MP4+MP3):', '3').strip())
         adjustment = float(
             rlinput('Subtitle Adjustment(negative is allowed):', '0').strip())
         add_item(item_name=item_name, item_id=item_id,

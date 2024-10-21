@@ -3,6 +3,7 @@ import time
 import datetime
 import uuid
 import nltk
+import m3u8
 from typing import List
 from sqlalchemy import desc
 from parrot_v2 import Session, DEBUG, PW
@@ -21,7 +22,8 @@ def get_media_url(item_id):
             'subtitle_url':, 
             'audio_url':, 
             'video_url':, 
-            'expiration_time':timestamp
+            'expiration_time':timestamp,
+            'item_type':
         }, err_string
     '''
     from parrot_v2.dal.aliyun_oss import oss_sington
@@ -50,6 +52,7 @@ def get_media_url(item_id):
         'video_url': video_url,
         'adjustment': adjustment,
         'expiration_time': time.time() + oss_sington.get_expire_sec(),
+        'item_type': str(item.item_type.value),
     }, ''
 
 
@@ -191,6 +194,63 @@ def readd_er(meaning_id: int) -> str:
     session.commit()
     session.close()
     return ''
+
+
+def gen_meaning_m3u8(meaning_id):
+    from parrot_v2.dal.aliyun_oss import oss_sington
+
+    session = Session()
+    meaning = session.query(Meaning).filter(
+        Meaning.id == meaning_id).one_or_none()
+    if meaning == None:
+        logger.info('invalid meaning id')
+        return ''
+    # get meaning voice_code
+    # voice_code format: item_id||start_sec||end_sec
+    # example voice_code: 	The.First.World.War.2||18.8||23.8
+    # voice_code = 'The.First.World.War.2||18.8||23.8'
+    # splited_vc = voice_code.split('||')
+    # item_id = splited_vc[0]
+    item_id = meaning.ucv_item_id()
+    # start_sec = float(splited_vc[1])
+    start_sec = meaning.ucv_start_sec()
+    # end_sec = float(splited_vc[2])
+    end_sec = meaning.ucv_end_sec()
+    session.close()
+
+    # fetch complete m3u8 file
+    complete_m3u8_path = f'{item_id}/{item_id}.m3u8'
+    complete_m3u8_url = oss_sington.get_object_url(complete_m3u8_path)
+    complete_m3u8 = m3u8.load(complete_m3u8_url)
+
+    # gen new m3u8 base on start_sec and end_sec
+    new_m3u8_obj = m3u8.M3U8()
+    new_m3u8_obj.target_duration = complete_m3u8.target_duration
+    new_m3u8_obj.version = complete_m3u8.version
+    new_m3u8_obj.media_sequence = complete_m3u8.media_sequence
+
+    start_i = int(start_sec // complete_m3u8.target_duration)
+    end_i = int(end_sec // complete_m3u8.target_duration) + 1
+    for s in complete_m3u8.segments[start_i:end_i]:
+        new_m3u8_obj.add_segment(m3u8.Segment(
+            duration=s.duration,
+            uri=oss_sington.get_object_url(f'{item_id}/{s.uri}'),
+        ))
+
+    return new_m3u8_obj.dumps()
+    return '''
+#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-PLAYLIST-TYPE:VOD
+#EXT-X-TARGETDURATION:11
+#EXTINF:10.000,
+https://test-streams.mux.dev/x36xhzz/url_6/url_847/193039199_mp4_h264_aac_hq_7.ts
+#EXTINF:10.000,
+https://test-streams.mux.dev/x36xhzz/url_6/url_848/193039199_mp4_h264_aac_hq_7.ts
+#EXTINF:10.000,
+https://test-streams.mux.dev/x36xhzz/url_6/url_849/193039199_mp4_h264_aac_hq_7.ts
+#EXT-X-ENDLIST
+'''
 
 
 if __name__ == '__main__':

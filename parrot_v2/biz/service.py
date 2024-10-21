@@ -37,10 +37,13 @@ def get_report_stats():
     }
 
 
-def add_new_word_and_meaning(text, phonetic_symbol, meaning, use_case, remark):
+def add_new_word_and_meaning(
+        text, phonetic_symbol, meaning, use_case,
+        remark, use_case_voice):
     session = Session()
     counter = AddCounter.get_counter(session)
-    word = Word.new_word(text, phonetic_symbol, meaning, use_case, remark)
+    word = Word.new_word(text, phonetic_symbol, meaning,
+                         use_case, remark, use_case_voice)
     session.add(word)
     counter.incr()
     meaning: Meaning = word.meanings[0]
@@ -50,12 +53,14 @@ def add_new_word_and_meaning(text, phonetic_symbol, meaning, use_case, remark):
     return True
 
 
-def add_new_meaning_to_exist_word(word_id, phonetic_symbol, meaning, use_case, remark):
+def add_new_meaning_to_exist_word(
+        word_id, phonetic_symbol, meaning, use_case,
+        remark, use_case_voice):
     session = Session()
     word = session.query(Word).filter(Word.id == word_id).one_or_none()
     counter = AddCounter.get_counter(session)
     meaning = Meaning.new_meaning(
-        word, phonetic_symbol, meaning, use_case, remark)
+        word, phonetic_symbol, meaning, use_case, remark, use_case_voice)
     session.add(meaning)
     counter.incr()
     update_meaning_fts(session, None, None, meaning)
@@ -64,7 +69,9 @@ def add_new_meaning_to_exist_word(word_id, phonetic_symbol, meaning, use_case, r
     return True
 
 
-def modify_exist_meaning(meaning_id, phonetic_symbol, meaning, use_case, remark, unremember=True):
+def modify_exist_meaning(
+        meaning_id, phonetic_symbol, meaning, use_case,
+        remark, use_case_voice, unremember=True):
     session = Session()
     meaning_obj_new: Meaning = session.query(Meaning).filter(
         Meaning.id == meaning_id).one_or_none()
@@ -72,7 +79,7 @@ def modify_exist_meaning(meaning_id, phonetic_symbol, meaning, use_case, remark,
         exit("Unknow Error(meaning doesn't exist)")
     old_use_case = meaning_obj_new.use_case
     meaning_obj_new.modify_meaning(
-        phonetic_symbol, meaning, use_case, remark, unremember=unremember)
+        phonetic_symbol, meaning, use_case, remark, use_case_voice, unremember=unremember)
     update_meaning_fts(session, meaning_id, old_use_case,
                        meaning_obj_new)
     if unremember == True:

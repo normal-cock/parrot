@@ -77,6 +77,7 @@ def item_play_page(passport, item_id):
     # video_url = Markup('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8')
     video_type = Markup('video/mp4')
     adjust_time = media_url_dict.get('adjustment', 10)
+    item_type = media_url_dict.get('item_type', '2')
     return render_template(
         'player.html',
         item_id=item_id,
@@ -87,6 +88,7 @@ def item_play_page(passport, item_id):
         video_url=video_url,
         video_type=video_type,
         adjust_time=adjust_time,
+        item_type=item_type,
         passport=passport,
     )
 
@@ -244,6 +246,17 @@ def heartbeat(passport, item_id):
     if succeed == False:
         logger.info(f"input={new_hb_data}||heartbeat update failed")
     return final_hb_data
+
+
+@app.route("/<passport>/meaning-m3u8/<meaning_id>", methods=['GET'])
+def meaning_m3u8(passport, meaning_id):
+    logger.info('begin meaning_m3u8')
+    if passport.upper() != PW.upper():
+        return make_response('', 404)
+    raw_data = biz_v2.gen_meaning_m3u8(int(meaning_id))
+    response = make_response(raw_data)
+    response.headers['Content-Type'] = 'application/vnd.apple.mpegurl'
+    return response
 
 
 @app.route("/<passport>/clear_session/<item_id>")

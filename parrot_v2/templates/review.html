@@ -6,6 +6,8 @@
     <meta name="generator" content="Hugo 0.88.1">
     <title>Review Page</title>
 
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
     <script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/jquery/3.2.1/jquery.min.js"></script>
     <link rel="canonical" href="https://getbootstrap.com/docs/5.1/examples/sticky-footer-navbar/">
 
@@ -49,6 +51,10 @@
             Review</button>
     </div>
 
+    <!-- <i class="bi bi-volume-down"></i> -->
+
+    <video id="myVideo" preload="metadata" style="width: 640px; height: 360px;display: none"></video>
+
     <div id="review-body"></div>
 
     <div id="c-toast" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true"
@@ -65,6 +71,16 @@
     <script>
         const reviewBody = $('#review-body');
         const toast = $('#c-toast');
+        const videoPlayer = videojs('myVideo');
+        var ucmOffset = 0;
+        var ucmDuration = 0;
+
+        const playIcon = $(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-volume-down"
+            viewBox="0 0 16 16">
+            <path
+                d="M9 4a.5.5 0 0 0-.812-.39L5.825 5.5H3.5A.5.5 0 0 0 3 6v4a.5.5 0 0 0 .5.5h2.325l2.363 1.89A.5.5 0 0 0 9 12zM6.312 6.39 8 5.04v5.92L6.312 9.61A.5.5 0 0 0 6 9.5H4v-3h2a.5.5 0 0 0 .312-.11M12.025 8a4.5 4.5 0 0 1-1.318 3.182L10 10.475A3.5 3.5 0 0 0 11.025 8 3.5 3.5 0 0 0 10 5.525l.707-.707A4.5 4.5 0 0 1 12.025 8">
+            </path>
+        </svg>`);
 
         function goHome() {
             window.location.href = `/{{ passport }}`;
@@ -78,6 +94,19 @@
         function httpErrorFunc(jqXHR, textStatus, errorThrown) {
             customToast(`${jqXHR.status}\t${errorThrown}: ${jqXHR.responseText}`);
         };
+
+        videoPlayer.on('timeupdate', function () {
+            if (videoPlayer.readyState() < 1) {
+                return
+            }
+            const currentTime = videoPlayer.currentTime();
+            if (!(
+                ucmOffset <= currentTime &&
+                currentTime < (ucmOffset + ucmDuration))
+            ) {
+                videoPlayer.currentTime(ucmOffset);
+            }
+        });
 
         function fecthCallback(response, textStatus, jqXHR) {
             var statusCode = jqXHR.status;
@@ -112,6 +141,29 @@
                 meaningDiv.hide();
 
                 const switchGroupDiv = $('<div class="input-group">');
+
+                const playBtn = $(`<button type="button" class="btn btn-success"></button>`);
+                playBtn.append(playIcon);
+                playBtn.text('Play');
+                const ucm = response.meaning.use_case_media;
+                if (ucm != undefined) {
+                    videoPlayer.src({
+                        src: ucm.play_url,
+                        type: 'application/x-mpegURL',
+                    });
+                    ucmOffset = ucm.offset;
+                    ucmDuration = ucm.duration;
+
+                    playBtn.on('click', function () {
+                        if (videoPlayer.paused()) {
+                            videoPlayer.play();
+                        } else {
+                            videoPlayer.pause();
+                        }
+                    });
+                    switchGroupDiv.append(playBtn);
+                }
+
                 const usecaseSwitchDiv = $('<div class="form-check form-switch">');
                 const usecaseSwitchInput = $(`<input class="form-check-input" type="checkbox" role="switch" id="use-case-switch">`);
                 const usecaseSwitchLabel = $(`<label class="form-check-label" for="use-case-switch">`).text('Use Case');
@@ -160,6 +212,25 @@
                 type: 'GET',
                 success: fecthCallback,
                 error: httpErrorFunc,
+            });
+
+            window.addEventListener('keydown', function (e) {
+                switch (e.keyCode) {
+                    case 32: // 空格键
+                        if (videoPlayer.paused()) {
+                            videoPlayer.play();
+                        } else {
+                            videoPlayer.pause();
+                        }
+                        e.preventDefault();
+                        break;
+                }
+            }, true);
+            navigator.mediaSession.setActionHandler('play', function () {
+                videoPlayer.play();
+            });
+            navigator.mediaSession.setActionHandler('pause', function () {
+                videoPlayer.pause();
             });
         });
     </script>

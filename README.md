@@ -106,7 +106,7 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
                 * 看看工单的回复——没有有用信息
             * 思路2.3: 基于oss自行实现
                 * 测试一下，videojs能否播放m3u8——Done,需要将type变成`type='application/x-mpegURL'`
-                * 自行处理m3u8文件的生成，下发给客户端
+                * 自行处理m3u8文件的生成，下发给客户端——Done
                     * 全文件播放
                     * 部分播放
                 * 自动上传的工具
@@ -116,6 +116,11 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
                         * 视频
                         * 字幕
                 * oss目录结构设计
+                * 前端自动生成use_case_voice_code——Done
+                * 处理快捷键。播放和空格是播放和暂停——Done
+                    * 为字幕增加id，以便获取选中的字幕属于哪个cue，从而获取start和end时间
+                    * 根据item_id、start_sec、end_sec生成voice_code，注意要考虑上adjustment
+                * 测试——Done
 * [P0]html页面支持一键将老单词录入ER中 P0——Done
 * [P0]add er支持自动增加全文检索——Done
 * [P0]review_er每个单词背完后，增加单词的其他意思的列表总结——Done

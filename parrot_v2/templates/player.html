@@ -238,6 +238,7 @@
             <div id="pr-cn-def"></div>
             <div id="pr-sentence"></div>
             <div id="pr-remark"></div>
+            <div id="pr-sentence-voice-code"></div>
         </div>
         <div id="pr-meaning-select" class="pr-item card-list"></div>
     </div>
@@ -275,12 +276,13 @@
 
         var selectedText = '';
         var selectedTextSentence = '';
+        var selectedCue = null;
 
         function customToast(msg) {
             const toastBody = toast.find('.toast-body');
             toastBody.text(msg);
             toast.show();
-        }
+        };
         $('#c-toast-button').on('click', function () {
             toast.hide();
             prMeaningSelect.empty();
@@ -385,7 +387,10 @@
                 // e.preventDefault();
                 selectedText = sel.toString();
                 const selectedGroupItem = $(sel.anchorNode).closest('.list-group-item');
-                selectedTextSentence = selectedGroupItem.find('.subtitle-item').text();
+                const selectedSubtitleItem = selectedGroupItem.find('.subtitle-item');
+                selectedTextSentence = selectedSubtitleItem.text();
+                const selectedCueIndex = Number(selectedSubtitleItem.attr('cue-index'))
+                selectedCue = findENCues()?.cues[selectedCueIndex];
                 console.info(`sel=${selectedText}||selStc=${selectedTextSentence}||list-group mouseup 2`);
                 showContextMenu();
                 // contextMenu.css('display', 'block');
@@ -406,6 +411,7 @@
             const prCnDef = $('#pr-cn-def');
             const prSentence = $('#pr-sentence');
             const prRemark = $('#pr-remark');
+            const prSentenceVoiceCode = $('#pr-sentence-voice-code');
             const prMeaningSelectContainer = $("#pr-meaning-select");
             prWord.text(selectionCleanWord);
             function flushReviewRecord() {
@@ -439,6 +445,11 @@
                 prCnDef.text(selectionMeaning);
                 prSentence.text(parsedSentence);
                 prRemark.text(remarkList.join('; '));
+                if ('{{ item_type }}' == '3') {
+                    prSentenceVoiceCode.text(
+                        `{{item_id}}||${selectedCue.startTime + adjustStartTime}||${selectedCue.endTime + adjustEndTime}`
+                    );
+                }
             }
             function genRadio(raw_word, word, queryResult) {
                 const radioCardDiv = $('<div class="pr-item">');
@@ -529,12 +540,14 @@
             const prCnDef = $('#pr-cn-def');
             const prSentence = $('#pr-sentence');
             const prRemark = $('#pr-remark');
+            const prSentenceVoiceCode = $('#pr-sentence-voice-code');
             const textToCopy = [
                 prWord.text(),
                 prPron.text(),
                 prCnDef.text(),
                 prSentence.text(),
                 prRemark.text(),
+                prSentenceVoiceCode.text(),
             ].join('\n');
             // console.log('textToCopy is:' + textToCopy);
 
@@ -831,6 +844,7 @@
                     var li = $('<li class="list-group-item">')
                     const spanTime = $('<span class="subtitle-meta">').text(startTime + ' ');
                     const spanText = $('<span class="subtitle-item">').html(cue.text);
+                    spanText.attr('cue-index', i.toString());
                     li.append(spanTime);
                     li.append(spanText);
                     if (hasSubCue == true && j < subCues.length) {

@@ -38,24 +38,26 @@ class Word(Base):
         return other_meanings
 
     @classmethod
-    def new_word(cls, text, phonetic_symbol, meaning, use_case, remark):
+    def new_word(cls, text, phonetic_symbol, meaning, use_case, remark, use_case_voice):
         word = Word(
             text=text,
         )
         word.meanings = []
         Meaning.new_meaning(
-            word, phonetic_symbol, meaning, use_case, remark)
+            word, phonetic_symbol, meaning, use_case, remark, use_case_voice)
 
         return word
 
     @classmethod
-    def new_word_during_er(cls, text, phonetic_symbol, meaning, use_case, remark):
+    def new_word_during_er(
+            cls, text, phonetic_symbol, meaning, use_case, remark,
+            use_case_voice=''):
         word = Word(
             text=text,
         )
         word.meanings = []
         Meaning.new_meaning_during_er(
-            word, phonetic_symbol, meaning, use_case, remark)
+            word, phonetic_symbol, meaning, use_case, remark, use_case_voice)
 
         return word
 
@@ -72,6 +74,9 @@ class Meaning(Base):
     # 备注
     remark = Column(String)
 
+    # use case voice
+    use_case_voice = Column(String)
+
     created_time = Column(DateTime, default=datetime.datetime.now)
     changed_time = Column(
         DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
@@ -81,11 +86,12 @@ class Meaning(Base):
     word: Word = relationship(
         "Word", back_populates="meanings", lazy="immediate")
 
-    def modify_meaning(self, phonetic_symbol, meaning, use_case, remark, unremember=True):
+    def modify_meaning(self, phonetic_symbol, meaning, use_case, remark, use_case_voice, unremember=True):
         self.phonetic_symbol = phonetic_symbol
         self.meaning = meaning
         self.use_case = use_case
         self.remark = remark
+        self.use_case_voice = use_case_voice
         if unremember == True:
             self.unremember()
 
@@ -98,13 +104,14 @@ class Meaning(Base):
         return len(new_plans)
 
     @classmethod
-    def new_meaning(cls, word, phonetic_symbol, meaning, use_case, remark):
+    def new_meaning(cls, word, phonetic_symbol, meaning, use_case, remark, use_case_voice):
         meaning = Meaning(
             word_id=word.id,
             phonetic_symbol=phonetic_symbol,
             meaning=meaning,
             use_case=use_case,
             remark=remark,
+            use_case_voice=use_case_voice,
         )
         meaning.review_plans = []
         ReviewPlan.gen_plan(meaning)
@@ -113,13 +120,16 @@ class Meaning(Base):
         return meaning
 
     @classmethod
-    def new_meaning_during_er(cls, word, phonetic_symbol, meaning, use_case, remark):
+    def new_meaning_during_er(
+            cls, word, phonetic_symbol, meaning,
+            use_case, remark, use_case_voice):
         meaning = Meaning(
             word_id=word.id,
             phonetic_symbol=phonetic_symbol,
             meaning=meaning,
             use_case=use_case,
             remark=remark,
+            use_case_voice=use_case_voice,
         )
         meaning.er_lookup_records = [
             ERLookupRecord(
@@ -143,6 +153,43 @@ class Meaning(Base):
         if re.match(_ipa_re_pattern, ipa) == None:
             raise ValueError(f"invalid ipa {ipa}")
         return ipa
+
+    def has_use_case_voice(self) -> bool:
+        return bool(self.use_case_voice)
+
+    def ucv_offset(self) -> float:
+        if self.has_use_case_voice():
+            # start_sec = 18.8
+            start_sec = float(self.use_case_voice.split('||')[1])
+            return start_sec % 20
+        return 0
+
+    def ucv_duration(self) -> float:
+        if self.has_use_case_voice():
+            # start_sec = 18.8
+            # end_sec = 23.8
+            start_sec = float(self.use_case_voice.split('||')[1])
+            end_sec = float(self.use_case_voice.split('||')[2])
+            return end_sec - start_sec
+        return 0
+
+    def ucv_item_id(self) -> str:
+        if self.has_use_case_voice():
+            item_id = self.use_case_voice.split('||')[0]
+            return item_id
+        return 0
+
+    def ucv_start_sec(self) -> float:
+        if self.has_use_case_voice():
+            start_sec = float(self.use_case_voice.split('||')[1])
+            return start_sec
+        return 0
+
+    def ucv_end_sec(self) -> float:
+        if self.has_use_case_voice():
+            end_sec = float(self.use_case_voice.split('||')[2])
+            return end_sec
+        return 0
 
 
 class ReviewStage(enum.Enum):
