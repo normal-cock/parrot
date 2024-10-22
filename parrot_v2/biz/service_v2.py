@@ -12,6 +12,7 @@ from parrot_v2.model import Item, Word, Meaning, ERLookupRecord, ER_REVIEW_RANGE
 
 # from parrot_v2.dal.aliyun_oss import oss_sington
 from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning, CWordPos
+from parrot_v2.model.player import ItemType
 from parrot_v2.util import logger
 
 
@@ -34,14 +35,25 @@ def get_media_url(item_id):
     if item == None:
         return {}, f'{item_id} not found'
     adjustment = item.subtitle_adjustment
-    subtitle_url = oss_sington.get_object_url(f'{item_id}-e.vtt')
+
+    subtitle_url = ''
     subtitle_url_2 = ''
-    if oss_sington.check_existence(f'{item_id}.vtt'):
-        subtitle_url = oss_sington.get_object_url(f'{item_id}.vtt')
-    if oss_sington.check_existence(f'{item_id}-c.vtt'):
-        subtitle_url_2 = oss_sington.get_object_url(f'{item_id}-c.vtt')
-    audio_url = oss_sington.get_object_url(f'{item_id}.mp3')
-    video_url = oss_sington.get_object_url(f'{item_id}.mp4')
+    audio_url = ''
+    video_url = ''
+    if item.item_type == ItemType.MP5:
+        subtitle_url = oss_sington.get_object_url(f'{item_id}/{item_id}-e.vtt')
+        subtitle_url_2 = oss_sington.get_object_url(
+            f'{item_id}/{item_id}-c.vtt')
+        audio_url = oss_sington.get_object_url(f'{item_id}/{item_id}.mp3')
+        video_url = oss_sington.get_object_url(f'{item_id}/{item_id}.mp4')
+    else:
+        subtitle_url = oss_sington.get_object_url(f'{item_id}-e.vtt')
+        if oss_sington.check_existence(f'{item_id}.vtt'):
+            subtitle_url = oss_sington.get_object_url(f'{item_id}.vtt')
+        if oss_sington.check_existence(f'{item_id}-c.vtt'):
+            subtitle_url_2 = oss_sington.get_object_url(f'{item_id}-c.vtt')
+        audio_url = oss_sington.get_object_url(f'{item_id}.mp3')
+        video_url = oss_sington.get_object_url(f'{item_id}.mp4')
 
     session.close()
     return {

@@ -115,7 +115,7 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
                         * 音频的m3u8和切片
                         * 视频
                         * 字幕
-                * oss目录结构设计
+                * oss目录结构设计。增加新目录类型的支持(item_type==3)——Done
                 * 前端自动生成use_case_voice_code——Done
                 * 处理快捷键。播放和空格是播放和暂停——Done
                     * 为字幕增加id，以便获取选中的字幕属于哪个cue，从而获取start和end时间
