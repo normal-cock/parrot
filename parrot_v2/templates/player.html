@@ -214,6 +214,10 @@
                     <input id="duration-starttime" type="number" name="duration" min="-5" max="5" step="0.01" value="0">
                     <input id="duration-endtime" type="number" name="duration" min="-5" max="5" step="0.01" value="0">
                 </div>
+                <div class="form-check control-item">
+                    <input id="parse-sel-start" type="number" name="duration" min="0" max="5" step="1" value="0">
+                    <input id="parse-sel-end" type="number" name="duration" min="0" max="5" step="1" value="0">
+                </div>
                 <button type="button" class="btn btn-link" onclick="goHome()">Home</button>
             </div>
         </div>
@@ -276,7 +280,8 @@
 
         var selectedText = '';
         var selectedTextSentence = '';
-        var selectedCue = null;
+        var startSelectedCue = null;
+        var endSelectedCue = null;
 
         function customToast(msg) {
             const toastBody = toast.find('.toast-body');
@@ -384,13 +389,27 @@
             console.info('list-group mouseup:' + sel.toString());
             if (sel.toString().length > 0) {
                 $(document).off(".custom");
+
+                const startOffset = parseInt($('#parse-sel-start').val());
+                const endOffset = parseInt($('#parse-sel-end').val());
+                console.log(`sel offset: startOffset=${startOffset}||endOffset=${endOffset}`);
+
                 // e.preventDefault();
                 selectedText = sel.toString();
                 const selectedGroupItem = $(sel.anchorNode).closest('.list-group-item');
+                const prevSelectedGroupItem = selectedGroupItem.prevAll(".list-group-item").slice(0, startOffset);
+                const nextSelectedGroupItem = selectedGroupItem.nextAll(".list-group-item").slice(0, endOffset);
+
+                // get text
+                const allSelGroupItems = prevSelectedGroupItem.add(selectedGroupItem).add(nextSelectedGroupItem);
+                selectedTextSentence = allSelGroupItems.find('.subtitle-item').map(function () {
+                    return $(this).text();
+                }).get().join(" ");
+
                 const selectedSubtitleItem = selectedGroupItem.find('.subtitle-item');
-                selectedTextSentence = selectedSubtitleItem.text();
                 const selectedCueIndex = Number(selectedSubtitleItem.attr('cue-index'))
-                selectedCue = findENCues()?.cues[selectedCueIndex];
+                startSelectedCue = findENCues()?.cues[selectedCueIndex - startOffset];
+                endSelectedCue = findENCues()?.cues[selectedCueIndex + endOffset];
                 console.info(`sel=${selectedText}||selStc=${selectedTextSentence}||list-group mouseup 2`);
                 showContextMenu();
                 // contextMenu.css('display', 'block');
@@ -434,20 +453,16 @@
                         remarkList.push(`${qr['word']} ${qr['pos']} ${qr['cn_def']}`);
                     }
                 })
-                // $.each(selectedUnknownQRIndex, function (word, i) {
-                //     if (word != selectionCleanWord) {
-                //         const qr = unknownWordsDict[word][i];
-                //         parsedSentence = parsedSentence.replace(word, `${word}[${qr['pron']}]`);
-                //         remarkList.push(`${qr['word']} ${qr['pos']} ${qr['cn_def']}`);
-                //     }
-                // })
                 prPron.text(selectionPron);
                 prCnDef.text(selectionMeaning);
                 prSentence.text(parsedSentence);
                 prRemark.text(remarkList.join('; '));
+
                 if ('{{ item_type }}' == '3') {
+                    const startTime = (startSelectedCue.startTime + adjustStartTime).toFixed(2);
+                    const endTime = (endSelectedCue.endTime + adjustEndTime).toFixed(2);
                     prSentenceVoiceCode.text(
-                        `{{item_id}}||${selectedCue.startTime + adjustStartTime}||${selectedCue.endTime + adjustEndTime}`
+                        `{{item_id}}||${startTime}||${endTime}`
                     );
                 }
             }
@@ -567,27 +582,6 @@
         $('#search').on('click', searchHttpRequest);
         $('#query-word').on('click', querywordHttpRequest);
         $('#parse-sentence').on('click', parseSentence);
-        // $(document).on('contextmenu', function (e) {
-        //     e.preventDefault();
-        //     showContextMenu();
-        // });
-
-
-
-        // Get a reference to an element.
-        // var listGroup = document.querySelector('.list-group');
-
-        // Create an instance of Hammer with the reference.
-        // var hammer = new Hammer(listGroup);
-
-        // Subscribe to a quick start event: press, tap, or doubletap.
-        // For a full list of quick start events, read the documentation.
-        // hammer.on('pan', function (e) {
-        //     console.log("You're pressing me!");
-        //     console.log(e);
-        // });
-
-        // searchHttpRequest()
     </script>
 
     <script>
