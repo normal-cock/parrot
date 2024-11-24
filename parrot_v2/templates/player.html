@@ -42,6 +42,11 @@
 
         .custom-tool {
             background-color: lightgray;
+            height: 10%;
+        }
+
+        .btn-group {
+            height: 100%;
         }
 
         .custom-area {
@@ -152,6 +157,14 @@
         #c-toast {
             background-color: red;
         }
+
+        input[type=range][orient=vertical] {
+            writing-mode: vertical-lr;
+            direction: ltr;
+            appearance: slider-vertical;
+            width: 24px;
+            vertical-align: top;
+        }
     </style>
 </head>
 
@@ -214,9 +227,21 @@
                     <input id="duration-starttime" type="number" name="duration" min="-5" max="5" step="0.01" value="0">
                     <input id="duration-endtime" type="number" name="duration" min="-5" max="5" step="0.01" value="0">
                 </div>
-                <div class="form-check control-item">
+                <!-- <div class="form-check control-item">
                     <input id="parse-sel-start" type="number" name="duration" min="0" max="5" step="1" value="0">
                     <input id="parse-sel-end" type="number" name="duration" min="0" max="5" step="1" value="0">
+                </div> -->
+                <div class="form-check control-item" style="z-index: 2;width: 30px;padding:0;">
+                    <input type="range" orient="vertical" min="0" max="5" step="1" id="parse-sel-start"
+                        style="height:60%;background-color:black" value="0"
+                        oninput="this.nextElementSibling.value = this.value">
+                    <output style="transform: translateX(50%);">0</output>
+                </div>
+                <div class="form-check control-item" style="z-index: 2;width: 30px;padding:0;">
+                    <input type="range" orient="vertical" min="0" max="5" step="1" id="parse-sel-end"
+                        style="height:60%;background-color:black" value="0"
+                        oninput="this.nextElementSibling.value = this.value">
+                    <output style="transform: translateX(50%);">0</output>
                 </div>
                 <button type="button" class="btn btn-link" onclick="goHome()">Home</button>
             </div>
@@ -255,6 +280,13 @@
     </div>
 
     <script>
+        $('#parse-sel-start, #parse-sel-end').on('mousedown touchstart', function () {
+            $(this).css('height', '200px'); // 按下或触摸开始时修改 Range Input 元素的宽度
+        });
+        $('#parse-sel-start, #parse-sel-end').on('mouseup touchend', function () {
+            $(this).css('height', '65%'); // 释放或触摸结束后恢复 Range Input 元素的宽度
+        });
+
         const cardContainer = $('.card-container');
         const parseResult = $('.parse-result');
         const cardList = $('#card-list');
