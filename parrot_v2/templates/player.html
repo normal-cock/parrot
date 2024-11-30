@@ -158,12 +158,28 @@
             background-color: red;
         }
 
+        .range-input {
+            z-index: 2;
+            width: 48px;
+            padding: 0;
+        }
+
         input[type=range][orient=vertical] {
             writing-mode: vertical-lr;
             direction: ltr;
             appearance: slider-vertical;
-            width: 24px;
+            width: 48px;
+            height: 65%;
             vertical-align: top;
+        }
+
+        #durationDiv {
+            width: 48px;
+            padding: 0;
+        }
+
+        #durationDiv>input {
+            width: 100%;
         }
     </style>
 </head>
@@ -198,7 +214,7 @@
     <div class="custom-area">
         <div class="custom-tool">
             <div class="btn-group" role="group" aria-label="Media Player Control Buttons">
-                <button type="button" class="btn btn-default control-item" onclick="previousAudio();">
+                <!-- <button type="button" class="btn btn-default control-item" onclick="previousAudio();">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor"
                         class="bi bi-skip-start-fill" viewBox="0 0 16 16">
                         <path
@@ -206,13 +222,12 @@
                     </svg>
                 </button>
                 <button type="button" class="btn btn-default control-item" onclick="nextAudio();">
-                    <!-- <span class="glyphicon glyphicon-step-forward"></span> -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor"
                         class="bi bi-skip-end-fill" viewBox="0 0 16 16">
                         <path
                             d="M12.5 4a.5.5 0 0 0-1 0v3.248L5.233 3.612C4.693 3.3 4 3.678 4 4.308v7.384c0 .63.692 1.01 1.233.697L11.5 8.753V12a.5.5 0 0 0 1 0z" />
                     </svg>
-                </button>
+                </button> -->
                 <div class="form-check control-item">
                     <input id="singleLineLoop" class="form-check-input" type="checkbox" checked="true">
                     <label class="form-check-label" for="singleLineLoop">单行循环</label>
@@ -223,25 +238,19 @@
                     <label class="form-check-label" for="audioOnlyMode">音频模式</label>
                     </input>
                 </div>
-                <div id="app" class="form-check control-item">
+                <div id="durationDiv" class="form-check control-item">
                     <input id="duration-starttime" type="number" name="duration" min="-5" max="5" step="0.01" value="0">
                     <input id="duration-endtime" type="number" name="duration" min="-5" max="5" step="0.01" value="0">
                 </div>
-                <!-- <div class="form-check control-item">
-                    <input id="parse-sel-start" type="number" name="duration" min="0" max="5" step="1" value="0">
-                    <input id="parse-sel-end" type="number" name="duration" min="0" max="5" step="1" value="0">
-                </div> -->
-                <div class="form-check control-item" style="z-index: 2;width: 30px;padding:0;">
-                    <input type="range" orient="vertical" min="0" max="5" step="1" id="parse-sel-start"
-                        style="height:60%;background-color:black" value="0"
-                        oninput="this.nextElementSibling.value = this.value">
-                    <output style="transform: translateX(50%);">0</output>
+                <div class="range-input form-check control-item">
+                    <output style="width: 100%;text-align: center;">0</output>
+                    <input type="range" orient="vertical" min="0" max="5" step="1" id="parse-sel-start" value="0"
+                        oninput="this.previousElementSibling.value = this.value">
                 </div>
-                <div class="form-check control-item" style="z-index: 2;width: 30px;padding:0;">
-                    <input type="range" orient="vertical" min="0" max="5" step="1" id="parse-sel-end"
-                        style="height:60%;background-color:black" value="0"
-                        oninput="this.nextElementSibling.value = this.value">
-                    <output style="transform: translateX(50%);">0</output>
+                <div class="range-input form-check control-item">
+                    <output style="width: 100%;text-align: center;">0</output>
+                    <input type="range" orient="vertical" min="0" max="5" step="1" id="parse-sel-end" value="0"
+                        oninput="this.previousElementSibling.value = this.value">
                 </div>
                 <button type="button" class="btn btn-link" onclick="goHome()">Home</button>
             </div>
@@ -281,7 +290,7 @@
 
     <script>
         $('#parse-sel-start, #parse-sel-end').on('mousedown touchstart', function () {
-            $(this).css('height', '200px'); // 按下或触摸开始时修改 Range Input 元素的宽度
+            $(this).css('height', '300px'); // 按下或触摸开始时修改 Range Input 元素的宽度
         });
         $('#parse-sel-start, #parse-sel-end').on('mouseup touchend', function () {
             $(this).css('height', '65%'); // 释放或触摸结束后恢复 Range Input 元素的宽度
