@@ -238,6 +238,21 @@
             navigator.mediaSession.setActionHandler('pause', function () {
                 video.pause();
             });
+
+            $(document).on('copy', function (e) {
+                console.log('copy triggered');
+                const selection = document.getSelection();
+                if (selection.type == 'Range') {
+                    const text_only = selection.toString();
+                    const clipdata = e.originalEvent.clipboardData;
+                    console.log('clear paste format');
+                    clipdata.setData('text/plain', text_only);
+                    clipdata.setData('text/html', text_only);
+                    e.preventDefault();
+                }
+            });
         });
+
+
     </script>
 </body>

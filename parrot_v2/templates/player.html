@@ -1035,14 +1035,14 @@
                 }
             }, true);
 
-            document.addEventListener('copy', function (e) {
+            $(document).on('copy', function (e) {
                 console.log('copied');
                 const selection = document.getSelection();
                 if (selection.type == 'Range') {
                     var ele = $(selection.anchorNode);
                     if (ele.closest('#subtitle-list').length > 0) {
                         const text_only = selection.toString();
-                        const clipdata = e.clipboardData || window.clipboardData;
+                        const clipdata = e.originalEvent.clipboardData;
                         console.log('clear paste format');
                         clipdata.setData('text/plain', text_only);
                         clipdata.setData('text/html', text_only);
