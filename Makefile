@@ -21,7 +21,7 @@ run_nginx:
 	docker run -it --rm -d --network="host" --name parrot_nginx -v /data00/open_source_project/parrot/parrot_v2/conf/parrot_nginx.conf:/etc/nginx/conf.d/nginx_parrot.conf:ro nginx
 
 extract_mp3:
-	ffmpeg -i test2.mp4 -vn -acodec libmp3lame test2.mp3
+	ffmpeg -i ${PWD##*/}.mp4 -vn -acodec libmp3lame ${PWD##*/}.mp3
 
 mp3_2_m3u8:
 	mkdir ts_file
@@ -29,7 +29,7 @@ mp3_2_m3u8:
 		-hls_base_url 'ts_file/' ${PWD##*/}.m3u8
 
 convert_subtitle_from_srt:
-	pysubs2 --to vtt {xxx.srt}
+	pysubs2 --to vtt *.srt
 
 test_cb_dict:
 	python parrot_v2/dal/dict/cambridge_dict/__init__.py

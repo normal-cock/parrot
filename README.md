@@ -123,6 +123,7 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
                 * 测试——Done
 * [P0]html页面支持一键将老单词录入ER中 P0——Done
 * [P0]add er支持自动增加全文检索——Done
+* [P0]review页面复制格式移除——Done
 * [P0]review_er每个单词背完后，增加单词的其他意思的列表总结——Done
 * [P1]提高背单词效率
     * [P0]7000单词内，先不要精背。提高速度
