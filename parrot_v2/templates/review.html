@@ -257,6 +257,9 @@
                     navigator.mediaSession.setActionHandler('previoustrack', function () {
                         btnPrevious.click();
                     });
+                } else {
+                    navigator.mediaSession.setActionHandler('previoustrack', function () {
+                    });
                 }
                 navigator.mediaSession.setActionHandler('nexttrack', function () {
                     btnComplete.click();
