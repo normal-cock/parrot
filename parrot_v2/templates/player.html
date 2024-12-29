@@ -181,6 +181,18 @@
         #durationDiv>input {
             width: 100%;
         }
+
+        #jumpBackBtn {
+            width: 50px;
+            height: 50px;
+            /* 将按钮设置为圆形  */
+            border-radius: 50%;
+            background-color: blue;
+            color: white;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+        }
     </style>
 </head>
 
@@ -257,6 +269,7 @@
         </div>
         <div class="subtitle-container">
             <ul id="subtitle-list" class="list-group"></ul>
+            <button id="jumpBackBtn" onclick="back2CurCueInUI();">B</button>
         </div>
     </div>
     <div class="http-result-container card-container card" style="display:none">
@@ -770,6 +783,8 @@
         function getCurrentCue() {
             return findENCues()?.cues[audioPlayer.currentCueIndex];
         }
+
+        // 播放时间上跳到当前Cue
         function jump2CurCue() {
             // https://docs.videojs.com/docs/api/player.html#MethodsreadyState
             if (audioPlayer.readyState() < 1) {
@@ -824,20 +839,31 @@
             )
         }
 
+        // UI上回到当前播放的字幕处
+        function back2CurCueInUI() {
+            var list = $('#subtitle-list');
+            var li = list.children().eq(audioPlayer.currentCueIndex);
+
+            var pos = (
+                li.offset().top + list.scrollTop()
+                - list.offset().top - list.height() / 2 + li.height() / 2);
+            // console.log('pos:' + pos);
+            list.animate({ scrollTop: pos });
+        }
+
         function flushListHighlight() {
             if (isActive() == true) {
                 console.log('flushListHighlight');
                 var highlightClass = 'list-group-item-success';
                 var list = $('#subtitle-list');
-                list.find('li').removeClass(highlightClass);
-                var li = list.children().eq(audioPlayer.currentCueIndex);
-                li.addClass(highlightClass);
+                old_li = list.find('.list-group-item-success');
+                if (old_li.index() != audioPlayer.currentCueIndex) {
+                    list.find('li').removeClass(highlightClass);
+                    var li = list.children().eq(audioPlayer.currentCueIndex);
+                    li.addClass(highlightClass);
 
-                var pos = (
-                    li.offset().top + list.scrollTop()
-                    - list.offset().top - list.height() / 2 + li.height() / 2);
-                // console.log('pos:' + pos);
-                list.animate({ scrollTop: pos });
+                    back2CurCueInUI();
+                }
             }
         }
 

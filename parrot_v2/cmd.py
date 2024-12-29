@@ -192,6 +192,8 @@ def run():
             print('meaning:', meaning.meaning)
             print(f'use case: {meaning.use_case}')
             print(f'remark: {meaning.remark}')
+            print(f'use_case_voice: {meaning.use_case_voice}')
+
             print(
                 f'create time: {meaning.created_time.strftime("%Y-%m-%d %H:%M")}')
 
