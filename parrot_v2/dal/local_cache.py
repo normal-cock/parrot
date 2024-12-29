@@ -87,7 +87,7 @@ class CustmLocalCache(object):
                     return False
             else:
                 old_er_index = int(old_er_index_str)
-                if old_er_index + 1 == reviewed_index:
+                if abs(old_er_index - reviewed_index) == 1:
                     self._cache.set(
                         index_key,
                         str(reviewed_index), expire=self._duration

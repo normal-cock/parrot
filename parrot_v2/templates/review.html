@@ -29,6 +29,7 @@
             margin: 10%;
             font-size: 1.3em;
             height: 90%;
+            text-align: center;
         }
 
         .btn-primary {
@@ -129,15 +130,35 @@
 
         function fecthCallback(response, textStatus, jqXHR) {
             var statusCode = jqXHR.status;
+            reviewBody.empty();
+            video.pause();
             if (statusCode === 204) {
-                reviewBody.text('Review finished!');
+                reviewBody.append($('<div>Review finished!</div>'));
+                const btnPrevious = $('<button type="button" class="btn btn-link">Back</button>');
+                btnPrevious.on('click', function () {
+                    btnPrevious.text('Backing');
+                    $.ajax({
+                        url: `/{{ passport }}/previous-review-record/999`,
+                        type: 'POST',
+                        success: fecthCallback,
+                        error: httpErrorFunc,
+                    });
+                });
+                reviewBody.append(btnPrevious);
+                navigator.mediaSession.setActionHandler('previoustrack', function () {
+                    btnPrevious.click();
+                });
+                navigator.mediaSession.setActionHandler('nexttrack', function () {
+                });
             } else {
-                reviewBody.empty();
                 const reviewIndex = response.review_index;
                 const meaningBodyDiv = $('<div></div>');
-                const btn = $('<button type="button" class="btn btn-primary">Complete This Record</button>');
-                btn.on('click', function () {
-                    btn.text('Completing');
+                meaningBodyDiv.css('text-align', 'left');
+                const btnComplete = $('<button type="button" class="btn btn-primary">Complete This Record</button>');
+                const btnPrevious = $('<button type="button" class="btn btn-link">Back</button>');
+
+                btnComplete.on('click', function () {
+                    btnComplete.text('Completing');
                     $.ajax({
                         url: `/{{ passport }}/complete-review-record/${reviewIndex}`,
                         type: 'POST',
@@ -145,6 +166,17 @@
                         error: httpErrorFunc,
                     });
                 });
+
+                btnPrevious.on('click', function () {
+                    btnPrevious.text('Backing');
+                    $.ajax({
+                        url: `/{{ passport }}/previous-review-record/${reviewIndex}`,
+                        type: 'POST',
+                        success: fecthCallback,
+                        error: httpErrorFunc,
+                    });
+                });
+
                 const progressDiv = $(`<div></div>`).text(
                     `Progress ${response.review_index + 1}/${response.total_len}`
                 );
@@ -219,7 +251,16 @@
                 meaningBodyDiv.append(meaningDiv);
 
                 reviewBody.append(meaningBodyDiv);
-                reviewBody.append(btn);
+                reviewBody.append(btnComplete);
+                if (reviewIndex > 0) {
+                    reviewBody.append(btnPrevious);
+                    navigator.mediaSession.setActionHandler('previoustrack', function () {
+                        btnPrevious.click();
+                    });
+                }
+                navigator.mediaSession.setActionHandler('nexttrack', function () {
+                    btnComplete.click();
+                });
             }
         }
 

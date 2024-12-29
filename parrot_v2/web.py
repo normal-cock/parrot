@@ -228,6 +228,30 @@ def complete_review_record(passport, review_index):
     return review_record
 
 
+@app.route("/<passport>/previous-review-record/<review_index>", methods=['POST'])
+def previous_review_record(passport, review_index):
+    logger.info(f'review_index={review_index}||begin previous_review_record')
+    if passport.upper() != PW.upper():
+        return make_response('', 404)
+
+    last_reviewed_index = None
+    if review_index == '999':
+        last_reviewed_index = cache.get_erplan_last_index_today()
+    else:
+        index = int(review_index)
+        if index <= 0:
+            return make_response('no previous record', 404)
+
+        last_reviewed_index = index - 1
+    if biz_er.rollback_er_lookup_record_review(last_reviewed_index) == False:
+        return make_response('previous failed', 400)
+
+    review_record = biz_er.fetch_next_er_lookup_record()
+    if review_record == None:
+        return make_response('', 204)
+    return review_record
+
+
 @app.route("/<passport>/heartbeat/<item_id>", methods=['POST'])
 def heartbeat(passport, item_id):
     logger.info('begin heartbeat')

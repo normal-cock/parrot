@@ -146,6 +146,11 @@ def complete_er_lookup_record_review(index: int):
     return cache.set_erplan_last_index_today(index)
 
 
+def rollback_er_lookup_record_review(last_reviewed_index: int):
+    '''回退到上一个review_record'''
+    return cache.set_erplan_last_index_today(last_reviewed_index-1)
+
+
 def begin_er_lookup_review():
     start_time = datetime.datetime.now()
     this_time_reviewed_plan_count = 0
