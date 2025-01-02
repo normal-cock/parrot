@@ -131,7 +131,7 @@
         function fecthCallback(response, textStatus, jqXHR) {
             var statusCode = jqXHR.status;
             reviewBody.empty();
-            video.pause();
+            pause();
             if (statusCode === 204) {
                 reviewBody.append($('<div>Review finished!</div>'));
                 const btnPrevious = $('<button type="button" class="btn btn-link">Back</button>');
@@ -264,6 +264,9 @@
                 navigator.mediaSession.setActionHandler('nexttrack', function () {
                     btnComplete.click();
                 });
+                if (ucm != undefined) {
+                    play();
+                }
             }
         }
 
