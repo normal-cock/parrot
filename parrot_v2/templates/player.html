@@ -654,6 +654,12 @@
         const localCurIndexKey = 'parrot:{{ item_id }}:local_cur_index';
         const adjustStartTimeKey = 'parrot:{{ item_id }}:local_adjust_start_time';
         const adjustEndTimeKey = 'parrot:{{ item_id }}:local_adjust_end_time';
+
+        // subtitle dynamic load, curCue前后各20个cue
+        const maxDynamicLoadSize = 50;
+        var dynamicLoadStart = 0;
+        var dynamicLoadEnd = 0;
+
         const initOptions = {
             // crossorigin: 'anonymous',
             audioOnlyMode: true,
@@ -670,7 +676,7 @@
         };
 
         function heartbeat() {
-            console.info('begin heartbeat');
+            // console.info('begin heartbeat');
             function heartbeatCallback(response) {
                 const newHB = response;
 
@@ -690,7 +696,7 @@
                 adjust_et: adjustEndTime,
             };
 
-            console.info('begin real heartbeat');
+            // console.info('begin real heartbeat');
             $.ajax({
                 url: `/{{ passport }}/heartbeat/{{ item_id }}`,
                 type: 'POST',
@@ -843,24 +849,142 @@
         // UI上回到当前播放的字幕处
         function back2CurCueInUI() {
             var list = $('#subtitle-list');
-            var li = list.children().eq(audioPlayer.currentCueIndex);
+            var li = list.children().eq(
+                audioPlayer.currentCueIndex - dynamicLoadStart);
 
-            var pos = (
-                li.offset().top + list.scrollTop()
-                - list.offset().top - list.height() / 2 + li.height() / 2);
-            // console.log('pos:' + pos);
-            list.animate({ scrollTop: pos });
+            if (li.index() != -1) {
+                var pos = (
+                    li.offset().top + list.scrollTop()
+                    - list.offset().top - list.height() / 2 + li.height() / 2);
+                console.log('pos:' + pos);
+                list.animate({ scrollTop: pos });
+            }
+        }
+
+        function genSingleSubtitle(i) {
+            const cues = Array.from(findENCues()?.cues || []);
+            const subCues = Array.from(findCNCues()?.cues || []);
+
+            var cue = cues[i];
+            var startTime = formatTime(cue.startTime);
+            var li = $('<li class="list-group-item">')
+            const spanTime = $('<span class="subtitle-meta">').text(startTime + ' ');
+            const spanText = $('<span class="subtitle-item">').html(cue.text);
+            spanText.attr('cue-index', i.toString());
+            li.append(spanTime);
+            li.append(spanText);
+            if (getSubCuesLength() > 0 && i < subCues.length) {
+                var subCue = subCues[i];
+                if (subCue.startTime == cue.startTime) {
+                    li = li.append("<br>")
+                        .append($("<span>").addClass("list-group-item-subcue").html("CN: " + subCue.text));
+                }
+            }
+
+            li.click(function () {
+                const selction = document.getSelection();
+                if (selction.type != 'Range') {
+                    audioPlayer.currentCueIndex = parseInt(cue.id);
+                    flushListHighlight();
+                    // audioPlayer.currentTime(cue.startTime);
+                    jump2CurCue();
+                    audioPlayer.play();
+                    heartbeat();
+                }
+            });
+            return li;
+        }
+
+        function dynamicLoadSubtitle() {
+            // check whether need to load
+            var needLoad = false;
+            if (audioPlayer.currentCueIndex - dynamicLoadStart < 10 &&
+                dynamicLoadStart > 0
+            ) {
+                needLoad = true;
+            }
+            if (dynamicLoadEnd - audioPlayer.currentCueIndex < 10 &&
+                dynamicLoadEnd < (getCuesLength() - 1)
+            ) {
+                needLoad = true;
+            }
+            if (needLoad == false) {
+                console.info('not need to reload subtitle')
+                return;
+            }
+
+            // load
+            var list = $('#subtitle-list');
+            newStart = Math.max(
+                Math.floor(audioPlayer.currentCueIndex / 10) - 2,
+                0
+            ) * 10;
+            newEnd = Math.min(
+                Math.floor(audioPlayer.currentCueIndex / 10) + 3,
+                getCuesLength() - 1
+            ) * 10 - 1;
+            console.info('try to reload subtitle: ',
+                newStart, newEnd,
+                dynamicLoadStart, dynamicLoadEnd, audioPlayer.currentCueIndex)
+            if (list.children().length == 0) {
+                console.debug('subtitle-list is empty, try to load all')
+                for (var i = newStart; i <= newEnd; i++) {
+                    var li = genSingleSubtitle(i);
+                    list.append(li);
+                }
+            } else {
+                // prepend
+                if (newStart < dynamicLoadStart) {
+                    console.debug(
+                        'try to prepend from', dynamicLoadStart - 1, 'to', newStart)
+                    if (list.scrollTop() == 0) {
+                        // 防止scrollTop为0时，持续能看到最新prepend的元素
+                        list.scrollTop(1);
+                    }
+                    for (var i = dynamicLoadStart - 1; i >= newStart; i--) {
+                        var li = genSingleSubtitle(i);
+                        list.prepend(li);
+                    }
+                } else {
+                    console.debug(
+                        'try to remove from', dynamicLoadStart, 'to', newStart - 1)
+                    for (var i = dynamicLoadStart; i < newStart; i++) {
+                        $('#subtitle-list li').first().remove();
+                    }
+                }
+                // append
+                if (newEnd > dynamicLoadEnd) {
+                    console.debug(
+                        'try to append from', dynamicLoadEnd + 1, 'to', newEnd)
+                    for (var i = dynamicLoadEnd + 1; i <= newEnd; i++) {
+                        var li = genSingleSubtitle(i);
+                        list.append(li);
+                    }
+                } else {
+                    console.debug(
+                        'try to remove from', dynamicLoadEnd, 'to', newEnd - 1)
+                    for (var i = dynamicLoadEnd; i > newEnd; i--) {
+                        $('#subtitle-list li').last().remove();
+                    }
+                }
+            }
+            dynamicLoadStart = newStart;
+            dynamicLoadEnd = newEnd;
         }
 
         function flushListHighlight() {
             if (isActive() == true) {
-                console.log('flushListHighlight');
+                // console.log('flushListHighlight');
                 var highlightClass = 'list-group-item-success';
                 var list = $('#subtitle-list');
                 old_li = list.find('.list-group-item-success');
-                if (old_li.index() != audioPlayer.currentCueIndex) {
+                if ((dynamicLoadStart + old_li.index())
+                    != audioPlayer.currentCueIndex
+                ) {
+                    dynamicLoadSubtitle();
                     list.find('li').removeClass(highlightClass);
-                    var li = list.children().eq(audioPlayer.currentCueIndex);
+                    var li = list.children().eq(
+                        audioPlayer.currentCueIndex - dynamicLoadStart);
                     li.addClass(highlightClass);
 
                     back2CurCueInUI();
@@ -889,57 +1013,18 @@
                 for (var i = 0; i < cues.length; i++) {
                     cues[i].id = i.toString();
                 }
-                const subCues = Array.from(findCNCues()?.cues || []);
-                var hasSubCue = false;
-                var list = $('#subtitle-list');
+                // var list = $('#subtitle-list');
 
-                if (subCues.length != 0) {
-                    console.log('loadedmetadata||Subtitles 2 loaded:' + getSubCuesLength());
-                    hasSubCue = true;
-                    list.empty();
-                }
+                // if (getSubCuesLength() > 0) {
+                //     console.log('loadedmetadata||Subtitles 2 loaded:' + getSubCuesLength());
+                //     list.empty();
+                // }
 
-                for (var i = 0, j = 0; i < cues.length; i++) {
-                    let cue = cues[i];
-                    var startTime = formatTime(cue.startTime);
-                    // var li = $('<li class="list-group-item">').text(startTime + '-' + cue.text);
-                    var li = $('<li class="list-group-item">')
-                    const spanTime = $('<span class="subtitle-meta">').text(startTime + ' ');
-                    const spanText = $('<span class="subtitle-item">').html(cue.text);
-                    spanText.attr('cue-index', i.toString());
-                    li.append(spanTime);
-                    li.append(spanText);
-                    if (hasSubCue == true && j < subCues.length) {
-                        let subCue = subCues[j];
-                        // 应对en和cn部分字幕数量不匹配的问题
-                        for (; subCue.startTime < cue.startTime;) {
-                            j++;
-                            if (j < subCues.length) {
-                                subCue = subCues[j];
-                            } else {
-                                break;
-                            }
-                        }
-                        if (subCue.startTime == cue.startTime) {
-                            li = li.append("<br>")
-                                .append($("<span>").addClass("list-group-item-subcue").html("CN: " + subCue.text));
-                            j++;
-                        }
-                    }
-
-                    li.click(function () {
-                        const selction = document.getSelection();
-                        if (selction.type != 'Range') {
-                            audioPlayer.currentCueIndex = parseInt(cue.id);
-                            flushListHighlight();
-                            // audioPlayer.currentTime(cue.startTime);
-                            jump2CurCue();
-                            audioPlayer.play();
-                            heartbeat();
-                        }
-                    });
-                    list.append(li);
-                }
+                // for (var i = 0, j = 0; i < maxDynamicLoadSize; i++) {
+                //     var li = genSingleSubtitle(i);
+                //     dynamicLoadEnd = i;
+                //     list.append(li);
+                // }
                 fetchLocalCurIndex();
                 flushListHighlight();
                 jump2CurCue();
