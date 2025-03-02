@@ -3,3 +3,4 @@
 .vscode
 gunicorn.log
 nohup.out
+tmp

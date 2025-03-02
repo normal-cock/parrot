@@ -62,6 +62,7 @@ def add_er_lookup_record():
     added_count = session.query(ERLookupRecord).filter(
         ERLookupRecord.created_time >= datetime.date.today()).count()
     session.commit()
+    # logger.info(f"added {meaning_obj.__dict__}")
     print("looked up {} times today".format(added_count))
     return True
 
@@ -135,9 +136,17 @@ def fetch_next_er_lookup_record():
     if meaning.has_use_case_voice():
         result['meaning']['use_case_media'] = {
             # 'play_url': 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+            'type': 'hls',
             'play_url': f'/Rkf7br9rmUMB/meaning-m3u8/{meaning.id}',
             'offset': meaning.ucv_offset(),
             'duration': meaning.ucv_duration(),
+        }
+    else:
+        result['meaning']['use_case_media'] = {
+            'type': 'mp3',
+            'play_url': f'/Rkf7br9rmUMB/meaning_speech/{meaning.id}',
+            'offset': -1,
+            'duration': 999,
         }
     return result
 
@@ -237,4 +246,4 @@ def predict_er():
             ERLookupRecord.created_time >= cur_begin_time,
             ERLookupRecord.created_time < cur_end_time,
         ).count()
-        print(f"{review_date} : {total_count}")
+        print(f"{review_date.strftime('%Y-%m-%d(%a)')} : {total_count}")

@@ -24,8 +24,7 @@ extract_mp3:
 	ffmpeg -i ${PWD##*/}.mp4 -vn -acodec libmp3lame ${PWD##*/}.mp3
 
 mp3_2_m3u8:
-	mkdir ts_file
-	ffmpeg -i ${PWD##*/}.mp3 -hls_time 20 -hls_list_size 0 -hls_segment_filename "ts_file/${PWD##*/}-%d.ts" \
+	mkdir ts_file && ffmpeg -i ${PWD##*/}.mp3 -hls_time 20 -hls_list_size 0 -hls_segment_filename "ts_file/${PWD##*/}-%d.ts" \
 		-hls_base_url 'ts_file/' ${PWD##*/}.m3u8
 
 convert_subtitle_from_srt:

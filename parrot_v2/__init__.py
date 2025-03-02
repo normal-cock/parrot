@@ -14,6 +14,7 @@ DEBUG = (os.getenv("DEBUG") == "True" or app.debug == True)
 DATA_DIR = "{}/.parrot_v2".format(os.environ['HOME'])
 if DEBUG:
     DATA_DIR = "{}/.parrot_v2_test".format(os.environ['HOME'])
+MEANING_SPEECH_DIR = "{}/meaning_speech".format(DATA_DIR)
 print("work dir is:", DATA_DIR)
 
 sqlite_url = 'sqlite:///{}/dictionary.db'.format(DATA_DIR)

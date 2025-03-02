@@ -512,7 +512,9 @@ def show_predict_v2():
         ).all()
         review_plans_today = list(review_plans_in_db)
         review_count = len(review_plans_today)
-        print("{} : {}".format(end_time-datetime.timedelta(days=1), review_count))
+        print("{} : {}".format(
+            (end_time-datetime.timedelta(days=1)).strftime("%Y-%m-%d(%a)"),
+            review_count))
 
         # generate tmp plans by today's review_plans
         reviewed_meaning_id = set()
@@ -552,6 +554,7 @@ def search(query: str):
         print("")
         meaning_dto = meaning_list[meaning_choice]
 
+        print('meaning_id:', meaning_dto.id)
         phonetic_symbol = print(
             'phonetic_symbol:', meaning_dto.phonetic_symbol)
         meaning = print(

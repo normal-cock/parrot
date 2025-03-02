@@ -1,20 +1,21 @@
+from parrot_v2 import app
+from flask_paginate import Pagination, get_page_parameter
+from parrot_v2.util import logger
+from parrot_v2.biz import service_er as biz_er
+from parrot_v2.biz import service_v2 as biz_v2
+from parrot_v2 import DATA_DIR, PW, cache, CustmLocalCache
+from werkzeug.middleware.proxy_fix import ProxyFix
+from parrot_v2.dal.aliyun_oss import oss_sington
+from markupsafe import Markup
+from flask_session import Session
+from flask import render_template, make_response, send_file
+from flask import Flask, session, request
+from cachelib.file import FileSystemCache
+import sys
 import json
 import time
-from cachelib.file import FileSystemCache
-from flask import Flask, session, request
-from flask import render_template, make_response
-from flask_session import Session
-from markupsafe import Markup
-from parrot_v2.dal.aliyun_oss import oss_sington
-from werkzeug.middleware.proxy_fix import ProxyFix
-from parrot_v2 import DATA_DIR, PW, cache, CustmLocalCache
-from parrot_v2.biz import service_v2 as biz_v2
-from parrot_v2.biz import service_er as biz_er
-from parrot_v2.util import logger, nlp_tool
-from flask_paginate import Pagination, get_page_parameter
-
+# print(f'{__file__}:{sys._getframe().f_lineno}', time.time())
 # app = Flask(__name__)
-from parrot_v2 import app
 
 SESSION_TYPE = 'cachelib'
 SESSION_SERIALIZATION_FORMAT = 'json'
@@ -28,6 +29,7 @@ cache_in_flask = cache
 app.wsgi_app = ProxyFix(
     app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
 )
+print(f'{__file__}:{sys._getframe().f_lineno}', time.time())
 
 
 @app.route("/<passport>")
@@ -168,6 +170,7 @@ def parse_sentence(passport):
             'unknown_words':[qr_result, qr_result],
         }
     '''
+    from parrot_v2.util import nlp_tool
     if passport.upper() != PW.upper():
         return make_response('', 404)
     selected = request.form.get('selected')
@@ -290,3 +293,19 @@ def clear_session(passport, item_id):
     _media_url_key = f'media_url_dict:{item_id}'
     session.pop(_media_url_key)
     return "<p>Hello, World!</p>"
+
+
+@app.route("/<passport>/meaning_speech/<meaning_id>")
+def meaning_speech(passport, meaning_id):
+    if passport.upper() != PW.upper():
+        return make_response('', 404)
+
+    meaning = biz_v2.get_meaning(int(meaning_id))
+    if meaning == None:
+        return make_response('', 404)
+    meaning_speech_path = biz_v2.get_meaning_speech_path(int(meaning_id))
+    if len(meaning_speech_path) == 0:
+        return make_response('', 404)
+    return send_file(
+        path_or_file=meaning_speech_path,
+        mimetype='audio/mpeg')

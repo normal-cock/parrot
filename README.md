@@ -20,6 +20,7 @@
         - [Error: stepping, database disk image is malformed (11)](#error-stepping-database-disk-image-is-malformed-11)
     - [changelog](#changelog)
         - [Future](#future)
+            - [\[P0\]兼容更多内容——Done](#p0兼容更多内容done)
             - [背单词效率 P0——Done](#背单词效率-p0done)
             - [优化PC播放视频的体验 P0——Done](#优化pc播放视频的体验-p0done)
             - [优化 P1](#优化-p1)
@@ -134,6 +135,19 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
     * [P0]7000单词内，先不要精背。提高速度
     * [P0]为ER增加随机和断点续背功能——Done
 * [P1]提高单词录入效率
+
+
+#### [P0]兼容更多内容——Done
+
+很多文字阅读的场景，录入后没有音频，以及一些历史上录入的单词，也没有音频，背的时候很难受。
+
+通过TTS模型来自行生成音频。
+
+* 通过脚本来遍历现有的meaning，未没有音频的生成音频
+    * 类似命令行的migrate的一样的命令
+* 实现接口返回MP3
+    * 测试一下接口
+* 前端根据meaning类型决定是否读取mp3来播放
 
 #### 背单词效率 P0——Done
 

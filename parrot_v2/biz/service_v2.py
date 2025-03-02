@@ -1,19 +1,49 @@
-
+from parrot_v2.util import logger
+from parrot_v2.model.player import ItemType
+from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning, CWordPos
+from parrot_v2.model import Item, Word, Meaning, ERLookupRecord, ER_REVIEW_RANGE_DAY
+from parrot_v2 import Session, DEBUG, PW, MEANING_SPEECH_DIR
+import os
+import sys
+import re
 import time
 import datetime
-import uuid
-import nltk
 import m3u8
+import inspect
 from typing import List
 from sqlalchemy import desc
-from parrot_v2 import Session, DEBUG, PW
+# print(f'{__file__}:{sys._getframe().f_lineno}', time.time())
 
-from parrot_v2.model import Item, Word, Meaning, ERLookupRecord, ER_REVIEW_RANGE_DAY
 
 # from parrot_v2.dal.aliyun_oss import oss_sington
-from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning, CWordPos
-from parrot_v2.model.player import ItemType
-from parrot_v2.util import logger
+
+
+def get_meaning_speech_path(meaning_id: int):
+    return f'{MEANING_SPEECH_DIR}/m_{meaning_id}.mp3'
+
+
+def gen_speech_4_meaning(meaning_id: int):
+    begin_time = time.time()
+    session = Session()
+    m: None | Meaning = session.query(Meaning).filter(
+        Meaning.id == meaning_id).one_or_none()
+    if m == None:
+        err_string = f'meaning {meaning_id} not found'
+        return err_string
+    if m.use_case_voice != None and len(m.use_case_voice) != 0:
+        err_string = f'meaning already has a voice'
+        return err_string
+    path = get_meaning_speech_path(meaning_id)
+    if os.path.exists(path):
+        err_string = f'already exists: {path}'
+        return err_string
+    # 移除音标
+    clean_uc = re.sub(r'\[.*?\]', '', m.use_case)
+    logger.info(f'try to gen(meaning_id:{meaning_id}):{clean_uc}')
+    from parrot_v2.util.tts import gen_en_mp3
+    gen_en_mp3(clean_uc, path)
+    logger.info(f'cost {round(time.time()-begin_time, 2)}s')
+    return ''
 
 
 def get_media_url(item_id):
@@ -206,6 +236,14 @@ def readd_er(meaning_id: int) -> str:
     session.commit()
     session.close()
     return ''
+
+
+def get_meaning(meaning_id: int) -> Meaning | None:
+    session = Session()
+    meaning = session.query(Meaning).filter(
+        Meaning.id == meaning_id).one_or_none()
+    session.close()
+    return meaning
 
 
 def gen_meaning_m3u8(meaning_id):

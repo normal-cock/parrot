@@ -1,33 +1,35 @@
 # coding=utf8
-import os
-import argparse
-import datetime
-import signal
-from parrot_v2 import Session
-from parrot_v2.model import Word
-
-
+from parrot_v2.util import rlinput, logger
+from parrot_v2 import DATA_DIR, MEANING_SPEECH_DIR
+from parrot_v2.biz.migrate_script import import_data_from_v1
+from parrot_v2.biz.service_er import add_er_lookup_record, begin_er_lookup_review, predict_er
+from parrot_v2 import DEBUG
+from parrot_v2.biz.service_v2 import (
+    add_item,
+    get_meaning,
+    gen_speech_4_meaning,
+)
 from parrot_v2.biz.service import (
     get_word_or_none,
     add_new_word_and_meaning,
     add_new_meaning_to_exist_word,
     modify_exist_meaning,
     modify_exist_word,
-    begin_to_review_v3, begin_to_review_v4,
+    begin_to_review_v4,
     show_predict_v2,
     search,
     rebuild_fts,
-    get_report_stats
+    get_report_stats,
 )
-from parrot_v2.biz.service_v2 import add_item
-from parrot_v2 import DEBUG
-
-from parrot_v2.biz.service_er import add_er_lookup_record, begin_er_lookup_review, predict_er
-
-from parrot_v2.biz.migrate_script import import_data_from_v1
-from parrot_v2 import DATA_DIR
-from parrot_v2.util import rlinput
-
+from parrot_v2 import Session
+import signal
+import datetime
+import argparse
+from parrot_v2.model import Word, Meaning, ERLookupRecord
+import time
+import os
+import sys
+# print(f'{__file__}:{sys._getframe().f_lineno}', time.time())
 # 定义信号处理函数
 
 
@@ -50,7 +52,7 @@ def run():
                         'modify_word', 'modify_meaning',
                         'add_er', 'review_er', 'predict_er',
                         'predict', 'import_v1_data',
-                        'add_item',
+                        'add_item', 'gen_tts', 'gen_tts_all',
                         'initialize'])
     args = parser.parse_args()
 
@@ -116,6 +118,7 @@ def run():
         alembic_config = os.path.join(os.path.dirname(
             os.path.abspath(__file__)), 'alembic.ini')
         os.system("mkdir -p {}".format(DATA_DIR))
+        os.system("mkdir -p {}".format(MEANING_SPEECH_DIR))
         os.system("alembic -c {} upgrade head".format(alembic_config))
         rebuild_fts()
     if args.command == 'rebuild_fts':
@@ -189,6 +192,7 @@ def run():
         for i, meaning in enumerate(word.meanings):
             print("\n{}. {} {}".format(
                 i+1, meaning.word.text, meaning.phonetic_symbol))
+            print('meaning_id:', meaning.id)
             print('meaning:', meaning.meaning)
             print(f'use case: {meaning.use_case}')
             print(f'remark: {meaning.remark}')
@@ -216,6 +220,34 @@ def run():
         add_item(item_name=item_name, item_id=item_id,
                  adjustment=adjustment, item_type=item_type)
         print('Item added')
+
+    if args.command == 'gen_tts':
+        meaning_id = rlinput('meaning id:', '').strip()
+        if not meaning_id.isdigit():
+            exit('Error: invalid meaning id')
+        meaning = get_meaning(meaning_id)
+        if meaning == None:
+            exit('Error: meaning not found')
+        print(gen_speech_4_meaning(meaning_id))
+
+    if args.command == 'gen_tts_all':
+        os.environ['LRU_CACHE_CAPACITY'] = '1'
+        session = Session()
+        er_records = session.query(ERLookupRecord).order_by(
+            ERLookupRecord.created_time.desc()).all()
+        logger.info(f"total {len(er_records)}")
+        gened_count = 0
+        for record in er_records:
+            if gened_count >= 10:
+                break
+            err_string = gen_speech_4_meaning(record.meaning_id)
+            if len(err_string) == 0:
+                gened_count += 1
+            else:
+                logger.error(
+                    f"gen speech for meaning {record.meaning_id} failed: {err_string}")
+        logger.info(f'gened {gened_count} speeches')
+        session.close()
 
 
 if __name__ == '__main__':
