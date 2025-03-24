@@ -4,3 +4,4 @@
 gunicorn.log
 nohup.out
 tmp
+tmp.log
