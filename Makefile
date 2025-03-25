@@ -15,10 +15,10 @@ run_test_server:
 
 run_gunicon:
 	gunicorn -w 2 'parrot_v2.web:app' -b localhost:7999 --capture-output \
-		--log-file /data00/open_source_project/parrot/gunicorn.log \
+		--log-file /data00/repos/parrot/gunicorn.log \
 		--timeout 120 --access-logfile - &
 run_nginx:
-	docker run -it --rm -d --network="host" --name parrot_nginx -v /data00/open_source_project/parrot/parrot_v2/conf/parrot_nginx.conf:/etc/nginx/conf.d/nginx_parrot.conf:ro nginx
+	docker run -it --rm -d --network="host" --name parrot_nginx -v /data00/repos/parrot/parrot_v2/conf/parrot_nginx.conf:/etc/nginx/conf.d/nginx_parrot.conf:ro nginx
 
 extract_mp3:
 	ffmpeg -i ${PWD##*/}.mp4 -vn -acodec libmp3lame ${PWD##*/}.mp3
@@ -32,3 +32,6 @@ convert_subtitle_from_srt:
 
 test_cb_dict:
 	python parrot_v2/dal/dict/cambridge_dict/__init__.py
+
+poetry_install:
+	poetry install
