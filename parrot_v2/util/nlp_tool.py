@@ -5,6 +5,7 @@ premise
     nltk.download('punkt')
     nltk.download('averaged_perceptron_tagger')
     nltk.download('cmudict')
+    nltk.download('averaged_perceptron_tagger_eng')
 pos values: https://www.ling.upenn.edu/courses/Fall_2003/ling001/penn_treebank_pos.html
 '''
 from typing import Callable, List

@@ -18,7 +18,14 @@ run_gunicon:
 		--log-file /data00/repos/parrot/gunicorn.log \
 		--timeout 120 --access-logfile - &
 run_nginx:
-	docker run -it --rm -d --network="host" --name parrot_nginx -v /data00/repos/parrot/parrot_v2/conf/parrot_nginx.conf:/etc/nginx/conf.d/nginx_parrot.conf:ro nginx
+	docker run -it --rm -d --network="host" --name parrot_nginx \
+		-v /data00/repos/parrot/parrot_v2/conf/parrot_nginx.conf:/etc/nginx/conf.d/nginx_parrot.conf:ro \
+		-v /data00/nginx/static:/data00/nginx/static:ro \
+		-v /data00/nginx/logs:/var/log/nginx \
+		nginx
+
+reload_nginx:
+	docker exec -it parrot_nginx nginx -s reload
 
 extract_mp3:
 	ffmpeg -i ${PWD##*/}.mp4 -vn -acodec libmp3lame ${PWD##*/}.mp3

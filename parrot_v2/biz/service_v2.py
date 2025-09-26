@@ -29,7 +29,7 @@ def gen_speech_4_meaning(meaning_id: int):
         Meaning.id == meaning_id).one_or_none()
     if m == None:
         err_string = f'meaning {meaning_id} not found'
-        return err_string
+        raise Exception(err_string)
     if m.use_case_voice != None and len(m.use_case_voice) != 0:
         err_string = f'meaning already has a voice'
         return err_string
