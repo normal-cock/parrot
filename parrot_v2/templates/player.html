@@ -88,17 +88,6 @@
             width: 100vw;
         }
 
-        @media only screen and (hover: none) and (pointer: coarse) {
-            body {
-                height: 85vh;
-            }
-
-            #subtitle-list {
-                height: 65vh;
-            }
-        }
-
-
         .card-list {
             /* position: absolute; */
             overflow: auto;
@@ -116,6 +105,7 @@
             /* height: 60%; */
             bottom: 0;
             padding-left: 2%;
+            padding-right: 2%;
             background-color: white;
             max-width: 800px;
             /* border: 2px solid black; */
@@ -191,6 +181,20 @@
             position: fixed;
             bottom: 20px;
             right: 20px;
+        }
+
+        @media only screen and (hover: none) and (pointer: coarse) {
+            body {
+                height: 85vh;
+            }
+
+            #subtitle-list {
+                height: 65vh;
+            }
+
+            .http-result-container {
+                bottom: 10vh;
+            }
         }
     </style>
 </head>
@@ -307,6 +311,11 @@
         $('#parse-sel-start, #parse-sel-end').on('mouseup touchend', function () {
             $(this).css('height', '65%'); // 释放或触摸结束后恢复 Range Input 元素的宽度
         });
+
+        const touchMediaQuery = window.matchMedia('only screen and (hover: none) and (pointer: coarse)');
+        function isMobile() {
+            return touchMediaQuery.matches;
+        }
 
         const cardContainer = $('.card-container');
         const parseResult = $('.parse-result');
@@ -1071,7 +1080,12 @@
                 audioPlayer.audioOnlyMode(true);
             }
             $('#audioOnlyMode').change(function () {
+                audioPlayer.pause();
                 if ($('#audioOnlyMode').is(':checked')) {
+                    audioPlayer.src({
+                        src: audioSrc,
+                        type: audioType,
+                    });
                     customArea.height('90%');
 
                     bodyArea.css('max-width', '800px');
@@ -1080,37 +1094,31 @@
                     customArea.css('float', '');
                     customArea.width('100%');
 
-                    audioPlayer.pause();
-                    audioPlayer.src({
-                        src: audioSrc,
-                        type: audioType,
-                    });
                     audioPlayer.audioOnlyMode(true);
-                    audioPlayer.load();
-                    audioPlayer.one('loadedmetadata', loadedmetadata);
-                    jump2CurCue();
-                    console.log('audioOnlyMode||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
                 } else {
-                    customArea.height('100%');
-
-                    bodyArea.css('max-width', '100%');
-                    playerArea.css('float', 'left');
-                    playerArea.width('60%');
-                    customArea.css('float', 'right');
-                    customArea.width('40%');
-
-
-                    audioPlayer.pause();
+                    // video mode
                     audioPlayer.src({
                         src: videoSrc,
                         type: videoType,
                     });
+                    if (isMobile()) {
+                        customArea.height('60%');
+                    } else {
+                        // desktop
+                        customArea.height('100%');
+
+                        bodyArea.css('max-width', '100%');
+                        playerArea.css('float', 'left');
+                        playerArea.width('60%');
+                        customArea.css('float', 'right');
+                        customArea.width('40%');
+                    }
                     audioPlayer.audioOnlyMode(false);
-                    audioPlayer.load();
-                    audioPlayer.one('loadedmetadata', loadedmetadata);
-                    jump2CurCue();
-                    console.log('audioOnlyMode||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
                 }
+                audioPlayer.load();
+                audioPlayer.one('loadedmetadata', loadedmetadata);
+                jump2CurCue();
+                console.log('audioOnlyMode||audioPlayer.currentCueIndex:' + audioPlayer.currentCueIndex)
             });
             fetchLocalCurIndex();
 
