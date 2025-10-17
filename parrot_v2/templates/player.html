@@ -40,7 +40,7 @@
 
         .custom-tool {
             background-color: lightgray;
-            height: 10%;
+            height: 7vh;
         }
 
         .btn-group {
@@ -100,9 +100,9 @@
             position: absolute;
             /* overflow: auto; */
             width: 100vw;
-            max-height: 60%;
-            height: 100%;
-            /* height: 60%; */
+            /* max-height: 60%; */
+            /* height: 100%; */
+            height: 60%;
             bottom: 0;
             padding-left: 2%;
             padding-right: 2%;
@@ -111,6 +111,12 @@
             /* border: 2px solid black; */
             /* 这里的display是为了取消bootstrap中的card导致的display:flex的显示问题 */
             display: block;
+            position: fixed;
+            bottom: 0;
+        }
+
+        #card-list {
+            height: 93%;
         }
 
         .card-container-button {
@@ -121,7 +127,6 @@
             margin-top: 1%;
             margin-right: 1%;
             float: right;
-            /* position: absolute; */
         }
 
         .pr-item {
@@ -134,7 +139,7 @@
         }
 
         #pr-meaning-select {
-            max-height: 55%;
+            max-height: 53%;
             overflow-y: auto;
         }
 
@@ -190,10 +195,6 @@
 
             #subtitle-list {
                 height: 65vh;
-            }
-
-            .http-result-container {
-                bottom: 10vh;
             }
         }
     </style>
@@ -862,7 +863,7 @@
             if (li.index() != -1) {
                 var pos = (
                     li.offset().top + list.scrollTop()
-                    - list.offset().top - list.height() / 2 + li.height() / 2);
+                    - list.offset().top - (1 * list.height() / 3) + (li.height() / 2));
                 console.log('pos:' + pos);
                 list.animate({ scrollTop: pos });
             }
