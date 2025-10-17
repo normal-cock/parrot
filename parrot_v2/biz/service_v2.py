@@ -1,6 +1,11 @@
 from parrot_v2.util import logger
 from parrot_v2.model.player import ItemType
-from parrot_v2.model.core import ReviewStage, update_meaning_fts, get_related_meaning, CWordPos
+from parrot_v2.model.core import (
+    ReviewStage,
+    update_meaning_fts,
+    get_related_meaning,
+    CWordPos,
+)
 from parrot_v2.model import Item, Word, Meaning, ERLookupRecord, ER_REVIEW_RANGE_DAY
 from parrot_v2 import Session, DEBUG, PW, MEANING_SPEECH_DIR
 import os
@@ -12,6 +17,7 @@ import m3u8
 import inspect
 from typing import List
 from sqlalchemy import desc
+
 # print(f'{__file__}:{sys._getframe().f_lineno}', time.time())
 
 
@@ -19,83 +25,83 @@ from sqlalchemy import desc
 
 
 def get_meaning_speech_path(meaning_id: int):
-    return f'{MEANING_SPEECH_DIR}/m_{meaning_id}.mp3'
+    return f"{MEANING_SPEECH_DIR}/m_{meaning_id}.mp3"
 
 
 def gen_speech_4_meaning(meaning_id: int):
     begin_time = time.time()
     session = Session()
-    m: None | Meaning = session.query(Meaning).filter(
-        Meaning.id == meaning_id).one_or_none()
+    m: None | Meaning = (
+        session.query(Meaning).filter(Meaning.id == meaning_id).one_or_none()
+    )
     if m == None:
-        err_string = f'meaning {meaning_id} not found'
+        err_string = f"meaning {meaning_id} not found"
         raise Exception(err_string)
     if m.use_case_voice != None and len(m.use_case_voice) != 0:
-        err_string = f'meaning already has a voice'
+        err_string = f"meaning already has a voice"
         return err_string
     path = get_meaning_speech_path(meaning_id)
     if os.path.exists(path):
-        err_string = f'already exists: {path}'
+        err_string = f"already exists: {path}"
         return err_string
     # 移除音标
-    clean_uc = re.sub(r'\[.*?\]', '', m.use_case)
-    logger.info(f'try to gen(meaning_id:{meaning_id}):{clean_uc}')
+    clean_uc = re.sub(r"\[.*?\]", "", m.use_case)
+    logger.info(f"try to gen(meaning_id:{meaning_id}):{clean_uc}")
     from parrot_v2.util.tts import gen_en_mp3
+
     gen_en_mp3(clean_uc, path)
-    logger.info(f'cost {round(time.time()-begin_time, 2)}s')
-    return ''
+    logger.info(f"cost {round(time.time()-begin_time, 2)}s")
+    return ""
 
 
 def get_media_url(item_id):
-    '''
-        return {
-            'item_id':
-            'subtitle_url':, 
-            'audio_url':, 
-            'video_url':, 
-            'expiration_time':timestamp,
-            'item_type':
-        }, err_string
-    '''
+    """
+    return {
+        'item_id':
+        'subtitle_url':,
+        'audio_url':,
+        'video_url':,
+        'expiration_time':timestamp,
+        'item_type':
+    }, err_string
+    """
     from parrot_v2.dal.aliyun_oss import oss_sington
 
     session = Session()
-    item = session.query(Item).filter(
-        Item.item_id == item_id).one_or_none()
+    item = session.query(Item).filter(Item.item_id == item_id).one_or_none()
     if item == None:
-        return {}, f'{item_id} not found'
+        return {}, f"{item_id} not found"
     adjustment = item.subtitle_adjustment
 
-    subtitle_url = ''
-    subtitle_url_2 = ''
-    audio_url = ''
-    video_url = ''
+    subtitle_url = ""
+    subtitle_url_2 = ""
+    audio_url = ""
+    video_url = ""
     if item.item_type == ItemType.MP5:
-        subtitle_url = oss_sington.get_object_url(f'{item_id}/{item_id}-e.vtt')
-        subtitle_url_2 = oss_sington.get_object_url(
-            f'{item_id}/{item_id}-c.vtt')
-        audio_url = oss_sington.get_object_url(f'{item_id}/{item_id}.mp3')
-        video_url = oss_sington.get_object_url(f'{item_id}/{item_id}.mp4')
+        subtitle_url = oss_sington.get_object_url(f"{item_id}/{item_id}-e.vtt")
+        subtitle_url_2 = oss_sington.get_object_url(f"{item_id}/{item_id}-c.vtt")
+        audio_url = oss_sington.get_object_url(f"{item_id}/{item_id}.mp3")
+        video_url = oss_sington.get_object_url(f"{item_id}/{item_id}.mp4")
     else:
-        subtitle_url = oss_sington.get_object_url(f'{item_id}-e.vtt')
-        if oss_sington.check_existence(f'{item_id}.vtt'):
-            subtitle_url = oss_sington.get_object_url(f'{item_id}.vtt')
-        if oss_sington.check_existence(f'{item_id}-c.vtt'):
-            subtitle_url_2 = oss_sington.get_object_url(f'{item_id}-c.vtt')
-        audio_url = oss_sington.get_object_url(f'{item_id}.mp3')
-        video_url = oss_sington.get_object_url(f'{item_id}.mp4')
+        subtitle_url = oss_sington.get_object_url(f"{item_id}-e.vtt")
+        if oss_sington.check_existence(f"{item_id}.vtt"):
+            subtitle_url = oss_sington.get_object_url(f"{item_id}.vtt")
+        if oss_sington.check_existence(f"{item_id}-c.vtt"):
+            subtitle_url_2 = oss_sington.get_object_url(f"{item_id}-c.vtt")
+        audio_url = oss_sington.get_object_url(f"{item_id}.mp3")
+        video_url = oss_sington.get_object_url(f"{item_id}.mp4")
 
     session.close()
     return {
-        'item_id': item_id,
-        'subtitle_url': subtitle_url,
-        'subtitle_url_2': subtitle_url_2,
-        'audio_url': audio_url,
-        'video_url': video_url,
-        'adjustment': adjustment,
-        'expiration_time': time.time() + oss_sington.get_expire_sec(),
-        'item_type': str(item.item_type.value),
-    }, ''
+        "item_id": item_id,
+        "subtitle_url": subtitle_url,
+        "subtitle_url_2": subtitle_url_2,
+        "audio_url": audio_url,
+        "video_url": video_url,
+        "adjustment": adjustment,
+        "expiration_time": time.time() + oss_sington.get_expire_sec(),
+        "item_type": str(item.item_type.value),
+    }, ""
 
 
 def get_item_total() -> int:
@@ -106,19 +112,26 @@ def get_item_total() -> int:
 
 
 def get_item_list(offset, per_page):
-    '''
-        return item_list
-    '''
+    """
+    return item_list
+    """
     session = Session()
-    item_list = session.query(Item).order_by(desc(Item.created_time)).offset(
-        offset).limit(per_page).all()
+    item_list = (
+        session.query(Item)
+        .order_by(desc(Item.created_time))
+        .offset(offset)
+        .limit(per_page)
+        .all()
+    )
     result_list = []
     for item in item_list:
-        result_list.append({
-            'create_time': item.created_time.strftime('%Y-%m-%d'),
-            'item_name': item.item_name,
-            'url': f'{PW}/{item.item_id}',
-        })
+        result_list.append(
+            {
+                "create_time": item.created_time.strftime("%Y-%m-%d"),
+                "item_name": item.item_name,
+                "url": f"{PW}/{item.item_id}",
+            }
+        )
     session.close()
     return result_list
 
@@ -138,110 +151,149 @@ def add_item(item_name, item_id, adjustment: float, item_type: int):
 
 
 def blur_search(query: str):
-    '''返回结果[(word_text, meaning_id, meaning_meaning, 
-        meaning_use_case, meaning_phonetic_symbol, meaning_remark)]'''
+    """返回结果[(word_text, meaning_id, meaning_meaning,
+    meaning_use_case, meaning_phonetic_symbol, meaning_remark)]"""
     session = Session()
-    meaning_list = get_related_meaning(session, query, output='html')
+    meaning_list = get_related_meaning(session, query, output="html")
     session.close()
     return meaning_list
 
 
 def query_word(word_text: str):
-    '''返回结果[(word_text, meaning_id, meaning_meaning, 
-        meaning_use_case, meaning_phonetic_symbol, meaning_remark)]'''
+    """返回结果[(word_text, meaning_id, meaning_meaning,
+    meaning_use_case, meaning_phonetic_symbol, meaning_remark)]"""
     from parrot_v2.util import nlp_tool
 
     origin_word_text = nlp_tool.get_origin_morphy_4_phrase(word_text)
     result_list = []
     session = Session()
-    word = session.query(Word).filter(
-        Word.text == origin_word_text).one_or_none()
-    if word == None:
-        logger.info('query_word||word not found')
+    raw_word = session.query(Word).filter(Word.text == word_text).one_or_none()
+    if raw_word != None:
+        logger.info(f"query_word||raw_word({raw_word.text}) is found")
+        for i, meaning in enumerate(raw_word.meanings):
+            result_list.append(
+                [
+                    meaning.word.text,
+                    meaning.id,
+                    meaning.meaning,
+                    meaning.use_case,
+                    meaning.phonetic_symbol,
+                    meaning.remark,
+                    meaning.created_time,
+                ]
+            )
+    else:
+        logger.info(f"query_word||raw_word({raw_word.text}) is not found")
+
+    origin_word = (
+        session.query(Word).filter(Word.text == origin_word_text).one_or_none()
+    )
+    if origin_word == None:
+        logger.info(f"query_word||word({origin_word.text}) not found")
         return result_list
 
-    logger.info('query_word||word is found')
-    for i, meaning in enumerate(word.meanings):
-        result_list.append([
-            meaning.word.text,
-            meaning.id,
-            meaning.meaning,
-            meaning.use_case,
-            meaning.phonetic_symbol,
-            meaning.remark,
-            meaning.created_time,
-        ])
+    logger.info(f"query_word||word({origin_word.text}) is found")
+    for i, meaning in enumerate(origin_word.meanings):
+        result_list.append(
+            [
+                meaning.word.text,
+                meaning.id,
+                meaning.meaning,
+                meaning.use_case,
+                meaning.phonetic_symbol,
+                meaning.remark,
+                meaning.created_time,
+            ]
+        )
     session.close()
     return result_list
 
 
 def unknown_checker_gen(session):
     def _checker(origin_word: str, pos: str, cpos_list: List[CWordPos]) -> bool:
-        '''
-            origin_word: lower
-        '''
-        if pos.upper().startswith('PRP') or pos.upper().startswith('PRON'):
+        """
+        origin_word: lower
+        """
+        if pos.upper().startswith("PRP") or pos.upper().startswith("PRON"):
             return False
         if CWordPos.PREP in cpos_list:
             return False
-        if origin_word in ['be', 'the', 'most', 'so', "'s", 'about', 'think', 'ever', 'go', 'year']:
+        if origin_word in [
+            "be",
+            "the",
+            "most",
+            "so",
+            "'s",
+            "about",
+            "think",
+            "ever",
+            "go",
+            "year",
+        ]:
             return False
-        word = session.query(Word).filter(
-            Word.text == origin_word).one_or_none()
+        word = session.query(Word).filter(Word.text == origin_word).one_or_none()
         return word == None
+
     return _checker
 
 
 def parse_sentence(selected, sentence):
-    '''
-        return {
-            'selected':{
-                'cleaned_word':'',
-                'qr':[{'pron':'', 'cn_def':'',}],
-            },
-            'unknown_words':{
-                'raw_word':[{'pron':'', 'cn_def':'',}],
-            }
+    """
+    return {
+        'selected':{
+            'cleaned_word':'',
+            'qr':[{'pron':'', 'cn_def':'',}],
+        },
+        'unknown_words':{
+            'raw_word':[{'pron':'', 'cn_def':'',}],
         }
-    '''
+    }
+    """
     from parrot_v2.util import nlp_tool
 
     session = Session()
     cleaned_selected, selected_qr, unknown_qr = nlp_tool.parse_sentence(
-        selected, sentence, unknown_checker_gen(session))
+        selected, sentence, unknown_checker_gen(session)
+    )
     session.close()
-    logger.info('unkown words:' + ', '.join(unknown_qr.keys()))
+    logger.info("unkown words:" + ", ".join(unknown_qr.keys()))
 
     return {
-        'selected': {
-            'cleaned_word': cleaned_selected,
-            'qr': selected_qr,
+        "selected": {
+            "cleaned_word": cleaned_selected,
+            "qr": selected_qr,
         },
-        'unknown_words': unknown_qr,
+        "unknown_words": unknown_qr,
     }
 
 
 def readd_er(meaning_id: int) -> str:
     begin_time = datetime.date.today() - datetime.timedelta(days=ER_REVIEW_RANGE_DAY)
     session = Session()
-    if session.query(ERLookupRecord).filter(
+    if (
+        session.query(ERLookupRecord)
+        .filter(
             ERLookupRecord.meaning_id == meaning_id,
-            ERLookupRecord.created_time >= begin_time).count() > 0:
-        return 'already in ER review plan'
-    m: Meaning | None = session.query(Meaning).filter(
-        Meaning.id == meaning_id).one_or_none()
+            ERLookupRecord.created_time >= begin_time,
+        )
+        .count()
+        > 0
+    ):
+        return "already in ER review plan"
+    m: Meaning | None = (
+        session.query(Meaning).filter(Meaning.id == meaning_id).one_or_none()
+    )
     if m == None:
-        return 'non-exist'
+        return "non-exist"
     m.add_er_lookup_record()
     session.commit()
     session.close()
-    return ''
+    return ""
 
 
 def get_meaning(meaning_id: int) -> Meaning | None:
     session = Session()
-    meaning = session.query(Meaning).filter(
-        Meaning.id == meaning_id).one_or_none()
+    meaning = session.query(Meaning).filter(Meaning.id == meaning_id).one_or_none()
     session.close()
     return meaning
 
@@ -250,11 +302,10 @@ def gen_meaning_m3u8(meaning_id):
     from parrot_v2.dal.aliyun_oss import oss_sington
 
     session = Session()
-    meaning = session.query(Meaning).filter(
-        Meaning.id == meaning_id).one_or_none()
+    meaning = session.query(Meaning).filter(Meaning.id == meaning_id).one_or_none()
     if meaning == None:
-        logger.info('invalid meaning id')
-        return ''
+        logger.info("invalid meaning id")
+        return ""
     # get meaning voice_code
     # voice_code format: item_id||start_sec||end_sec
     # example voice_code: 	The.First.World.War.2||18.8||23.8
@@ -269,7 +320,7 @@ def gen_meaning_m3u8(meaning_id):
     session.close()
 
     # fetch complete m3u8 file
-    complete_m3u8_path = f'{item_id}/{item_id}.m3u8'
+    complete_m3u8_path = f"{item_id}/{item_id}.m3u8"
     complete_m3u8_url = oss_sington.get_object_url(complete_m3u8_path)
     complete_m3u8 = m3u8.load(complete_m3u8_url)
 
@@ -282,13 +333,15 @@ def gen_meaning_m3u8(meaning_id):
     start_i = int(start_sec // complete_m3u8.target_duration)
     end_i = int(end_sec // complete_m3u8.target_duration) + 1
     for s in complete_m3u8.segments[start_i:end_i]:
-        new_m3u8_obj.add_segment(m3u8.Segment(
-            duration=s.duration,
-            uri=oss_sington.get_object_url(f'{item_id}/{s.uri}'),
-        ))
+        new_m3u8_obj.add_segment(
+            m3u8.Segment(
+                duration=s.duration,
+                uri=oss_sington.get_object_url(f"{item_id}/{s.uri}"),
+            )
+        )
 
     return new_m3u8_obj.dumps()
-    return '''
+    return """
 #EXTM3U
 #EXT-X-VERSION:3
 #EXT-X-PLAYLIST-TYPE:VOD
@@ -300,10 +353,10 @@ https://test-streams.mux.dev/x36xhzz/url_6/url_848/193039199_mp4_h264_aac_hq_7.t
 #EXTINF:10.000,
 https://test-streams.mux.dev/x36xhzz/url_6/url_849/193039199_mp4_h264_aac_hq_7.ts
 #EXT-X-ENDLIST
-'''
+"""
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # selected = 'poor'
     # sentence = 'sentence=more fearsome and dangerous than the old'
     # selected = 'notes'
@@ -312,22 +365,22 @@ if __name__ == '__main__':
     # sentence = 'Whenever Princip missed the target people standing around would laugh at him'
     # selected = 'extreme'
     # sentence = 'It was filled with demands so extreme and insulting that Serbia could never accept them.'
-    selected = 'commemorates'
-    sentence = '''At the Serbian town of Prnjavor, this memorial commemorates those who died.'''
+    selected = "commemorates"
+    sentence = """At the Serbian town of Prnjavor, this memorial commemorates those who died."""
     print(selected)
     print(sentence)
     result_dict = parse_sentence(selected, sentence)
-    print(result_dict['selected']['cleaned_word'])
-    for qr in result_dict['selected']['qr']:
-        print(qr['pron'])
-        print(qr['pos'] + ' ' + qr['cn_def'])
+    print(result_dict["selected"]["cleaned_word"])
+    for qr in result_dict["selected"]["qr"]:
+        print(qr["pron"])
+        print(qr["pos"] + " " + qr["cn_def"])
 
-    for w, qr_list in result_dict['unknown_words'].items():
+    for w, qr_list in result_dict["unknown_words"].items():
         sentence = sentence.replace(w, f"{w}[{qr_list[0]['pron']}]")
     print(sentence)
 
-    for w, qr_list in result_dict['unknown_words'].items():
+    for w, qr_list in result_dict["unknown_words"].items():
         print(w)
         for qr in qr_list:
-            print(' '.join([qr['word'], qr['pos'], qr['cn_def']]))
-        print('\n')
+            print(" ".join([qr["word"], qr["pos"], qr["cn_def"]]))
+        print("\n")
