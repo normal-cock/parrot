@@ -9,7 +9,8 @@ from parrot_v2.model.core import (
 from parrot_v2.model import Item, Word, Meaning, ERLookupRecord, ER_REVIEW_RANGE_DAY
 from parrot_v2 import Session, DEBUG, PW, MEANING_SPEECH_DIR
 import os
-import sys
+import html
+import json
 import re
 import time
 import datetime
@@ -22,6 +23,43 @@ from sqlalchemy import desc
 
 
 # from parrot_v2.dal.aliyun_oss import oss_sington
+
+
+def enrich_usecase_4_web(use_case: str) -> str:
+    from parrot_v2.util import nlp_tool
+
+    logger.info(f"begin enrich_usecase_4_web: {use_case}")
+    tokens = nlp_tool.tokenize(use_case)
+
+    enriched_token_count = 0
+    begin_time = time.time()
+    for i, token in enumerate(tokens):
+        if token.isalpha():
+            meaning_list = []
+            query_result_list = query_word(token, use_case)
+            if len(query_result_list) == 0:
+                continue
+            for result in query_result_list:
+                meaning_list.append(
+                    {
+                        "word": result[0],
+                        "meaning_id": result[1],
+                        "meaning": result[2],
+                        "usecase": result[3],
+                        "phonetic_symbol": result[4],
+                        "remark": result[5],
+                        "created_time": result[6].strftime("%Y-%m-%d %H:%M"),
+                    }
+                )
+            meaning_str = html.escape(json.dumps(meaning_list))
+            enriched_token = f"""<span onclick="showMeaning({meaning_str})" style="color: blue; cursor: pointer;">{token}</span>"""
+            tokens[i] = enriched_token
+            enriched_token_count += 1
+
+    logger.info(
+        f"finished enrich_usecase_4_web. cost {round(time.time()-begin_time, 2)}s. enriched {enriched_token_count} token"
+    )
+    return nlp_tool.detokenize(tokens)
 
 
 def get_meaning_speech_path(meaning_id: int):
@@ -159,17 +197,19 @@ def blur_search(query: str):
     return meaning_list
 
 
-def query_word(word_text: str):
+def query_word(word_text: str, setence: str):
     """返回结果[(word_text, meaning_id, meaning_meaning,
     meaning_use_case, meaning_phonetic_symbol, meaning_remark)]"""
     from parrot_v2.util import nlp_tool
+    logger.info(f"query_word||word({word_text}) in sentence({setence})")
 
-    origin_word_text = nlp_tool.get_origin_morphy_4_phrase(word_text)
+    morphy_word_text = nlp_tool.get_morphy_4_sel(word_text, setence)
+
     result_list = []
     session = Session()
-    raw_word = session.query(Word).filter(Word.text == word_text).one_or_none()
+    raw_word = session.query(Word).filter(Word.text == word_text.lower()).one_or_none()
     if raw_word != None:
-        logger.info(f"query_word||raw_word({raw_word.text}) is found")
+        logger.info(f"query_word||raw_word({word_text}) is found")
         for i, meaning in enumerate(raw_word.meanings):
             result_list.append(
                 [
@@ -183,28 +223,30 @@ def query_word(word_text: str):
                 ]
             )
     else:
-        logger.info(f"query_word||raw_word({raw_word.text}) is not found")
+        logger.info(f"query_word||raw_word({word_text}) is not found")
 
-    origin_word = (
-        session.query(Word).filter(Word.text == origin_word_text).one_or_none()
-    )
-    if origin_word == None:
-        logger.info(f"query_word||word({origin_word.text}) not found")
-        return result_list
-
-    logger.info(f"query_word||word({origin_word.text}) is found")
-    for i, meaning in enumerate(origin_word.meanings):
-        result_list.append(
-            [
-                meaning.word.text,
-                meaning.id,
-                meaning.meaning,
-                meaning.use_case,
-                meaning.phonetic_symbol,
-                meaning.remark,
-                meaning.created_time,
-            ]
+    if morphy_word_text != word_text:
+        origin_word = (
+            session.query(Word)
+            .filter(Word.text == morphy_word_text.lower())
+            .one_or_none()
         )
+        if origin_word != None:
+            logger.info(f"query_word||word({morphy_word_text}) is found")
+            for i, meaning in enumerate(origin_word.meanings):
+                result_list.append(
+                    [
+                        meaning.word.text,
+                        meaning.id,
+                        meaning.meaning,
+                        meaning.use_case,
+                        meaning.phonetic_symbol,
+                        meaning.remark,
+                        meaning.created_time,
+                    ]
+                )
+        else:
+            logger.info(f"query_word||word({morphy_word_text}) not found")
     session.close()
     return result_list
 
@@ -367,20 +409,21 @@ if __name__ == "__main__":
     # sentence = 'It was filled with demands so extreme and insulting that Serbia could never accept them.'
     selected = "commemorates"
     sentence = """At the Serbian town of Prnjavor, this memorial commemorates those who died."""
-    print(selected)
-    print(sentence)
-    result_dict = parse_sentence(selected, sentence)
-    print(result_dict["selected"]["cleaned_word"])
-    for qr in result_dict["selected"]["qr"]:
-        print(qr["pron"])
-        print(qr["pos"] + " " + qr["cn_def"])
+    print(enrich_usecase_4_web(sentence))
+    # print(selected)
+    # print(sentence)
+    # result_dict = parse_sentence(selected, sentence)
+    # print(result_dict["selected"]["cleaned_word"])
+    # for qr in result_dict["selected"]["qr"]:
+    #     print(qr["pron"])
+    #     print(qr["pos"] + " " + qr["cn_def"])
 
-    for w, qr_list in result_dict["unknown_words"].items():
-        sentence = sentence.replace(w, f"{w}[{qr_list[0]['pron']}]")
-    print(sentence)
+    # for w, qr_list in result_dict["unknown_words"].items():
+    #     sentence = sentence.replace(w, f"{w}[{qr_list[0]['pron']}]")
+    # print(sentence)
 
-    for w, qr_list in result_dict["unknown_words"].items():
-        print(w)
-        for qr in qr_list:
-            print(" ".join([qr["word"], qr["pos"], qr["cn_def"]]))
-        print("\n")
+    # for w, qr_list in result_dict["unknown_words"].items():
+    #     print(w)
+    #     for qr in qr_list:
+    #         print(" ".join([qr["word"], qr["pos"], qr["cn_def"]]))
+    #     print("\n")

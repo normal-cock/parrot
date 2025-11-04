@@ -27,11 +27,16 @@ run_nginx:
 reload_nginx:
 	docker exec -it parrot_nginx nginx -s reload
 
+unify_mp4:
+	ffmpeg -i ${PWD##*/}.raw.mp4 -af "loudnorm=I=-16:LRA=11:TP=-1" \
+		-c:v copy -c:a aac -b:a 192k -y ${PWD##*/}.mp4
+
 extract_mp3:
 	ffmpeg -i ${PWD##*/}.mp4 -vn -acodec libmp3lame ${PWD##*/}.mp3
 
 mp3_2_m3u8:
-	mkdir ts_file && ffmpeg -i ${PWD##*/}.mp3 -hls_time 20 -hls_list_size 0 -hls_segment_filename "ts_file/${PWD##*/}-%d.ts" \
+	mkdir ts_file && ffmpeg -i ${PWD##*/}.mp3 -hls_time 20 -hls_list_size 0 \
+		-hls_segment_filename "ts_file/${PWD##*/}-%d.ts" \
 		-hls_base_url 'ts_file/' ${PWD##*/}.m3u8
 
 convert_subtitle_from_srt:
@@ -42,3 +47,6 @@ test_cb_dict:
 
 poetry_install:
 	poetry install
+
+translate_vtt:
+	PYTHONPATH=. python parrot_v2/dal/doubao_llm.py

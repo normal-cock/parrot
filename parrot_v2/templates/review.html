@@ -4,7 +4,7 @@
     <meta name="description" content="">
     <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
     <meta name="generator" content="Hugo 0.88.1">
-    <title>Review Page</title>
+    <title>Parrot Review</title>
 
     <script src="http://mstation.top:8000/static/jquery-3.2.1.min.js"></script>
     <link rel="canonical" href="https://getbootstrap.com/docs/5.1/examples/sticky-footer-navbar/">
@@ -41,6 +41,44 @@
         .form-switch {
             margin-right: 2%;
         }
+
+        .meaning-container {
+            position: absolute;
+            /* overflow: auto; */
+            width: 100vw;
+            /* max-height: 60%; */
+            /* height: 100%; */
+            height: 60%;
+            bottom: 0;
+            padding-left: 2%;
+            padding-right: 2%;
+            background-color: white;
+            max-width: 800px;
+            /* border: 2px solid black; */
+            /* 这里的display是为了取消bootstrap中的card导致的display:flex的显示问题 */
+            display: block;
+            position: fixed;
+            bottom: 0;
+        }
+
+        .card-list {
+            /* position: absolute; */
+            overflow: auto;
+            height: 93%;
+            max-height: 55vh;
+            top: 0;
+            width: 100%;
+        }
+
+        .meaning-container-button-area {
+            height: 5%;
+        }
+
+        .meaning-container-closer {
+            margin-top: 1%;
+            margin-right: 1%;
+            float: right;
+        }
     </style>
 </head>
 
@@ -63,6 +101,14 @@
             <button id="c-toast-button" type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"
                 aria-label="Close"></button>
         </div>
+    </div>
+
+    <div class="meaning-container card-container card" style="display:none">
+        <div class="meaning-container-button-area">
+            <button id="meaning-container-closer" type="button" class="btn-close meaning-container-closer"
+                aria-label="Close"></button>
+        </div>
+        <div id="meaning-container-card-list" class="card-list"></div>
     </div>
 
     <script>
@@ -107,6 +153,10 @@
             customToast(`${jqXHR.status}\t${errorThrown}: ${jqXHR.responseText}`);
         };
 
+        function setTitle(title) {
+            document.title = `Parrot Review: ${title}`;
+        }
+
         video.addEventListener('timeupdate', function () {
             if (!(
                 ucmOffset <= video.currentTime &&
@@ -149,6 +199,7 @@
                 });
                 navigator.mediaSession.setActionHandler('nexttrack', function () {
                 });
+                setTitle("Finished");
             } else {
                 const reviewIndex = response.review_index;
                 const meaningBodyDiv = $('<div></div>');
@@ -158,6 +209,7 @@
 
                 btnComplete.on('click', function () {
                     btnComplete.text('Completing');
+                    setTitle('Completing');
                     $.ajax({
                         url: `/{{ passport }}/complete-review-record/${reviewIndex}`,
                         type: 'POST',
@@ -168,6 +220,7 @@
 
                 btnPrevious.on('click', function () {
                     btnPrevious.text('Backing');
+                    setTitle('Backing');
                     $.ajax({
                         url: `/{{ passport }}/previous-review-record/${reviewIndex}`,
                         type: 'POST',
@@ -183,7 +236,7 @@
                     `Word: ${response.meaning.word} [${response.meaning.phonetic_symbol}]`
                 )
                 // meaningDiv.text(JSON.stringify(response));
-                const usecaseDiv = $(`<div></div>`).text(
+                const usecaseDiv = $(`<div></div>`).html(
                     'Use Case: ' + response.meaning.use_case);
                 const meaningDiv = $(`<div></div>`).text(
                     'Meaning: ' +
@@ -212,8 +265,10 @@
                     playBtn.on('click', function () {
                         if (video.paused) {
                             play();
+                            setTitle(response.meaning.word);
                         } else {
                             pause();
+                            setTitle(`[Paused] ${response.meaning.word}`);
                         }
                     });
                     switchGroupDiv.append(playBtn);
@@ -273,8 +328,71 @@
                 if (ucm != undefined) {
                     play();
                 }
+                setTitle(response.meaning.word);
             }
         }
+
+
+        const meaningContainer = $('.meaning-container');
+        const meaningCardList = $('#meaning-container-card-list');
+
+        $('#meaning-container-closer').on('click', function () {
+            meaningContainer.hide();
+            meaningCardList.empty();
+        });
+
+        function showMeaning(list) {
+            // var list = JSON.parse(response);
+            // var list = response;
+            // var list = [
+            //     {
+            //         'word': 'abc', 'meaning_id': 123, 'meaning': 'def',
+            //         'usecase': 'ghi', 'phonetic_symbol': 'jkl', 'remark': 'mno',
+            //         'created_time': '2023-01-01'
+            //     },
+            // ];
+            $.each(list, function (i, item) {
+                // 创建一个卡片元素
+                function genCard(word, m_id, meaning, usecase, phonetic_symbol, remark, created_time) {
+                    var card = $('<div class="card"></div>');
+                    var cardBody = $('<div class="card-body"></div>');
+                    var title = $('<h5 class="card-title">').text(word);
+                    var subTitle = $('<h6 class="card-subtitle mb-2 text-body-secondary">').text(phonetic_symbol + ' ' + meaning);
+                    var body = $('<p class="card-text">').html(usecase + '<br/>' + remark);
+                    var foot = $('<p class="card-text">').html('Created time: ' + created_time);
+                    var addERBtn = $('<button type="button" class="btn btn-primary">Add ER</button>');
+                    addERBtn.on('click', function () {
+                        $.ajax({
+                            url: `/{{ passport }}/readd-er/${m_id}`,
+                            type: 'POST',
+                            success: function (response) {
+                                // searchCallback(response);
+                                const msg = `add_er successfully: ${word} ${meaning}`;
+                                toastr.info(msg, '', { timeOut: 2000 });
+                            },
+                            error: httpErrorFunc,
+                        });
+                    });
+                    cardBody.append(title, subTitle, body, foot, addERBtn);
+                    card.append(cardBody);
+                    return card;
+                }
+                // var li = $('<li>')
+                // parse data
+                var card = genCard(
+                    item['word'], item['meaning_id'],
+                    item['meaning'], item['usecase'],
+                    item['phonetic_symbol'], item['remark'],
+                    item['created_time']);
+                // li.append(card);
+                // gen list
+                meaningCardList.append(card);
+            });
+            if (list.length == 0) {
+                meaningCardList.text('Empty!');
+            }
+            meaningContainer.show();
+        };
 
         $(document).ready(function () {
             $.ajax({

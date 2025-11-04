@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{item_id}}</title>
+    <title>Parrot: {{item_id}}</title>
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
     <script src="http://mstation.top:8000/static/jquery-3.2.1.min.js"></script>
@@ -193,9 +193,9 @@
                 height: 85vh;
             }
 
-            #subtitle-list {
+            /* #subtitle-list {
                 height: 65vh;
-            }
+            } */
         }
     </style>
 </head>
@@ -434,11 +434,19 @@
             // var q = window.getSelection();
             var q = selectedText;
             selectedText = '';
+            var sentence = selectedTextSentence;
+            selectedTextSentence = '';
             console.log('querywordHttpRequest:' + q)
+
             // q = 'more';
+            var data = {
+                sentence: sentence,
+            };
+
             $.ajax({
                 url: `/{{ passport }}/queryword/${q}`,
                 type: 'GET',
+                data: data,
                 success: function (response) {
                     searchCallback(response);
                 },

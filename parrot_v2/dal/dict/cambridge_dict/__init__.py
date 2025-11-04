@@ -2,7 +2,8 @@ import requests
 from typing import List
 from bs4 import BeautifulSoup
 from parrot_v2.model.core import CWordPos
-''' 
+
+""" 
 class==entry-body__el
     词性(part of speech): class==pos dpos
         verb
@@ -19,108 +20,105 @@ class==entry-body__el
         英语解释(所有text拼接在一起): class==def ddef_d db
         汉语解释(所有text拼接在一起): class==trans dtrans dtrans-se break-cj ; lang="zh-Hans"
 
-'''
+"""
 
-NON_TITLE = 'Non-Title'
-NON_POS = 'Non-Pos'
-NON_PRON = 'Non-Pron'
+NON_TITLE = "Non-Title"
+NON_POS = "Non-Pos"
+NON_PRON = "Non-Pron"
 
 
 def entry_filter(soup):
-    return soup.select('div.entry-body__el')
+    return soup.select("div.entry-body__el")
 
 
 def meaning_filter(soup):
-    meanings = soup.select('.def-block')
+    meanings = soup.select(".def-block")
     meaning_list = []
     for meaning in meanings:
-        if meaning.find_parent(class_='phrase-block'):
+        if meaning.find_parent(class_="phrase-block"):
             continue
         meaning_list.append(meaning)
     return meaning_list
 
 
 def get_title(soup):
-    title = soup.select_one('*.di-title')
+    title = soup.select_one("*.di-title")
     if title:
         return title.get_text().strip()
     return NON_TITLE
 
 
 def get_pos(soup):
-    pos = ''
-    posgram = soup.select_one('*.posgram')
+    pos = ""
+    posgram = soup.select_one("*.posgram")
     if posgram:
         pos = posgram.get_text()
     else:
-        dpos = soup.select_one('*.pos.dpos')
+        dpos = soup.select_one("*.pos.dpos")
         if dpos:
             pos = dpos.get_text()
     if len(pos) != 0:
-        pos = pos.replace('noun', 'n.')
-        pos = pos.replace('verb', 'v.')
-        pos = pos.replace('adjective', 'adj.')
-        pos = pos.replace('determiner', 'adj.')
-        pos = pos.replace('adverb', 'adv.')
-        pos = pos.replace('preposition', 'prep.')
+        pos = pos.replace("noun", "n.")
+        pos = pos.replace("verb", "v.")
+        pos = pos.replace("adjective", "adj.")
+        pos = pos.replace("determiner", "adj.")
+        pos = pos.replace("adverb", "adv.")
+        pos = pos.replace("preposition", "prep.")
         return pos
     return NON_POS
 
 
 def get_pron(soup):
-    us_pron = soup.select_one(
-        '*.us.dpron-i')
+    us_pron = soup.select_one("*.us.dpron-i")
     if us_pron != None:
-        us_pron = us_pron.select_one('*.ipa.dipa.lpr-2.lpl-1')
+        us_pron = us_pron.select_one("*.ipa.dipa.lpr-2.lpl-1")
         if us_pron != None:
             return us_pron.get_text()
-    uk_pron = soup.select_one(
-        '*.uk.dpron-i')
+    uk_pron = soup.select_one("*.uk.dpron-i")
     if uk_pron != None:
-        uk_pron = uk_pron.select_one('*.ipa.dipa.lpr-2.lpl-1')
+        uk_pron = uk_pron.select_one("*.ipa.dipa.lpr-2.lpl-1")
         if uk_pron != None:
             return uk_pron.get_text()
     return NON_PRON
 
 
 def get_en_def(soup):
-    en_def = soup.select_one('*.def.ddef_d.db')
+    en_def = soup.select_one("*.def.ddef_d.db")
     if en_def != None:
         return en_def.get_text()
-    return ''
+    return ""
 
 
 def get_cn_def(soup):
-    cn_def = soup.select_one(
-        '*.trans.dtrans.dtrans-se.break-cj[lang="zh-Hans"]')
+    cn_def = soup.select_one('*.trans.dtrans.dtrans-se.break-cj[lang="zh-Hans"]')
     if cn_def != None:
         return cn_def.get_text()
-    return ''
+    return ""
 
 
 def raw_query(word):
-    '''
-        word: origin state for noun and verb
-        return [meaning1, ], ''
-            meaning {
-                'word': '',
-                'pos':'',
-                'pron':'',
-                'en_def':'',
-                'cn_def':'',
-            }
-    '''
+    """
+    word: origin state for noun and verb
+    return [meaning1, ], ''
+        meaning {
+            'word': '',
+            'pos':'',
+            'pron':'',
+            'en_def':'',
+            'cn_def':'',
+        }
+    """
     query_result = []
 
     url = f"https://dictionary.cambridge.org/us/dictionary/english-chinese-simplified/{word}"
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
     }
     resp = requests.get(url, headers=headers)
     if resp.status_code != 200:
-        return query_result, f'status_code={resp.status_code}'
+        return query_result, f"status_code={resp.status_code}"
 
-    soup = BeautifulSoup(resp.text, 'html.parser')
+    soup = BeautifulSoup(resp.text, "html.parser")
     entries = entry_filter(soup)
 
     for entry in entries:
@@ -136,25 +134,29 @@ def raw_query(word):
             en_def = get_en_def(meaning)
             cn_def = get_cn_def(meaning)
 
-            for cd in cn_def.replace('；', ';').split(';'):
-                query_result.append({
-                    'word': title,
-                    'pos': pos,
-                    'pron': pron,
-                    'en_def': en_def,
-                    'cn_def': cd,
-                })
+            for cd in cn_def.replace("；", ";").split(";"):
+                query_result.append(
+                    {
+                        "word": title,
+                        "pos": pos,
+                        "pron": pron,
+                        "en_def": en_def,
+                        "cn_def": cd,
+                    }
+                )
 
-    return query_result, ''
+    return query_result, ""
 
 
 def _is_pos_match(pos: str, cpos_list: List[CWordPos]) -> bool:
     pos = pos.lower()
-    if ((CWordPos.NOUN in cpos_list and 'n.' in pos)
-        or (CWordPos.VERB in cpos_list and 'v.' in pos)
-            or (CWordPos.ADJ in cpos_list and 'adj.' in pos)
-            or (CWordPos.ADV in cpos_list and 'adv.' in pos)
-            or (CWordPos.PREP in cpos_list and 'prep.' in pos)):
+    if (
+        (CWordPos.NOUN in cpos_list and "n." in pos)
+        or (CWordPos.VERB in cpos_list and "v." in pos)
+        or (CWordPos.ADJ in cpos_list and "adj." in pos)
+        or (CWordPos.ADV in cpos_list and "adv." in pos)
+        or (CWordPos.PREP in cpos_list and "prep." in pos)
+    ):
         return True
     return False
 
@@ -164,36 +166,36 @@ def query_pron_with_pos(word, cpos: CWordPos):
     if len(err_str) != 0:
         raise Exception(err_str)
     if len(result_list) == 0:
-        return ''
+        return ""
     if cpos.may_have_different_pron_by_pos():
         for result in result_list:
-            if _is_pos_match(result['pos'], [cpos]):
-                return result['pron']
+            if _is_pos_match(result["pos"], [cpos]):
+                return result["pron"]
     else:
-        return result_list[0]['pron']
+        return result_list[0]["pron"]
 
-    return ''
+    return ""
 
 
-def query_word_with_pos(word, cpos_list: List[CWordPos]):
+def query_word_with_cpos(word, cpos_list: List[CWordPos]):
     result_list, err_str = raw_query(word)
     if len(err_str) != 0:
         raise Exception(err_str)
     filtered_result_list = []
     for result in result_list:
-        if _is_pos_match(result['pos'], cpos_list) or result['pos'] == NON_POS:
+        if _is_pos_match(result["pos"], cpos_list) or result["pos"] == NON_POS:
             filtered_result_list.append(result)
 
     return filtered_result_list
 
 
-if __name__ == '__main__':
-    meanings, err_str = raw_query('Manchurian candidate')
+if __name__ == "__main__":
+    meanings, err_str = raw_query("Manchurian candidate")
     # meanings, err_str = raw_query('be born')
     # meanings, err_str = raw_query('first')
-    # meanings = query_word_with_pos('first', [CWordPos.ADJ])
+    # meanings = query_word_with_cpos('first', [CWordPos.ADJ])
     # if len(err_str) != 0:
     #     print(err_str)
     #     exit(0)
     for meaning in meanings:
-        print(meaning['pos'], meaning['pron'], meaning['cn_def'])
+        print(meaning["pos"], meaning["pron"], meaning["cn_def"])
