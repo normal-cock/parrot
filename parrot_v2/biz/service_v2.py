@@ -16,7 +16,7 @@ import time
 import datetime
 import m3u8
 import inspect
-from typing import List
+from typing import List, Tuple
 from sqlalchemy import desc
 
 # print(f'{__file__}:{sys._getframe().f_lineno}', time.time())
@@ -60,6 +60,101 @@ def enrich_usecase_4_web(use_case: str) -> str:
         f"finished enrich_usecase_4_web. cost {round(time.time()-begin_time, 2)}s. enriched {enriched_token_count} token"
     )
     return nlp_tool.detokenize(tokens)
+
+
+def _query_by_prefix(session, word_text: str, morphy_word_text: str):
+    word_dict = {}
+    for word in (
+        session.query(Word)
+        .filter(
+            Word.text.like(f"{word_text}%") | Word.text.like(f"{morphy_word_text}%")
+        )
+        .order_by(Word.text)
+        .all()
+    ):
+        word_dict[word.text] = word
+    return word_dict
+
+
+def _match_longest_word(
+    use_case: str, left_tokens: List[str], word_dict: dict
+) -> Tuple[Word | None, int]:
+    from parrot_v2.util import nlp_tool
+
+    word_list = word_dict.keys()
+    max_word_token_count = 0
+    for word_text in word_list:
+        word_tokens = nlp_tool.tokenize(word_text)
+        if len(word_tokens) > max_word_token_count:
+            max_word_token_count = len(word_tokens)
+
+    # 由长到短，与字典匹配
+    for i in range(max_word_token_count, 0, -1):
+        sub_tokens = left_tokens[:i]
+        sub_phrase = nlp_tool.detokenize(sub_tokens)
+        morphy_sub_phrase = nlp_tool.get_morphy_4_sel(sub_phrase, use_case)
+        # 先匹配原始单词
+        if sub_phrase in word_dict:
+            return word_dict[sub_phrase], i
+        # 再匹配morphy
+        elif morphy_sub_phrase in word_dict:
+            return word_dict[morphy_sub_phrase], i
+
+    return None, 0
+
+
+def enrich_usecase_4_web_v2(session, use_case: str) -> str:
+    from parrot_v2.util import nlp_tool
+
+    logger.info(f"begin enrich_usecase_4_web: {use_case}")
+    tokens = nlp_tool.tokenize(use_case)
+    enrich_tokens = []
+
+    enriched_token_count = 0
+    begin_time = time.time()
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
+        if not token.isalpha():
+            enrich_tokens.append(token)
+            i += 1
+            continue
+        if token.isalpha():
+            meaning_list = []
+            morphy_word_text = nlp_tool.get_morphy_4_sel(token, use_case)
+            word_dict = _query_by_prefix(session, token, morphy_word_text)
+            longest_word, occupied_token_count = _match_longest_word(
+                use_case, tokens[i:], word_dict
+            )
+            if longest_word == None or occupied_token_count == 0:
+                enrich_tokens.append(token)
+                i += 1
+                continue
+
+            new_token = nlp_tool.detokenize(tokens[i : i + occupied_token_count])
+            for meaning in longest_word.meanings:
+                meaning_list.append(
+                    {
+                        "word": longest_word.text,
+                        "meaning_id": meaning.id,
+                        "meaning": meaning.meaning,
+                        "usecase": meaning.use_case,
+                        "phonetic_symbol": meaning.phonetic_symbol,
+                        "remark": meaning.remark,
+                        "created_time": meaning.created_time.strftime("%Y-%m-%d %H:%M"),
+                    }
+                )
+            meaning_str = html.escape(json.dumps(meaning_list))
+            enriched_token = f"""<span onclick="showMeaning({meaning_str})" style="border-bottom: 2px solid var(--bs-orange); cursor: pointer;">{new_token}</span>"""
+            logger.info(f"enrich token: {new_token} through {longest_word.text}")
+            enrich_tokens.append(enriched_token)
+            enriched_token_count += 1
+            i += occupied_token_count
+
+    logger.info(
+        f"finished enrich_usecase_4_web. cost {round(time.time()-begin_time, 2)}s. enriched {enriched_token_count} token"
+    )
+    return nlp_tool.detokenize(enrich_tokens)
 
 
 def get_meaning_speech_path(meaning_id: int):
@@ -201,8 +296,8 @@ def query_word(word_text: str, setence: str):
     """返回结果[(word_text, meaning_id, meaning_meaning,
     meaning_use_case, meaning_phonetic_symbol, meaning_remark)]"""
     from parrot_v2.util import nlp_tool
-    logger.info(f"query_word||word({word_text}) in sentence({setence})")
 
+    logger.info(f"query_word||word({word_text}) in sentence({setence})")
     morphy_word_text = nlp_tool.get_morphy_4_sel(word_text, setence)
 
     result_list = []
@@ -408,8 +503,9 @@ if __name__ == "__main__":
     # selected = 'extreme'
     # sentence = 'It was filled with demands so extreme and insulting that Serbia could never accept them.'
     selected = "commemorates"
-    sentence = """At the Serbian town of Prnjavor, this memorial commemorates those who died."""
-    print(enrich_usecase_4_web(sentence))
+    sentence = """Goes through At the Serbian town of Prnjavor, this memorial commemorates those who died."""
+
+    print(enrich_usecase_4_web_v2(Session(), sentence))
     # print(selected)
     # print(sentence)
     # result_dict = parse_sentence(selected, sentence)

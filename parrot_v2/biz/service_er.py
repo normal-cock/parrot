@@ -160,8 +160,8 @@ def fetch_next_er_lookup_record():
             "duration": 999,
         }
 
-    result["meaning"]["use_case"] = service_v2.enrich_usecase_4_web(
-        result["meaning"]["use_case"]
+    result["meaning"]["use_case"] = service_v2.enrich_usecase_4_web_v2(
+        session, result["meaning"]["use_case"]
     )
     return result
 
