@@ -101,13 +101,18 @@ def get_cpos_dict_4_sentence(sentence: str) -> defaultdict[str, set[CWordPos]]:
 
 
 def get_morphy_4_sel(sel: str, sentence: str) -> str:
-    """获取选中词语的morphy"""
+    """获取选中词语的morphy
+    sel和sentence需要原生数据，没经过大小写转换的
+    """
     sel_tokens = nltk.word_tokenize(sel)
     sentence_tokens = nltk.word_tokenize(sentence)
     # 这里不能直接用`if sel not in sentence`是因为某些场景，tokenize和detokenize会有差异。
     # 例如"smelter[ˈsmel.tɚ]" 会变成"smelter [ˈsmel.tɚ]", 多一个空格
-    if not set(sel_tokens).issubset(set(sentence_tokens)):
-        raise Exception(f'sel="{sel}" not in sentence="{sentence}"')
+    for sel_token in sel_tokens:
+        if sel_token not in sentence:
+            raise Exception(
+                f"sel_token={sel_token} not in sentence_tokens={sentence_tokens}"
+            )
 
     token_pos_dict = get_cpos_dict_4_sentence(sentence)
     sel_morphy_tokens = []

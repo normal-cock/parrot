@@ -1206,7 +1206,20 @@
             // so it's better to invoce it every time when visibility changed
             document.addEventListener("visibilitychange", function () {
                 flushListHighlight();
+                continuePlay4VideoMode();
             });
+
+            function continuePlay4VideoMode() {
+                if (!isActive() && !$('#audioOnlyMode').is(':checked')) {
+                    console.debug('player become not active in video mode');
+                    if (!audioPlayer.paused()) {
+                        console.debug('video player still playing');
+                        return;
+                    }
+                    console.debug('replay video');
+                    audioPlayer.play();
+                }
+            }
         });
 
     </script>

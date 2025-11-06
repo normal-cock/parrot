@@ -299,6 +299,7 @@ def query_word(word_text: str, setence: str):
 
     logger.info(f"query_word||word({word_text}) in sentence({setence})")
     morphy_word_text = nlp_tool.get_morphy_4_sel(word_text, setence)
+    logger.info(f"query_word=({word_text})||morphy_word=({morphy_word_text})")
 
     result_list = []
     session = Session()
@@ -320,7 +321,7 @@ def query_word(word_text: str, setence: str):
     else:
         logger.info(f"query_word||raw_word({word_text}) is not found")
 
-    if morphy_word_text != word_text:
+    if morphy_word_text.lower() != word_text.lower():
         origin_word = (
             session.query(Word)
             .filter(Word.text == morphy_word_text.lower())
