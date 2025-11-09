@@ -20,7 +20,48 @@
     <link href="https://unpkg.com/@videojs/themes@1/dist/city/index.css" rel="stylesheet">
 
     <style>
+        @media (prefers-color-scheme: light) {
+            :root {
+                /* 背景色 */
+                --bg-primary: #ffffff;
+                /* 页面主背景 */
+                --bg-secondary: lightgray;
+                --bg-highlight: #d1e7dd;
+                /* 卡片/组件背景 */
+                /* 文字色 */
+                --text-primary: #1d2129;
+                /* 主要文字 */
+                --text-secondary: #666c78;
+                /* 次要文字 */
+                --text-link: #1890ff;
+                /* 链接色 */
+                /* 边框/分割线 */
+                --border-color: #e5e7eb;
+                /* 强调色（按钮/高亮） */
+                --accent-color: #1890ff;
+                /* 过渡动画（切换时平滑过渡） */
+                --transition: all 0.3s ease;
+            }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #121212;
+                --bg-secondary: #1e1e1e;
+                --bg-highlight: darkslategray;
+                --text-primary: #f5f7fa;
+                --text-secondary: #b0b7c3;
+                --text-link: #40a9ff;
+                --border-color: #333842;
+                --accent-color: #40a9ff;
+            }
+        }
+
         body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: var(--transition);
+
             width: auto;
             margin: auto;
             max-width: 800px;
@@ -38,8 +79,13 @@
             /* height: 15vh; */
         }
 
+        .custom-area {
+            height: 90%;
+        }
+
+
         .custom-tool {
-            background-color: lightgray;
+            background-color: var(--bg-secondary);
             height: 7vh;
         }
 
@@ -47,15 +93,8 @@
             height: 100%;
         }
 
-        .custom-area {
-            height: 90%;
-        }
-
-        .highlight-span {
-            background-color: #d1e7dd;
-        }
-
         .subtitle-container {
+            background-color: inherit;
             height: 90%;
         }
 
@@ -73,10 +112,17 @@
             /* 设置内填充为 10 像素 */
             padding: 3%;
             border: none;
+            color: var(--text-primary);
+            background-color: var(--bg-primary);
+        }
+
+        .list-group-item-success {
+            background-color: var(--bg-highlight);
         }
 
         .list-group-item-subcue {
             font-size: 0.7em;
+            color: var(--text-secondary);
         }
 
 
@@ -96,6 +142,12 @@
             width: 100%;
         }
 
+        .card {
+            background-color: inherit;
+            color: inherit;
+            border-color: var(--border-color);
+        }
+
         .http-result-container {
             position: absolute;
             /* overflow: auto; */
@@ -106,7 +158,8 @@
             bottom: 0;
             padding-left: 2%;
             padding-right: 2%;
-            background-color: white;
+            background-color: inherit;
+            color: inherit;
             max-width: 800px;
             /* border: 2px solid black; */
             /* 这里的display是为了取消bootstrap中的card导致的display:flex的显示问题 */
@@ -223,7 +276,7 @@
             <div class="toast-body">
                 Hello, world! This is a toast message.
             </div>
-            <button id="c-toast-button" type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"
+            <button id="c-toast-button" type="button" class="btn-close-white me-2 m-auto" data-bs-dismiss="toast"
                 aria-label="Close"></button>
         </div>
     </div>
@@ -278,14 +331,14 @@
     </div>
     <div class="http-result-container card-container card" style="display:none">
         <div class="card-container-button">
-            <button id="close-card-container" type="button" class="btn-close http-result-closer"
+            <button id="close-card-container" type="button" class="btn-close-white http-result-closer"
                 aria-label="Close"></button>
         </div>
         <div id="card-list" class="card-list"></div>
     </div>
     <div class="http-result-container parse-result card" style="display:none">
         <div class="card-container-button">
-            <button id="pr-close" type="button" class="btn-close http-result-closer" aria-label="Close"></button>
+            <button id="pr-close" type="button" class="btn-close-white http-result-closer" aria-label="Close"></button>
         </div>
         <div id="pr-review-record" class="pr-item">
             <div id="pr-word"></div>

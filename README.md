@@ -20,6 +20,7 @@
         - [Error: stepping, database disk image is malformed (11)](#error-stepping-database-disk-image-is-malformed-11)
     - [changelog](#changelog)
         - [Future](#future)
+            - [支持根据书籍生成系列音频和字幕](#支持根据书籍生成系列音频和字幕)
             - [\[P0\]兼容更多内容——Done](#p0兼容更多内容done)
             - [背单词效率 P0——Done](#背单词效率-p0done)
             - [优化PC播放视频的体验 P0——Done](#优化pc播放视频的体验-p0done)
@@ -145,6 +146,9 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
     * [P0]声音大小不统一的问题优化——Done
     * [P0]web端单词查询时，增加了语句级别的morphy操作，避免部分单词查不到的问题（动词识别成名词，所以还原失败） ——Done
 
+#### 支持根据书籍生成系列音频和字幕
+
+思路: 通过python-ffmpeg来读取内存中的音频的时间并调整归一化音量
 
 #### [P0]兼容更多内容——Done
 

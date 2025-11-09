@@ -27,8 +27,8 @@ run_nginx:
 reload_nginx:
 	docker exec -it parrot_nginx nginx -s reload
 
-unify_mp4:
-	ffmpeg -i ${PWD##*/}.raw.mp4 -af "loudnorm=I=-16:LRA=11:TP=-1" \
+unify_mp4_sound:
+	ffmpeg -i ${PWD##*/}-raw.mp4 -af "loudnorm=I=-16:LRA=11:TP=-1" \
 		-c:v copy -c:a aac -b:a 192k -y ${PWD##*/}.mp4
 
 extract_mp3:
@@ -40,7 +40,7 @@ mp3_2_m3u8:
 		-hls_base_url 'ts_file/' ${PWD##*/}.m3u8
 
 convert_subtitle_from_srt:
-	pysubs2 --to vtt *.srt
+	cd tmp && pysubs2 --to vtt *.srt && cd -
 
 test_cb_dict:
 	python parrot_v2/dal/dict/cambridge_dict/__init__.py

@@ -25,6 +25,49 @@
             }
         }
 
+        @media (prefers-color-scheme: light) {
+            :root {
+                /* 背景色 */
+                --bg-primary: #ffffff;
+                /* 页面主背景 */
+                --bg-secondary: #f5f7fa;
+                /* 卡片/组件背景 */
+                /* 文字色 */
+                --text-primary: #1d2129;
+                /* 主要文字 */
+                --text-secondary: #666c78;
+                /* 次要文字 */
+                --text-link: #1890ff;
+                /* 链接色 */
+                /* 边框/分割线 */
+                --border-color: #e5e7eb;
+                /* 强调色（按钮/高亮） */
+                --accent-color: #1890ff;
+                /* 过渡动画（切换时平滑过渡） */
+                --transition: all 0.3s ease;
+            }
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #121212;
+                --bg-secondary: #1e1e1e;
+                --text-primary: #f5f7fa;
+                --text-secondary: #b0b7c3;
+                --text-link: #40a9ff;
+                --border-color: #333842;
+                --accent-color: #40a9ff;
+            }
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: var(--transition);
+            /* 切换时平滑过渡 */
+            padding: 20px;
+        }
+
         main>.container {
             padding: 60px 15px 0;
         }
@@ -32,6 +75,7 @@
         table {
             border-collapse: separate;
             border-spacing: 10px 15px;
+            color: inherit;
         }
     </style>
 </head>
