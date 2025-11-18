@@ -203,7 +203,10 @@ def parse_sentence(passport):
             "qr_list": qr_list,
         }
 
-    resp_dict = {}
+    resp_dict = {
+        "start_time": request.form.get("start_time", type=float),
+        "end_time": request.form.get("end_time", type=float),
+    }
     result_selected = result_dict["selected"]
     resp_dict["selected"] = qr_result_gen(
         selected, result_selected["cleaned_word"], result_selected["qr"]

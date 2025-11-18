@@ -107,9 +107,10 @@ def get_morphy_4_sel(sel: str, sentence: str) -> str:
     sel_tokens = nltk.word_tokenize(sel)
     sentence_tokens = nltk.word_tokenize(sentence)
     # 这里不能直接用`if sel not in sentence`是因为某些场景，tokenize和detokenize会有差异。
+    # 也不能用`if sel_token not in sentence`，因为""会被tokenize称``
     # 例如"smelter[ˈsmel.tɚ]" 会变成"smelter [ˈsmel.tɚ]", 多一个空格
     for sel_token in sel_tokens:
-        if sel_token not in sentence:
+        if sel_token not in sentence_tokens:
             raise Exception(
                 f"sel_token={sel_token} not in sentence_tokens={sentence_tokens}"
             )

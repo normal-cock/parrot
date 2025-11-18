@@ -332,13 +332,14 @@
     <div class="http-result-container card-container card" style="display:none">
         <div class="card-container-button">
             <button id="close-card-container" type="button" class="btn-close-white http-result-closer"
-                aria-label="Close"></button>
+                aria-label="Close" style="height: 100%;"></button>
         </div>
         <div id="card-list" class="card-list"></div>
     </div>
     <div class="http-result-container parse-result card" style="display:none">
         <div class="card-container-button">
-            <button id="pr-close" type="button" class="btn-close-white http-result-closer" aria-label="Close"></button>
+            <button id="pr-close" type="button" class="btn-close-white http-result-closer" aria-label="Close"
+                style="height: 100%;"></button>
         </div>
         <div id="pr-review-record" class="pr-item">
             <div id="pr-word"></div>
@@ -392,6 +393,10 @@
             closePopup();
             // parseResult.hide();
             // prMeaningSelect.empty();
+        });
+
+        $(document).click(function () {
+            hideContextMenu();
         });
 
         var selectedText = '';
@@ -534,6 +539,7 @@
                 const selectedCueIndex = Number(selectedSubtitleItem.attr('cue-index'))
                 startSelectedCue = findENCues()?.cues[selectedCueIndex - startOffset];
                 endSelectedCue = findENCues()?.cues[selectedCueIndex + endOffset];
+
                 console.info(`sel=${selectedText}||selStc=${selectedTextSentence}||list-group mouseup 2`);
                 showContextMenu();
                 // contextMenu.css('display', 'block');
@@ -547,6 +553,8 @@
             var selectionQRList = response.selected.qr_list;
             const unknownWords = response.unknown_words;
             const sentence = response.raw_sentence;
+            const startTime = response.start_time;
+            const endTime = response.end_time;
             var selectedSelectionIndex = 0;
             var selectedUnknownQRIndex = {};
             const prWord = $('#pr-word');
@@ -583,8 +591,6 @@
                 prRemark.text(remarkList.join('; '));
 
                 if ('{{ item_type }}' == '3') {
-                    const startTime = (startSelectedCue.startTime + adjustStartTime).toFixed(2);
-                    const endTime = (endSelectedCue.endTime + adjustEndTime).toFixed(2);
                     prSentenceVoiceCode.text(
                         `{{item_id}}||${startTime}||${endTime}`
                     );
@@ -659,6 +665,8 @@
             var data = {
                 selected: selected,
                 sentence: sentence,
+                start_time: (startSelectedCue.startTime + adjustStartTime).toFixed(2),
+                end_time: (endSelectedCue.endTime + adjustEndTime).toFixed(2),
             };
             console.log('parseSentence:' + data)
             $.ajax({
@@ -723,6 +731,8 @@
         const localCurIndexKey = 'parrot:{{ item_id }}:local_cur_index';
         const adjustStartTimeKey = 'parrot:{{ item_id }}:local_adjust_start_time';
         const adjustEndTimeKey = 'parrot:{{ item_id }}:local_adjust_end_time';
+
+        var manualPaused = false;
 
         // subtitle dynamic load, curCue前后各20个cue
         const maxDynamicLoadSize = 50;
@@ -1233,7 +1243,12 @@
             });
 
             audioPlayer.on('play', function () {
+                manualPaused = false;
                 heartbeat();
+            });
+            audioPlayer.on('pause', function () {
+                manualPaused = true;
+                console.log('audioPlayer paused');
             });
             navigator.mediaSession.setActionHandler('play', function () {
                 audioPlayer.play();
@@ -1266,7 +1281,11 @@
                 if (!isActive() && !$('#audioOnlyMode').is(':checked')) {
                     console.debug('player become not active in video mode');
                     if (!audioPlayer.paused()) {
-                        console.debug('video player still playing');
+                        console.debug('skip because video player still playing');
+                        return;
+                    }
+                    if (manualPaused) {
+                        console.debug('skip because video player paused manually');
                         return;
                     }
                     console.debug('replay video');
