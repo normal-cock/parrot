@@ -1246,10 +1246,22 @@
                 manualPaused = false;
                 heartbeat();
             });
-            audioPlayer.on('pause', function () {
-                manualPaused = true;
-                console.log('audioPlayer paused');
+
+            // desktop
+            audioPlayer.controlBar.getChild('PlayToggle').on('click', () => {
+                console.debug('Play/Pause button clicked.');
+                if (audioPlayer.paused()) {
+                    manualPaused = true;
+                }
             });
+            // mobile
+            audioPlayer.controlBar.getChild('PlayToggle').on('touchend', () => {
+                console.debug('Play/Pause button touchend.');
+                if (audioPlayer.paused()) {
+                    manualPaused = true;
+                }
+            });
+
             navigator.mediaSession.setActionHandler('play', function () {
                 audioPlayer.play();
             });
