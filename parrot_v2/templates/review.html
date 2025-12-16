@@ -241,8 +241,6 @@
                 const meaningDiv = $(`<div></div>`).text(
                     'Meaning: ' +
                     response.meaning.meaning + '\t' + response.meaning.remark);
-                usecaseDiv.hide();
-                meaningDiv.hide();
 
                 const switchGroupDiv = $('<div class="input-group">');
 
@@ -275,7 +273,7 @@
                 }
 
                 const usecaseSwitchDiv = $('<div class="form-check form-switch">');
-                const usecaseSwitchInput = $(`<input class="form-check-input" type="checkbox" role="switch" id="use-case-switch">`);
+                const usecaseSwitchInput = $(`<input class="form-check-input" type="checkbox" role="switch" id="use-case-switch" checked>`);
                 const usecaseSwitchLabel = $(`<label class="form-check-label" for="use-case-switch">`).text('Use Case');
                 usecaseSwitchInput.change(function () {
                     const checked = $(this).prop('checked');
@@ -289,7 +287,7 @@
                 usecaseSwitchDiv.append(usecaseSwitchLabel);
 
                 const meaningSwitchDiv = $('<div class="form-check form-switch">');
-                const meaningSwitchInput = $(`<input class="form-check-input" type="checkbox" role="switch" id="meaning-switch">`);
+                const meaningSwitchInput = $(`<input class="form-check-input" type="checkbox" role="switch" id="meaning-switch" checked>`);
                 const meaningSwitchLabel = $(`<label class="form-check-label" for="meaning-switch">`).text('Meaning');
                 meaningSwitchInput.change(function () {
                     const checked = $(this).prop('checked');
