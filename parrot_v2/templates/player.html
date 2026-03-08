@@ -970,6 +970,8 @@
                 if (subCue.startTime == cue.startTime) {
                     li = li.append("<br>")
                         .append($("<span>").addClass("list-group-item-subcue").html("CN: " + subCue.text));
+                } else {
+                    console.warn('cue and subcue don\'t match subCue.startTime != cue.startTime:', subCue.startTime, cue.startTime)
                 }
             }
 
