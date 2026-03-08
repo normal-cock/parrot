@@ -2,6 +2,7 @@ import requests
 from typing import List
 from bs4 import BeautifulSoup
 from parrot_v2.model.core import CWordPos
+from parrot_v2.util import logger
 
 """ 
 class==entry-body__el
@@ -115,6 +116,10 @@ def raw_query(word):
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
     }
     resp = requests.get(url, headers=headers)
+    if resp.status_code == 404:
+        logger.info(f"word={word} not found")
+        return query_result, ""
+
     if resp.status_code != 200:
         return query_result, f"status_code={resp.status_code}"
 

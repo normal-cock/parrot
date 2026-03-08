@@ -9,7 +9,7 @@ from parrot_v2.util import logger
 # doubao pro
 model = "ep-20250215214655-hwwv7"
 # deepseek v3
-model = "ep-20250217140128-vrzc7"
+# model = "ep-20250217140128-vrzc7"
 
 client = Ark(
     api_key=os.environ.get("ARK_API_KEY"),
@@ -171,8 +171,8 @@ if __name__ == "__main__":
     #     "came here with a Browning pistol",
     #     "for some target practice."]
     # print(translate(content))
-    name = "Interview About Tim Cook by Dua Lipa-2023"
-    vtt_e = "tmp/Interview About Tim Cook by Dua Lipa-2023.vtt"
+    name = "2013-buffett-florida-university"
+    vtt_e = f"tmp/{name}-raw.vtt"
     long_vtt_e = f"tmp/{name}-e.vtt"
     long_vtt_c = f"tmp/{name}-c.vtt"
     merge_vtt(vtt_e, long_vtt_e)

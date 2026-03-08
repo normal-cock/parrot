@@ -395,9 +395,9 @@
             // prMeaningSelect.empty();
         });
 
-        $(document).click(function () {
-            hideContextMenu();
-        });
+        // $(document).click(function () {
+        //     hideContextMenu();
+        // });
 
         var selectedText = '';
         var selectedTextSentence = '';
@@ -542,6 +542,7 @@
 
                 console.info(`sel=${selectedText}||selStc=${selectedTextSentence}||list-group mouseup 2`);
                 showContextMenu();
+                // sel.removeAllRanges();
                 // contextMenu.css('display', 'block');
             } else {
                 hideContextMenu();
@@ -707,13 +708,25 @@
             toastr.info('Success Copied!', '', { timeOut: 1000 });
         };
 
-        $('.list-group').on('mouseup', selectEndHandle);
-        $('.list-group').on('touchend', selectEndHandle);
+        $('.list-group').on('mouseup touchend', selectEndHandle);
+        // $('.list-group').on('touchend', selectEndHandle);
+        $('.http-result-container').on('click', hideContextMenu);
 
         $('#pr-review-record').on('click', copyReviewCard);
-        $('#search').on('click', searchHttpRequest);
-        $('#query-word').on('click', querywordHttpRequest);
-        $('#parse-sentence').on('click', parseSentence);
+
+        // context menu actions
+        $('#search').on('click', function (e) {
+            // window.getSelection().removeAllRanges();
+            searchHttpRequest();
+        });
+        $('#query-word').on('click', function (e) {
+            // window.getSelection().removeAllRanges();
+            querywordHttpRequest();
+        });
+        $('#parse-sentence').on('click', function (e) {
+            // window.getSelection().removeAllRanges();
+            parseSentence();
+        });
     </script>
 
     <script>

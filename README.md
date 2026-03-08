@@ -110,7 +110,7 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
                 * https://help.aliyun.com/zh/oss/use-cases/create-hls-streams-based-on-oss?spm=a2c4g.11186623.0.i25
                 * 上传时，貌似必须包含视频: https://help.aliyun.com/zh/oss/user-guide/rtmp-based-stream-ingest?spm=a2c4g.11186623.0.0.b2aa152ai6s40D#concept-vbb-dmb-5db 中的使用限制
                 * 看看工单的回复——没有有用信息
-            * 思路2.3: 基于oss自行实现
+            * [最终思路]思路2.3: 基于oss自行实现
                 * 测试一下，videojs能否播放m3u8——Done,需要将type变成`type='application/x-mpegURL'`
                 * 自行处理m3u8文件的生成，下发给客户端——Done
                     * 全文件播放
@@ -148,7 +148,7 @@ sqlite3查询某个词的时候报这个错误，且重新dump并insert为新的
     * [P0]夜间模式——Done
     * [P1]主动暂停后，切换到后台自动播放的bug——Done
     * [P1]点击卡片的时候，context菜单不会消失——Done
-    * [P0]单词解析的时间偶尔错乱——Verifying
+    * [P0]单词解析的时间偶尔错乱——Done
         * 20251118修完了，继续观察。通过在请求中传递start_time和end_time的快照来避免并发问题
         * 20251118解析某个单词时，查询另一个单词，可能复现
 
