@@ -51,21 +51,31 @@ def download_srt(youtube_url, turnstile_data, output_path):
     session.proxies = proxies
     session.headers.update({'User-Agent': ua, 'Referer': 'https://downsub.com/'})
 
-    # POST to get subtitle token
-    resp = session.post('https://get.downsub.com/', json={
-        'url': youtube_url,
-        'data': turnstile_data
-    }, timeout=30)
-    result = resp.json()
+    max_retries = 5
+    for attempt in range(max_retries):
+        resp = session.post('https://get.downsub.com/', json={
+            'url': youtube_url,
+            'data': turnstile_data
+        }, timeout=30)
+        result = resp.json()
+        state = result.get('state')
+        subtitles = result.get('subtitles', [])
+        print(f'API response: state={state}, subtitles={len(subtitles)}, title={result.get("title", "N/A")}')
 
-    subtitles = result.get('subtitles', [])
-    eng = next((s for s in subtitles if 'English' in s.get('name', '')), None)
-    if not eng:
-        eng = subtitles[0] if subtitles else None
-    if not eng:
-        print(f'ERROR: No subtitles found. Response state={result.get("state")}')
+        if state == 2 and subtitles:
+            break
+        elif state == 0:
+            print(f'  downsub still processing, retry {attempt + 1}/{max_retries}...')
+        else:
+            print(f'  unexpected state={state}, retry {attempt + 1}/{max_retries}...')
+        time.sleep(3)
+    else:
+        print(f'ERROR: Failed to get subtitles after {max_retries} retries')
         sys.exit(1)
 
+    eng = next((s for s in subtitles if 'English' in s.get('name', '')), None)
+    if not eng:
+        eng = subtitles[0]
     print(f'Found subtitle: {eng["name"]}')
 
     # Download SRT

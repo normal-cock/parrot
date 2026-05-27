@@ -24,7 +24,7 @@ if [ -f "${NAME}-raw.mp4" ]; then
     echo "${NAME}-raw.mp4 already exists, skip"
 else
     proxy_on
-    python3 "$SKILL_DIR/scripts/ytdown_download.py" "$URL" "${NAME}-raw.mp4"
+    PYTHONUNBUFFERED=1 python3 -u "$SKILL_DIR/scripts/ytdown_download.py" "$URL" "${NAME}-raw.mp4"
     proxy_off
 fi
 
